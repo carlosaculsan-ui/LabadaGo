@@ -106,7 +106,7 @@ export default function Home() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F5A623] mb-4">
               Welcome back
             </p>
-            <h1 className="font-heading font-extrabold text-[3rem] leading-[1.1] text-white mb-5">
+            <h1 className="font-heading font-bold text-5xl leading-[1.1] tracking-tight text-white mb-5">
               Laundry picked up,<br />
               <span className="text-[#F5A623]">washed, delivered.</span>
             </h1>
@@ -174,7 +174,7 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-8 py-8">
           <div className="flex items-center justify-center divide-x divide-[#e5e7eb]">
             {STATS.map(stat => (
-              <div key={stat.label} className="px-16 text-center">
+              <div key={stat.label} className="h-16 px-16 flex flex-col items-center justify-center">
                 <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">
                   {stat.value}
                 </p>
