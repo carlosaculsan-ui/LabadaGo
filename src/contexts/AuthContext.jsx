@@ -31,14 +31,17 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(false)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
 
       if (firebaseUser) {
+        setProfileLoading(true)
         const snap = await getDoc(doc(db, 'users', firebaseUser.uid))
         setUserProfile(snap.exists() ? snap.data() : null)
+        setProfileLoading(false)
       } else {
         setUserProfile(null)
       }
@@ -54,7 +57,7 @@ export function AuthProvider({ children }) {
   if (loading) return <Spinner />
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, role }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, profileLoading, role }}>
       {children}
     </AuthContext.Provider>
   )

@@ -24,9 +24,9 @@ function Spinner() {
 }
 
 export default function ProtectedRoute({ allowedRoles }) {
-  const { user, userProfile, loading } = useAuth()
+  const { user, userProfile, loading, profileLoading } = useAuth()
 
-  if (loading) return <Spinner />
+  if (loading || profileLoading) return <Spinner />
   if (!user) return <Navigate to="/signin" replace />
   if (allowedRoles && !allowedRoles.includes(userProfile?.role)) {
     return <Navigate to="/" replace />

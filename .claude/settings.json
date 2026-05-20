@@ -8,7 +8,8 @@
       "Bash(firebase --version)",
       "PowerShell(firebase --version 2>&1)",
       "PowerShell(npm install -g firebase-tools 2>&1)",
-      "PowerShell(firebase --version)"
+      "PowerShell(firebase --version)",
+      "Bash(npx vite *)"
     ]
   }
 }

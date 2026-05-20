@@ -1,8 +1,18 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { signOut } from 'firebase/auth'
+import { auth } from '../lib/firebase'
+import { useAuth } from '../hooks/useAuth'
 
 export default function Navbar() {
   const [search, setSearch] = useState('')
+  const navigate = useNavigate()
+  const { user, userProfile } = useAuth()
+
+  async function handleSignOut() {
+    await signOut(auth)
+    navigate('/', { replace: true })
+  }
 
   return (
     <header className="w-full bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
@@ -49,15 +59,38 @@ export default function Navbar() {
           >
             Browse shops
           </NavLink>
-          <Link to="/order-tracking" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
-            My orders
-          </Link>
-          <Link to="/order-tracking" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
-            Track
-          </Link>
-          <button className="bg-[#1B6CA8] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors">
-            Sign in
-          </button>
+
+          {user && (
+            <>
+              <Link to="/order-tracking" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
+                My orders
+              </Link>
+              <Link to="/order-tracking" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
+                Track
+              </Link>
+            </>
+          )}
+
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600 font-medium">
+                {userProfile?.fullName ?? user.displayName ?? user.email}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/signin"
+              className="bg-[#1B6CA8] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors"
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
 
       </div>

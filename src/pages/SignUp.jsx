@@ -155,7 +155,7 @@ const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rid
 
 export default function SignUp() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, role, profileLoading } = useAuth()
 
   const [fullName,        setFullName]        = useState('')
   const [email,           setEmail]           = useState('')
@@ -168,8 +168,10 @@ export default function SignUp() {
   const [loading,         setLoading]         = useState(false)
 
   useEffect(() => {
-    if (user) navigate('/', { replace: true })
-  }, [user, navigate])
+    if (user && !profileLoading) {
+      navigate(ROLE_REDIRECT[role] ?? '/browse', { replace: true })
+    }
+  }, [user, role, profileLoading, navigate])
 
   async function handleCreateAccount() {
     setError('')

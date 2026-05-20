@@ -165,7 +165,7 @@ function friendlyError(code) {
 
 export default function SignIn() {
   const navigate   = useNavigate()
-  const { user }   = useAuth()
+  const { user, role, profileLoading } = useAuth()
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -174,8 +174,10 @@ export default function SignIn() {
   const [loading,  setLoading]  = useState(false)
 
   useEffect(() => {
-    if (user) navigate('/', { replace: true })
-  }, [user, navigate])
+    if (user && !profileLoading) {
+      navigate(ROLE_REDIRECT[role] ?? '/browse', { replace: true })
+    }
+  }, [user, role, profileLoading, navigate])
 
   async function handleSignIn() {
     setError('')
