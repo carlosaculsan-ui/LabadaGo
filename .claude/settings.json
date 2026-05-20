@@ -3,7 +3,12 @@
     "allow": [
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Admin\\\\Downloads\\\\labadago\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Sort-Object)"
+      "Bash(Sort-Object)",
+      "Bash(npm install *)",
+      "Bash(firebase --version)",
+      "PowerShell(firebase --version 2>&1)",
+      "PowerShell(npm install -g firebase-tools 2>&1)",
+      "PowerShell(firebase --version)"
     ]
   }
 }
