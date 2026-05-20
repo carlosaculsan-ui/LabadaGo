@@ -1,4 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 import RootLayout from './layouts/RootLayout'
 import Home from './pages/Home'
 import Browse from './pages/Browse'
@@ -16,16 +18,31 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'browse', element: <Browse /> },
-      { path: 'checkout', element: <Checkout /> },
-      { path: 'order-tracking', element: <OrderTracking /> },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: 'checkout', element: <Checkout /> },
+          { path: 'order-tracking', element: <OrderTracking /> },
+        ],
+      },
     ],
   },
-  { path: '/rider',     element: <RiderDashboard />     },
-  { path: '/merchant', element: <MerchantDashboard /> },
-  { path: '/signin',   element: <SignIn />           },
-  { path: '/signup',   element: <SignUp />           },
+  {
+    element: <ProtectedRoute allowedRoles={['rider']} />,
+    children: [{ path: '/rider', element: <RiderDashboard /> }],
+  },
+  {
+    element: <ProtectedRoute allowedRoles={['merchant']} />,
+    children: [{ path: '/merchant', element: <MerchantDashboard /> }],
+  },
+  { path: '/signin', element: <SignIn /> },
+  { path: '/signup', element: <SignUp /> },
 ])
 
 export default function App() {
-  return <RouterProvider router={router} />
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  )
 }
