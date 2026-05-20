@@ -1,3 +1,9 @@
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { useAuth } from '../hooks/useAuth'
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const ORDER_STATUSES = [
@@ -12,12 +18,31 @@ const ORDER_STATUSES = [
   { id: 'COMPLETED',          label: 'Delivered',           desc: 'Your laundry has been delivered. Thank you for using LabadaGo!'   },
 ]
 
-const ACTIVE_INDEX = 2 // PICKUP_EN_ROUTE
+const STATUS_INDEX = {
+  PENDING:            0,
+  ACCEPTED:           1,
+  PICKUP_EN_ROUTE:    2,
+  PICKED_UP:          3,
+  ARRIVED_AT_SHOP:    4,
+  PROCESSING:         5,
+  READY_FOR_DELIVERY: 6,
+  DELIVERY_EN_ROUTE:  7,
+  COMPLETED:          8,
+}
 
-const STEP_TIMESTAMPS = ['1:45 PM', '2:10 PM', '2:14 PM']
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+}
+
+function fmtPayment(method) {
+  return { gcash: 'GCash', maya: 'Maya', cod: 'Cash on Delivery' }[method] ?? method
+}
 
 // ─── Shared placeholder component ─────────────────────────────────────────────
-// All visual slots use this instead of real images.
+
 function ImgPlaceholder({ label, className }) {
   return (
     <div className={['border border-dashed flex items-center justify-center', className].join(' ')}>
@@ -28,9 +53,100 @@ function ImgPlaceholder({ label, className }) {
   )
 }
 
+function Spinner({ text }) {
+  return (
+    <div className="min-h-screen bg-[#F4F7FA] flex flex-col items-center justify-center gap-3">
+      <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-[#1B6CA8] animate-spin" />
+      {text && <p className="text-sm text-gray-500">{text}</p>}
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function OrderTracking() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
+  const orderId = searchParams.get('id')
+
+  const [order,    setOrder]    = useState(null)
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState('')
+  const [cancelling, setCancelling] = useState(false)
+
+  useEffect(() => {
+    if (!orderId) {
+      navigate('/browse', { replace: true })
+      return
+    }
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'orders', orderId),
+      (snap) => {
+        if (!snap.exists()) {
+          setError('Order not found.')
+          setLoading(false)
+          return
+        }
+        const data = snap.data()
+        if (data.customerId !== user?.uid) {
+          navigate('/', { replace: true })
+          return
+        }
+        setOrder(data)
+        setLoading(false)
+      },
+      () => {
+        setError('Could not load order. You may not have permission to view it.')
+        setLoading(false)
+      }
+    )
+
+    return unsubscribe
+  }, [orderId, user, navigate])
+
+  async function handleCancel() {
+    setCancelling(true)
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status:    'CANCELLED',
+        updatedAt: serverTimestamp(),
+      })
+      navigate('/browse', { replace: true })
+    } catch {
+      setCancelling(false)
+    }
+  }
+
+  if (loading) return <Spinner text="Loading your order..." />
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
+        <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
+          <p className="font-heading font-bold text-gray-900 text-lg mb-2">Something went wrong</p>
+          <p className="text-sm text-gray-400 mb-6">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
+          >
+            Go home
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const activeIndex  = STATUS_INDEX[order.status] ?? 0
+  const activeStatus = ORDER_STATUSES[activeIndex]
+  const displayPrice = order.finalPrice ?? order.estimatedPrice
+  const weightLabel  = order.actualWeight != null
+    ? `${order.actualWeight} kg`
+    : `${order.estimatedWeight} kg (estimated)`
+  const orderRef = `LBG-${orderId.substring(0, 8).toUpperCase()}`
+
   return (
     <div className="min-h-screen bg-[#F4F7FA]">
       <div className="max-w-6xl mx-auto px-8 py-10">
@@ -44,12 +160,16 @@ export default function OrderTracking() {
               <div className="flex items-start justify-between mb-5">
                 <div>
                   <h1 className="font-heading font-bold text-[22px] text-gray-900 leading-tight">
-                    Order #LBG-0041
+                    Order #{orderRef}
                   </h1>
-                  <p className="text-sm text-gray-400 mt-1">Placed on May 20, 2026 · 1:45 PM</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {order.createdAt?.toDate
+                      ? order.createdAt.toDate().toLocaleString('en-PH', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+                      : 'Just placed'}
+                  </p>
                 </div>
                 <span className="bg-[#1B6CA8] text-white text-sm font-semibold px-4 py-1.5 rounded-full shrink-0">
-                  Pickup en route
+                  {activeStatus?.label ?? order.status}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -58,8 +178,7 @@ export default function OrderTracking() {
                   className="w-10 h-10 rounded-lg bg-[#DBEAFE] border-blue-300 shrink-0"
                 />
                 <div>
-                  <p className="text-[13px] font-semibold text-gray-800">Bubbles Laundry Hub</p>
-                  <p className="text-xs text-gray-400">23 Tomas Morato Ave, Quezon City</p>
+                  <p className="text-[13px] font-semibold text-gray-800">{order.shopName}</p>
                 </div>
               </div>
             </div>
@@ -72,8 +191,8 @@ export default function OrderTracking() {
 
               <div>
                 {ORDER_STATUSES.map((status, idx) => {
-                  const isCompleted = idx < ACTIVE_INDEX
-                  const isActive    = idx === ACTIVE_INDEX
+                  const isCompleted = idx < activeIndex
+                  const isActive    = idx === activeIndex
                   const isLast      = idx === ORDER_STATUSES.length - 1
 
                   return (
@@ -98,12 +217,12 @@ export default function OrderTracking() {
                         {!isLast && (
                           <div className={[
                             'w-0.5 flex-1 min-h-8 mt-1',
-                            idx < ACTIVE_INDEX ? 'bg-[#1B6CA8]' : 'bg-gray-200',
+                            idx < activeIndex ? 'bg-[#1B6CA8]' : 'bg-gray-200',
                           ].join(' ')} />
                         )}
                       </div>
 
-                      {/* Content + timestamp */}
+                      {/* Content */}
                       <div className={[
                         'flex-1 flex justify-between items-start gap-4',
                         !isLast ? 'pb-5' : '',
@@ -121,13 +240,6 @@ export default function OrderTracking() {
                           ].join(' ')}>
                             {status.desc}
                           </p>
-                        </div>
-                        <div className="shrink-0 pt-0.5">
-                          {STEP_TIMESTAMPS[idx] && (
-                            <p className="text-xs font-medium text-gray-500 whitespace-nowrap">
-                              {STEP_TIMESTAMPS[idx]}
-                            </p>
-                          )}
                         </div>
                       </div>
 
@@ -149,10 +261,10 @@ export default function OrderTracking() {
                   </p>
                   <div className="space-y-2">
                     {[
-                      ['Service',     'Wash & Fold'],
-                      ['Est. weight', '5 kg'       ],
-                      ['Detergent',   'Ariel'       ],
-                      ['Conditioner', 'Downy'       ],
+                      ['Service',     order.serviceType ?? '—'],
+                      ['Weight',      weightLabel            ],
+                      ['Detergent',   order.detergent ?? '—' ],
+                      ['Conditioner', order.conditioner ?? '—'],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between text-sm">
                         <span className="text-gray-400">{label}</span>
@@ -167,8 +279,8 @@ export default function OrderTracking() {
                   </p>
                   <div className="space-y-2">
                     {[
-                      ['Pickup',   'May 20 · 2:00–4:00 PM'   ],
-                      ['Delivery', 'May 21 · 10:00 AM–12 PM' ],
+                      ['Pickup',   `${fmtDate(order.pickupDate)} · ${order.pickupTime ?? '—'}`    ],
+                      ['Delivery', `${fmtDate(order.deliveryDate)} · ${order.deliveryTime ?? '—'}` ],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between text-sm">
                         <span className="text-gray-400">{label}</span>
@@ -189,7 +301,9 @@ export default function OrderTracking() {
                 />
                 <p className="text-sm text-amber-600">
                   <span className="font-semibold">Weight confirmation: </span>
-                  Pending — shop will update after weighing
+                  {order.actualWeight != null
+                    ? `Confirmed — ${order.actualWeight} kg`
+                    : 'Pending — shop will update after weighing'}
                 </p>
               </div>
             </div>
@@ -201,9 +315,9 @@ export default function OrderTracking() {
               </h2>
               <div className="space-y-3">
                 {[
-                  ['Est. 5 kg × ₱50', '₱250'],
-                  ['Pickup fee',       '₱49' ],
-                  ['Delivery fee',     '₱49' ],
+                  [`Est. ${order.estimatedWeight} kg × ₱50`, `₱${(order.estimatedWeight * 50).toLocaleString()}`],
+                  ['Pickup fee',                              `₱${order.pickupFee}`  ],
+                  ['Delivery fee',                            `₱${order.deliveryFee}`],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between text-sm">
                     <span className="text-gray-400">{label}</span>
@@ -213,12 +327,21 @@ export default function OrderTracking() {
               </div>
               <hr className="border-[#e5e7eb] my-4" />
               <div className="flex justify-between items-baseline">
-                <span className="font-heading font-bold text-[15px] text-gray-900">Total</span>
-                <span className="font-bold text-2xl text-[#1B6CA8]">₱348</span>
+                <span className="font-heading font-bold text-[15px] text-gray-900">
+                  {order.finalPrice != null ? 'Final total' : 'Estimated total'}
+                </span>
+                <span className="font-bold text-2xl text-[#1B6CA8]">
+                  ₱{displayPrice?.toLocaleString()}
+                </span>
               </div>
-              <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
-                Final price adjusted after the shop weighs your actual laundry.
-              </p>
+              <div className="flex justify-between items-center mt-2">
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  {order.finalPrice != null
+                    ? 'This is the final confirmed price.'
+                    : 'Final price adjusted after the shop weighs your actual laundry.'}
+                </p>
+                <span className="text-[11px] font-medium text-gray-500">{fmtPayment(order.paymentMethod)}</span>
+              </div>
             </div>
 
           </div>
@@ -242,27 +365,30 @@ export default function OrderTracking() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
                 Your rider
               </p>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <ImgPlaceholder
-                    label="Rider photo"
-                    className="w-12 h-12 rounded-full bg-gray-100 border-gray-300 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-heading font-bold text-[15px] text-gray-900">Kuya Mark</p>
-                    <p className="text-xs text-gray-400">Rider</p>
-                    <p className="text-xs text-gray-500 mt-0.5">4.9 ★</p>
+              {order.riderId ? (
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <ImgPlaceholder
+                      label="Rider photo"
+                      className="w-12 h-12 rounded-full bg-gray-100 border-gray-300 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-heading font-bold text-[15px] text-gray-900">Assigned</p>
+                      <p className="text-xs text-gray-400">Rider</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <button className="text-sm font-medium px-4 py-1.5 rounded-lg border border-[#1B6CA8] text-[#1B6CA8] hover:bg-[#F0F7FF] transition-colors">
+                      Call rider
+                    </button>
+                    <button className="text-sm font-medium px-4 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-400 transition-colors">
+                      Message
+                    </button>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 shrink-0">
-                  <button className="text-sm font-medium px-4 py-1.5 rounded-lg border border-[#1B6CA8] text-[#1B6CA8] hover:bg-[#F0F7FF] transition-colors">
-                    Call rider
-                  </button>
-                  <button className="text-sm font-medium px-4 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:border-gray-400 transition-colors">
-                    Message
-                  </button>
-                </div>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-400">No rider assigned yet.</p>
+              )}
             </div>
 
             {/* Estimated arrival */}
@@ -273,21 +399,27 @@ export default function OrderTracking() {
                   className="w-5 h-5 rounded bg-gray-100 border-gray-300 shrink-0"
                 />
                 <p className="font-heading font-semibold text-[15px] text-gray-900">
-                  Estimated arrival: 2:30 PM
+                  Pickup window: {order.pickupTime ?? '—'}
                 </p>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed pl-7">
-                Based on current traffic conditions.
+                {fmtDate(order.pickupDate)}
               </p>
             </div>
 
-            {/* Cancel order */}
-            <div className="text-center py-2">
-              <button className="text-sm text-[#DC2626] hover:underline underline-offset-2 transition-colors">
-                Cancel order
-              </button>
-              <p className="text-[11px] text-gray-400 mt-1">(Only available before pickup)</p>
-            </div>
+            {/* Cancel order — only when PENDING */}
+            {order.status === 'PENDING' && (
+              <div className="text-center py-2">
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="text-sm text-[#DC2626] hover:underline underline-offset-2 transition-colors disabled:opacity-50"
+                >
+                  {cancelling ? 'Cancelling...' : 'Cancel order'}
+                </button>
+                <p className="text-[11px] text-gray-400 mt-1">(Only available before pickup)</p>
+              </div>
+            )}
 
           </div>
 
