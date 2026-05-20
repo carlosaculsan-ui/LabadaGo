@@ -1,5 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+} from 'firebase/auth'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
+import { useAuth } from '../hooks/useAuth'
 
 // ─── Bubble background ─────────────────────────────────────────────────────
 
@@ -138,12 +147,94 @@ function PasswordInput({ id, label, value, onChange }) {
   )
 }
 
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider' }
+
+function friendlyError(code) {
+  switch (code) {
+    case 'auth/user-not-found':     return 'No account found with this email.'
+    case 'auth/wrong-password':     return 'Incorrect password. Try again.'
+    case 'auth/invalid-credential': return 'Invalid email or password.'
+    case 'auth/too-many-requests':  return 'Too many attempts. Try again later.'
+    default:                        return null
+  }
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function SignIn() {
   const navigate   = useNavigate()
+  const { user }   = useAuth()
+
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
+  const [error,    setError]    = useState('')
+  const [success,  setSuccess]  = useState('')
+  const [loading,  setLoading]  = useState(false)
+
+  useEffect(() => {
+    if (user) navigate('/', { replace: true })
+  }, [user, navigate])
+
+  async function handleSignIn() {
+    setError('')
+    setSuccess('')
+    if (!email || !password) {
+      setError('Enter your email and password.')
+      return
+    }
+    setLoading(true)
+    try {
+      const { user } = await signInWithEmailAndPassword(auth, email, password)
+      const snap = await getDoc(doc(db, 'users', user.uid))
+      const role = snap.exists() ? snap.data().role : 'customer'
+      navigate(ROLE_REDIRECT[role] ?? '/browse', { replace: true })
+    } catch (err) {
+      setError(friendlyError(err.code) ?? err.message)
+      setLoading(false)
+    }
+  }
+
+  async function handleGoogle() {
+    setError('')
+    setSuccess('')
+    setLoading(true)
+    try {
+      const { user } = await signInWithPopup(auth, new GoogleAuthProvider())
+      const ref  = doc(db, 'users', user.uid)
+      const snap = await getDoc(ref)
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          fullName: user.displayName ?? '',
+          email: user.email ?? '',
+          mobile: '',
+          role: 'customer',
+          createdAt: serverTimestamp(),
+          isActive: true,
+        })
+      }
+      navigate('/browse', { replace: true })
+    } catch (err) {
+      setError(friendlyError(err.code) ?? err.message)
+      setLoading(false)
+    }
+  }
+
+  async function handleForgotPassword() {
+    setError('')
+    setSuccess('')
+    if (!email) {
+      setError('Enter your email address first.')
+      return
+    }
+    try {
+      await sendPasswordResetEmail(auth, email)
+      setSuccess('Password reset email sent. Check your inbox.')
+    } catch (err) {
+      setError(friendlyError(err.code) ?? err.message)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#EEF5FB]">
@@ -186,18 +277,41 @@ export default function SignIn() {
                 onChange={e => setPassword(e.target.value)}
               />
               <div className="flex justify-end mt-2">
-                <button type="button" className="text-xs text-[#1B6CA8] hover:underline">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-xs text-[#1B6CA8] hover:underline"
+                >
                   Forgot password?
                 </button>
               </div>
             </div>
           </div>
 
+          {/* Feedback pill */}
+          {(error || success) && (
+            <div className={[
+              'mt-5 px-4 py-2 rounded-full text-xs text-center border',
+              error
+                ? 'bg-red-50 border-red-200 text-red-600'
+                : 'bg-green-50 border-green-200 text-green-700',
+            ].join(' ')}>
+              {error || success}
+            </div>
+          )}
+
           <button
             type="button"
-            className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-3 rounded-xl mt-8 hover:bg-[#0D3F6B] transition-colors text-sm"
+            onClick={handleSignIn}
+            disabled={loading}
+            className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-3 rounded-xl mt-4 hover:bg-[#0D3F6B] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Sign in
+            {loading ? (
+              <>
+                <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                Signing in...
+              </>
+            ) : 'Sign in'}
           </button>
         </div>
 
@@ -215,7 +329,9 @@ export default function SignIn() {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors"
+              onClick={handleGoogle}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <ImgPlaceholder label="Google logo" className="w-5 h-5 rounded bg-gray-100 border-gray-300" />
               <span className="text-sm font-medium text-gray-700">Google</span>

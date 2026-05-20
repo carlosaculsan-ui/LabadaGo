@@ -1,5 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from 'firebase/auth'
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
+import { useAuth } from '../hooks/useAuth'
 
 // ─── Bubble background ─────────────────────────────────────────────────────
 
@@ -142,8 +151,11 @@ function PasswordInput({ id, label, value, onChange }) {
 
 const ROLES = ['Customer', 'Merchant', 'Rider']
 
+const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider' }
+
 export default function SignUp() {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [fullName,        setFullName]        = useState('')
   const [email,           setEmail]           = useState('')
@@ -152,6 +164,72 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [selectedRole,    setSelectedRole]    = useState('Customer')
   const [termsAccepted,   setTermsAccepted]   = useState(false)
+  const [error,           setError]           = useState('')
+  const [loading,         setLoading]         = useState(false)
+
+  useEffect(() => {
+    if (user) navigate('/', { replace: true })
+  }, [user, navigate])
+
+  async function handleCreateAccount() {
+    setError('')
+
+    if (!fullName || !email || !mobile || !password || !confirmPassword) {
+      setError('Please fill in all fields.')
+      return
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+    if (!termsAccepted) {
+      setError('You must accept the Terms of Service and Privacy Policy.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const role = selectedRole.toLowerCase()
+      const { user } = await createUserWithEmailAndPassword(auth, email, password)
+      await updateProfile(user, { displayName: fullName })
+      await setDoc(doc(db, 'users', user.uid), {
+        fullName,
+        email,
+        mobile,
+        role,
+        createdAt: serverTimestamp(),
+        isActive: true,
+      })
+      navigate(ROLE_REDIRECT[role] ?? '/browse', { replace: true })
+    } catch (err) {
+      setError(err.message)
+      setLoading(false)
+    }
+  }
+
+  async function handleGoogle() {
+    setError('')
+    setLoading(true)
+    try {
+      const { user } = await signInWithPopup(auth, new GoogleAuthProvider())
+      const ref = doc(db, 'users', user.uid)
+      const snap = await getDoc(ref)
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          fullName: user.displayName ?? '',
+          email: user.email ?? '',
+          mobile: '',
+          role: 'customer',
+          createdAt: serverTimestamp(),
+          isActive: true,
+        })
+      }
+      navigate('/browse', { replace: true })
+    } catch (err) {
+      setError(err.message)
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#EEF5FB]">
@@ -276,11 +354,27 @@ export default function SignUp() {
             </label>
           </div>
 
+          {/* Error pill */}
+          {error && (
+            <div className="mt-5 px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
+              {error}
+            </div>
+          )}
+
           <button
             type="button"
-            className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-3 rounded-xl mt-6 hover:bg-[#0D3F6B] transition-colors text-sm"
+            onClick={handleCreateAccount}
+            disabled={loading}
+            className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-3 rounded-xl mt-4 hover:bg-[#0D3F6B] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Create account
+            {loading ? (
+              <>
+                <span
+                  className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"
+                />
+                Creating account...
+              </>
+            ) : 'Create account'}
           </button>
         </div>
 
@@ -298,7 +392,9 @@ export default function SignUp() {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors"
+              onClick={handleGoogle}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <ImgPlaceholder label="Google logo" className="w-5 h-5 rounded bg-gray-100 border-gray-300" />
               <span className="text-sm font-medium text-gray-700">Google</span>
