@@ -5,6 +5,7 @@ import Browse from './pages/Browse'
 import Checkout from './pages/Checkout'
 import OrderTracking from './pages/OrderTracking'
 import RiderDashboard from './pages/RiderDashboard'
+import MerchantDashboard from './pages/MerchantDashboard'
 
 const router = createBrowserRouter([
   {
@@ -17,7 +18,8 @@ const router = createBrowserRouter([
       { path: 'order-tracking', element: <OrderTracking /> },
     ],
   },
-  { path: '/rider', element: <RiderDashboard /> },
+  { path: '/rider',     element: <RiderDashboard />     },
+  { path: '/merchant', element: <MerchantDashboard /> },
 ])
 
 export default function App() {
