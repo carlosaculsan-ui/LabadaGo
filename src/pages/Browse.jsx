@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import FilterSidebar from '../components/FilterSidebar'
 import ShopCard from '../components/ShopCard'
+import { SHOPS } from '../data/shops'
 
 const CHIPS = ['All', 'Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
 
@@ -8,93 +9,6 @@ const SORT_OPTIONS = [
   { key: 'nearest', label: 'Nearest' },
   { key: 'rating', label: 'Top rated' },
   { key: 'price', label: 'Price' },
-]
-
-const SHOPS = [
-  {
-    id: 1,
-    name: 'Bubbles Laundry Hub',
-    address: '23 Tomas Morato Ave, Quezon City',
-    rating: 4.8,
-    distanceKm: 0.4,
-    pricePerKg: 65,
-    services: ['Wash & Fold', 'Dry Cleaning'],
-    detergents: ['Ariel', 'Tide'],
-    isOpen: true,
-    isSameDay: true,
-    isFeatured: true,
-    color: 'bg-[#DBEAFE]',
-  },
-  {
-    id: 2,
-    name: 'FreshPress Express',
-    address: '5 Scout Albano St, Quezon City',
-    rating: 4.6,
-    distanceKm: 0.9,
-    pricePerKg: 55,
-    services: ['Wash & Fold', 'Towels & Linens'],
-    detergents: ['Tide', 'Breeze'],
-    isOpen: true,
-    isSameDay: true,
-    isFeatured: false,
-    color: 'bg-[#D1FAE5]',
-  },
-  {
-    id: 3,
-    name: 'CleanSuds Laundromat',
-    address: '88 Timog Ave, Quezon City',
-    rating: 4.3,
-    distanceKm: 1.4,
-    pricePerKg: 48,
-    services: ['Wash & Fold', 'Comforters'],
-    detergents: ['Ariel', 'Hypoallergenic'],
-    isOpen: false,
-    isSameDay: false,
-    isFeatured: false,
-    color: 'bg-[#FEE2E2]',
-  },
-  {
-    id: 4,
-    name: 'Pristine Garments Care',
-    address: '12 Bohol Ave, Quezon City',
-    rating: 4.9,
-    distanceKm: 1.8,
-    pricePerKg: 90,
-    services: ['Dry Cleaning', 'Comforters'],
-    detergents: ['Breeze', 'Hypoallergenic'],
-    isOpen: true,
-    isSameDay: false,
-    isFeatured: true,
-    color: 'bg-[#EDE9FE]',
-  },
-  {
-    id: 5,
-    name: 'Sudsy Corner',
-    address: '41 Mother Ignacia Ave, Quezon City',
-    rating: 4.1,
-    distanceKm: 2.3,
-    pricePerKg: 42,
-    services: ['Wash & Fold', 'Towels & Linens'],
-    detergents: ['Tide'],
-    isOpen: true,
-    isSameDay: true,
-    isFeatured: false,
-    color: 'bg-[#FEF3C7]',
-  },
-  {
-    id: 6,
-    name: 'The Linen Club',
-    address: '7 Sct. Madrinan St, Quezon City',
-    rating: 4.7,
-    distanceKm: 3.0,
-    pricePerKg: 75,
-    services: ['Comforters', 'Towels & Linens', 'Dry Cleaning'],
-    detergents: ['Ariel', 'Tide', 'Breeze'],
-    isOpen: false,
-    isSameDay: false,
-    isFeatured: false,
-    color: 'bg-[#CCFBF1]',
-  },
 ]
 
 const DEFAULT_FILTERS = {
