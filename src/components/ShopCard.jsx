@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
 export default function ShopCard({
-  name, address, rating, distanceKm, pricePerKg,
+  id, name, address, rating, distanceKm, pricePerKg,
   services, isOpen, isFeatured, color,
 }) {
   const navigate = useNavigate()
@@ -59,7 +59,7 @@ export default function ShopCard({
             <span className="text-xs font-normal text-gray-400"> /kg</span>
           </p>
           <button
-            onClick={() => navigate(`/checkout?shop=${encodeURIComponent(name)}`)}
+            onClick={() => navigate(`/checkout?shopId=${id}&shop=${encodeURIComponent(name)}`)}
             className="bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-1.5 rounded-lg hover:bg-[#155a8a] transition-colors"
           >
             Book now

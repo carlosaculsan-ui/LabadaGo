@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { useAuth } from '../hooks/useAuth'
 import CalendarPicker from '../components/CalendarPicker'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -95,7 +98,11 @@ function ImgPlaceholder({ label, className }) {
 
 export default function Checkout() {
   const [searchParams] = useSearchParams()
+  const navigate  = useNavigate()
+  const { user, userProfile } = useAuth()
+
   const shopName = searchParams.get('shop') || "Ate Linda's Lavanderia"
+  const shopId   = searchParams.get('shopId') || null
 
   // Address
   const [street,   setStreet]   = useState('')
@@ -116,9 +123,59 @@ export default function Checkout() {
   // Payment
   const [payment, setPayment] = useState('gcash')
 
+  // UI state
+  const [submitting, setSubmitting] = useState(false)
+  const [error,      setError]      = useState('')
+
   // Derived prices
-  const subtotal = weight * PRICE_PER_KG
-  const total    = subtotal + PICKUP_FEE + DELIVERY_FEE
+  const subtotal    = weight * PRICE_PER_KG
+  const total       = subtotal + PICKUP_FEE + DELIVERY_FEE
+  const totalPrice  = total
+
+  async function handleConfirm() {
+    setError('')
+
+    if (!street)       return setError('Please enter your street address.')
+    if (!pickupDate)   return setError('Please select a pickup date.')
+    if (!pickupTime)   return setError('Please select a pickup time.')
+    if (!deliveryDate) return setError('Please select a delivery date.')
+    if (!deliveryTime) return setError('Please select a delivery time.')
+
+    setSubmitting(true)
+    try {
+      const orderObject = {
+        customerId:      user.uid,
+        customerName:    userProfile?.fullName ?? user.displayName ?? '',
+        shopId,
+        shopName,
+        status:          'PENDING',
+        serviceType,
+        estimatedWeight: weight,
+        actualWeight:    null,
+        detergent,
+        conditioner,
+        pickupAddress:   { street, landmark },
+        pickupDate:      pickupDate.toISOString(),
+        pickupTime,
+        deliveryDate:    deliveryDate.toISOString(),
+        deliveryTime,
+        paymentMethod:   payment,
+        estimatedPrice:  totalPrice,
+        finalPrice:      null,
+        pickupFee:       PICKUP_FEE,
+        deliveryFee:     DELIVERY_FEE,
+        riderId:         null,
+        createdAt:       serverTimestamp(),
+        updatedAt:       serverTimestamp(),
+      }
+
+      const newDoc = await addDoc(collection(db, 'orders'), orderObject)
+      navigate(`/order-tracking?id=${newDoc.id}`, { replace: true })
+    } catch (err) {
+      setError(err.message)
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -356,8 +413,23 @@ export default function Checkout() {
                 Final price adjusted after shop weighs your laundry.
               </p>
 
-              <button className="w-full bg-[#1B6CA8] text-white font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm">
-                Confirm booking
+              {error && (
+                <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={handleConfirm}
+                disabled={submitting}
+                className="w-full bg-[#1B6CA8] text-white font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Confirming...
+                  </>
+                ) : 'Confirm booking'}
               </button>
 
               {/* Payment method echo — shows which method is active */}
