@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { useAuth } from '../hooks/useAuth'
 import ShopCard from '../components/ShopCard'
 
-// ─── Shared placeholder component ────────────────────────────────────────────
+// ─── Shared placeholder ───────────────────────────────────────────────────────
 function ImgPlaceholder({ label, className, bg, borderColor }) {
   return (
     <div
@@ -23,7 +24,7 @@ function ImgPlaceholder({ label, className, bg, borderColor }) {
   )
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Static data ──────────────────────────────────────────────────────────────
 
 const CARD_COLORS = [
   'bg-[#DBEAFE]', 'bg-[#D1FAE5]', 'bg-[#FEE2E2]',
@@ -36,12 +37,6 @@ const SERVICE_CHIPS = [
   { id: 'dry',    label: 'Dry Cleaning',    param: 'Dry Cleaning',    iconBg: 'bg-[#EDE9FE]',  iconBorder: 'border-purple-300' },
   { id: 'comf',   label: 'Comforters',      param: 'Comforters',      iconBg: 'bg-[#D1FAE5]',  iconBorder: 'border-green-300'  },
   { id: 'towels', label: 'Towels & Linens', param: 'Towels & Linens', iconBg: 'bg-[#FEF3C7]',  iconBorder: 'border-amber-300'  },
-]
-
-const STATS = [
-  { value: '14',       label: 'partner shops'    },
-  { value: '4.8★',     label: 'avg rating'       },
-  { value: 'Same-day', label: 'pickup available' },
 ]
 
 const HOW_STEPS = [
@@ -111,33 +106,83 @@ function ShopSkeleton() {
 
 export default function Home() {
   const navigate = useNavigate()
-  const [activeChip, setActiveChip] = useState('all')
-  const [nearbyShops, setNearbyShops] = useState([])
-  const [shopsLoading, setShopsLoading] = useState(true)
+  const { user, userProfile, role } = useAuth()
 
+  const firstName = (userProfile?.fullName ?? user?.displayName ?? '').split(' ')[0] || ''
+
+  const [activeChip,      setActiveChip]      = useState('all')
+  const [nearbyShops,     setNearbyShops]     = useState([])
+  const [shopsLoading,    setShopsLoading]    = useState(true)
+  const [shopsCount,      setShopsCount]      = useState(14)
+  const [userOrderCount,  setUserOrderCount]  = useState(0)
+  const [activeOrderCount, setActiveOrderCount] = useState(0)
+  const [userDataLoaded,  setUserDataLoaded]  = useState(false)
+
+  // Fetch shops — count + first 3 for preview
   useEffect(() => {
     getDocs(collection(db, 'shops')).then(snap => {
-      const data = snap.docs.slice(0, 3).map((doc, i) => {
-        const d = doc.data()
-        return {
-          ...d,
-          id: doc.id,
-          color: CARD_COLORS[i % CARD_COLORS.length],
-          distanceKm: d.distanceKm ?? +(Math.random() * 4 + 0.5).toFixed(1),
-        }
-      })
+      setShopsCount(snap.size)
+      const data = snap.docs.slice(0, 3).map((d, i) => ({
+        ...d.data(),
+        id: d.id,
+        color: CARD_COLORS[i % CARD_COLORS.length],
+        distanceKm: d.data().distanceKm ?? +(Math.random() * 4 + 0.5).toFixed(1),
+      }))
       setNearbyShops(data)
       setShopsLoading(false)
     }).catch(() => setShopsLoading(false))
   }, [])
+
+  // Fetch user's orders once — derive total count + active count
+  useEffect(() => {
+    if (!user?.uid) return
+    getDocs(query(collection(db, 'orders'), where('customerId', '==', user.uid)))
+      .then(snap => {
+        setUserOrderCount(snap.size)
+        setActiveOrderCount(
+          snap.docs.filter(d => !['COMPLETED', 'CANCELLED'].includes(d.data().status)).length
+        )
+        setUserDataLoaded(true)
+      })
+      .catch(() => setUserDataLoaded(true))
+  }, [user?.uid])
 
   function handleChipClick(chip) {
     setActiveChip(chip.id)
     navigate(chip.param ? `/browse?service=${encodeURIComponent(chip.param)}` : '/browse')
   }
 
+  // Stats bar — add personal stat when logged in
+  const displayStats = [
+    { value: String(shopsCount), label: 'partner shops'    },
+    { value: '4.8★',             label: 'avg rating'       },
+    { value: 'Same-day',         label: 'pickup available' },
+    ...(user && userDataLoaded
+      ? [{ value: String(userOrderCount), label: 'your orders' }]
+      : []),
+  ]
+
+  const isLoggedIn = !!user
+
   return (
     <>
+      {/* ── Active order banner ─────────────────────────────────────────────── */}
+      {isLoggedIn && userDataLoaded && activeOrderCount > 0 && (
+        <div className="w-full bg-[#1B6CA8] px-8 py-2.5 flex items-center justify-center gap-2">
+          <span className="text-white text-sm">
+            👋 Welcome back, {firstName}! You have{' '}
+            <span className="font-semibold">{activeOrderCount}</span>{' '}
+            active order{activeOrderCount !== 1 ? 's' : ''}.
+          </span>
+          <Link
+            to="/my-orders"
+            className="text-[#F5A623] text-sm font-semibold hover:underline underline-offset-2 whitespace-nowrap"
+          >
+            Track them →
+          </Link>
+        </div>
+      )}
+
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section className="bg-[#0D3F6B] relative overflow-hidden">
 
@@ -150,7 +195,7 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-8 py-16 relative z-10 grid grid-cols-2 gap-16 items-center">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F5A623] mb-4">
-              Welcome back
+              {isLoggedIn && firstName ? `Welcome back, ${firstName}!` : 'Welcome back'}
             </p>
             <h1 className="font-heading font-bold text-5xl leading-[1.1] tracking-tight text-white mb-5">
               Laundry picked up,<br />
@@ -161,7 +206,7 @@ export default function Home() {
             </p>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate(isLoggedIn ? '/checkout' : '/signin')}
                 className="bg-[#F5A623] text-[#0D3F6B] font-semibold px-6 py-2.5 rounded-lg hover:bg-[#e89b15] transition-colors text-sm"
               >
                 Book a pickup
@@ -175,7 +220,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ↓ image placeholder — replace with commissioned hero photograph */}
           <ImgPlaceholder
             label="Hero image — rider handing laundry bag at doorstep, warm natural light, local PH feel"
             className="h-[280px]"
@@ -218,8 +262,11 @@ export default function Home() {
       <section className="bg-white border-b border-[#e5e7eb]">
         <div className="max-w-[1280px] mx-auto px-8 py-8">
           <div className="flex items-center justify-center divide-x divide-[#e5e7eb]">
-            {STATS.map(stat => (
-              <div key={stat.label} className="h-16 px-16 flex flex-col items-center justify-center">
+            {displayStats.map(stat => (
+              <div
+                key={stat.label}
+                className="h-16 flex-1 flex flex-col items-center justify-center px-6"
+              >
                 <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">
                   {stat.value}
                 </p>
@@ -267,10 +314,12 @@ export default function Home() {
 
           <div className="text-center mb-14">
             <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
-              How LabadaGo works
+              {isLoggedIn ? "Your laundry journey" : "How LabadaGo works"}
             </h2>
             <p className="text-sm text-gray-500 mt-2">
-              From your door to the wash and back — four simple steps.
+              {isLoggedIn
+                ? <span>You&rsquo;re all set! Here&rsquo;s a reminder of how it works.</span>
+                : 'From your door to the wash and back — four simple steps.'}
             </p>
           </div>
 
