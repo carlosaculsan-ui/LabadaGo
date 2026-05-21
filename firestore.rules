@@ -1,12 +1,90 @@
-rules_version = '2';
+// LabadaGo Firestore Security Rules
+// Last updated: May 2026
+// Test with: firebase emulators:start
+// Deploy with: firebase deploy --only firestore:rules
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Temporary: allow all reads/writes during development
-    // Replace with proper rules before production
-    match /{document=**} {
-      allow read, write: if true;
+    // Helper functions
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isCustomer() {
+      return isLoggedIn() && getUserRole() == 'customer';
+    }
+
+    function isMerchant() {
+      return isLoggedIn() && getUserRole() == 'merchant';
+    }
+
+    function isRider() {
+      return isLoggedIn() && getUserRole() == 'rider';
+    }
+
+    // USERS collection
+    // Users can only read and write their own profile
+    match /users/{userId} {
+      allow read:   if isLoggedIn() && isOwner(userId);
+      allow create: if isLoggedIn() && isOwner(userId);
+      allow update: if isLoggedIn() && isOwner(userId);
+      allow delete: if false;
+    }
+
+    // SHOPS collection
+    // Anyone can read shops (public browse page)
+    // Only the merchant who owns the shop can update it
+    match /shops/{shopId} {
+      allow read:   if true;
+      allow create: if isMerchant();
+      allow update: if isMerchant() &&
+        get(/databases/$(database)/documents/shops/$(shopId)).data.ownerId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ORDERS collection
+    match /orders/{orderId} {
+      // Customers can read their own orders
+      // Merchants can read orders for their shop
+      // Riders can read orders assigned to them or unclaimed accepted orders
+      allow read: if isLoggedIn() && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.riderId == request.auth.uid ||
+        (isMerchant() && get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerId == request.auth.uid) ||
+        (isRider() && resource.data.status == 'ACCEPTED' && resource.data.riderId == null)
+      );
+
+      // Only customers can create orders
+      allow create: if isCustomer() &&
+        request.resource.data.customerId == request.auth.uid;
+
+      // Updates allowed based on role and current status
+      // Customers can only cancel PENDING orders
+      // Merchants can update status and weight for their shop's orders
+      // Riders can claim and update status of their assigned orders
+      allow update: if isLoggedIn() && (
+        (resource.data.customerId == request.auth.uid &&
+         resource.data.status == 'PENDING' &&
+         request.resource.data.status == 'CANCELLED') ||
+        (isMerchant() &&
+         get(/databases/$(database)/documents/shops/$(resource.data.shopId)).data.ownerId == request.auth.uid) ||
+        (isRider() && (
+          resource.data.riderId == null ||
+          resource.data.riderId == request.auth.uid
+        ))
+      );
+
+      allow delete: if false;
     }
 
   }
