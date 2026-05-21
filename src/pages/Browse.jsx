@@ -1,14 +1,15 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import FilterSidebar from '../components/FilterSidebar'
 import ShopCard from '../components/ShopCard'
-import { SHOPS } from '../data/shops'
 
 const CHIPS = ['All', 'Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
 
 const SORT_OPTIONS = [
   { key: 'nearest', label: 'Nearest' },
-  { key: 'rating', label: 'Top rated' },
-  { key: 'price', label: 'Price' },
+  { key: 'rating',  label: 'Top rated' },
+  { key: 'price',   label: 'Price' },
 ]
 
 const DEFAULT_FILTERS = {
@@ -21,13 +22,57 @@ const DEFAULT_FILTERS = {
   sameDay: false,
 }
 
+const CARD_COLORS = [
+  'bg-[#DBEAFE]', 'bg-[#D1FAE5]', 'bg-[#FEE2E2]',
+  'bg-[#EDE9FE]', 'bg-[#FEF3C7]', 'bg-[#CCFBF1]',
+]
+
+function ShopSkeleton() {
+  return (
+    <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden animate-pulse">
+      <div className="bg-gray-200 h-36" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="h-3 bg-gray-100 rounded w-1/3" />
+        <div className="flex gap-2 mt-2">
+          <div className="h-5 bg-gray-100 rounded-full w-20" />
+          <div className="h-5 bg-gray-100 rounded-full w-24" />
+        </div>
+        <div className="flex justify-between items-center pt-3 border-t border-[#e5e7eb]">
+          <div className="h-4 bg-gray-200 rounded w-16" />
+          <div className="h-7 bg-gray-200 rounded-lg w-20" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Browse() {
+  const [shops, setShops] = useState([])
+  const [loading, setLoading] = useState(true)
   const [activeChip, setActiveChip] = useState('All')
   const [sortBy, setSortBy] = useState('nearest')
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
+  useEffect(() => {
+    getDocs(collection(db, 'shops')).then(snap => {
+      const data = snap.docs.map((doc, i) => {
+        const d = doc.data()
+        return {
+          ...d,
+          id: doc.id,
+          color: CARD_COLORS[i % CARD_COLORS.length],
+          distanceKm: d.distanceKm ?? +(Math.random() * 4 + 0.5).toFixed(1),
+        }
+      })
+      setShops(data)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
   const displayed = useMemo(() => {
-    const filtered = SHOPS.filter(shop => {
+    const filtered = shops.filter(shop => {
       if (shop.distanceKm > filters.maxDistance) return false
       if (filters.services.length > 0 && !filters.services.some(s => shop.services.includes(s))) return false
       if (activeChip !== 'All' && !shop.services.includes(activeChip)) return false
@@ -42,11 +87,11 @@ export default function Browse() {
 
     return [...filtered].sort((a, b) => {
       if (sortBy === 'nearest') return a.distanceKm - b.distanceKm
-      if (sortBy === 'rating') return b.rating - a.rating
-      if (sortBy === 'price') return a.pricePerKg - b.pricePerKg
+      if (sortBy === 'rating')  return b.rating - a.rating
+      if (sortBy === 'price')   return a.pricePerKg - b.pricePerKg
       return 0
     })
-  }, [filters, activeChip, sortBy])
+  }, [shops, filters, activeChip, sortBy])
 
   return (
     <>
@@ -107,12 +152,20 @@ export default function Browse() {
                 {opt.label}
               </button>
             ))}
-            <span className="ml-auto text-sm text-gray-400">
-              {displayed.length} shop{displayed.length !== 1 ? 's' : ''}
-            </span>
+            {!loading && (
+              <span className="ml-auto text-sm text-gray-400">
+                {displayed.length} shop{displayed.length !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
 
-          {displayed.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-3 gap-5">
+              <ShopSkeleton />
+              <ShopSkeleton />
+              <ShopSkeleton />
+            </div>
+          ) : displayed.length > 0 ? (
             <div className="grid grid-cols-3 gap-5">
               {displayed.map(shop => (
                 <ShopCard key={shop.id} {...shop} />

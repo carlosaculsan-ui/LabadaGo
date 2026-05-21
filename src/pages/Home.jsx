@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 import ShopCard from '../components/ShopCard'
-import { SHOPS } from '../data/shops'
 
 // ─── Shared placeholder component ────────────────────────────────────────────
-// bg and borderColor accept full Tailwind class strings so tints can vary per slot.
 function ImgPlaceholder({ label, className, bg, borderColor }) {
   return (
     <div
@@ -25,11 +25,16 @@ function ImgPlaceholder({ label, className, bg, borderColor }) {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
+const CARD_COLORS = [
+  'bg-[#DBEAFE]', 'bg-[#D1FAE5]', 'bg-[#FEE2E2]',
+  'bg-[#EDE9FE]', 'bg-[#FEF3C7]', 'bg-[#CCFBF1]',
+]
+
 const SERVICE_CHIPS = [
-  { id: 'all',    label: 'All services',    param: null,             iconBg: 'bg-gray-200',    iconBorder: 'border-gray-400'   },
-  { id: 'wash',   label: 'Wash & Fold',     param: 'Wash & Fold',    iconBg: 'bg-[#DBEAFE]',   iconBorder: 'border-blue-300'   },
-  { id: 'dry',    label: 'Dry Cleaning',    param: 'Dry Cleaning',   iconBg: 'bg-[#EDE9FE]',   iconBorder: 'border-purple-300' },
-  { id: 'comf',   label: 'Comforters',      param: 'Comforters',     iconBg: 'bg-[#D1FAE5]',   iconBorder: 'border-green-300'  },
+  { id: 'all',    label: 'All services',    param: null,              iconBg: 'bg-gray-200',   iconBorder: 'border-gray-400'   },
+  { id: 'wash',   label: 'Wash & Fold',     param: 'Wash & Fold',     iconBg: 'bg-[#DBEAFE]',  iconBorder: 'border-blue-300'   },
+  { id: 'dry',    label: 'Dry Cleaning',    param: 'Dry Cleaning',    iconBg: 'bg-[#EDE9FE]',  iconBorder: 'border-purple-300' },
+  { id: 'comf',   label: 'Comforters',      param: 'Comforters',      iconBg: 'bg-[#D1FAE5]',  iconBorder: 'border-green-300'  },
   { id: 'towels', label: 'Towels & Linens', param: 'Towels & Linens', iconBg: 'bg-[#FEF3C7]',  iconBorder: 'border-amber-300'  },
 ]
 
@@ -79,11 +84,52 @@ const FOOTER_LINKS = {
   Support:  ['Help center', 'Contact', 'FAQs'],
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function ShopSkeleton() {
+  return (
+    <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden animate-pulse">
+      <div className="bg-gray-200 h-36" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="h-3 bg-gray-100 rounded w-1/3" />
+        <div className="flex gap-2 mt-2">
+          <div className="h-5 bg-gray-100 rounded-full w-20" />
+          <div className="h-5 bg-gray-100 rounded-full w-24" />
+        </div>
+        <div className="flex justify-between items-center pt-3 border-t border-[#e5e7eb]">
+          <div className="h-4 bg-gray-200 rounded w-16" />
+          <div className="h-7 bg-gray-200 rounded-lg w-20" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
   const navigate = useNavigate()
   const [activeChip, setActiveChip] = useState('all')
+  const [nearbyShops, setNearbyShops] = useState([])
+  const [shopsLoading, setShopsLoading] = useState(true)
+
+  useEffect(() => {
+    getDocs(collection(db, 'shops')).then(snap => {
+      const data = snap.docs.slice(0, 3).map((doc, i) => {
+        const d = doc.data()
+        return {
+          ...d,
+          id: doc.id,
+          color: CARD_COLORS[i % CARD_COLORS.length],
+          distanceKm: d.distanceKm ?? +(Math.random() * 4 + 0.5).toFixed(1),
+        }
+      })
+      setNearbyShops(data)
+      setShopsLoading(false)
+    }).catch(() => setShopsLoading(false))
+  }, [])
 
   function handleChipClick(chip) {
     setActiveChip(chip.id)
@@ -154,7 +200,6 @@ export default function Home() {
                     : 'border-[#e5e7eb] text-gray-700 hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
                 ].join(' ')}
               >
-                {/* 24×24 icon slot — dashed, tinted per service type */}
                 <div
                   className={[
                     'w-6 h-6 rounded border border-dashed shrink-0',
@@ -199,10 +244,19 @@ export default function Home() {
               See all →
             </Link>
           </div>
+
           <div className="grid grid-cols-3 gap-5">
-            {SHOPS.slice(0, 3).map(shop => (
-              <ShopCard key={shop.id} {...shop} />
-            ))}
+            {shopsLoading ? (
+              <>
+                <ShopSkeleton />
+                <ShopSkeleton />
+                <ShopSkeleton />
+              </>
+            ) : (
+              nearbyShops.map(shop => (
+                <ShopCard key={shop.id} {...shop} />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -221,32 +275,25 @@ export default function Home() {
           </div>
 
           <div className="relative grid grid-cols-4 gap-8">
-            {/* Dashed connector line — aligns with center of step number circles (top-4 = 16px = half of w-8/h-8) */}
             <div className="absolute top-4 left-[12.5%] right-[12.5%] border-t-2 border-dashed border-gray-300 pointer-events-none" />
 
             {HOW_STEPS.map(step => (
               <div key={step.num} className="flex flex-col items-center text-center">
-
-                {/* Step number — z-10 so it renders above the connector line */}
                 <div className="relative z-10 w-8 h-8 rounded-full bg-[#1B6CA8] text-white text-sm font-bold flex items-center justify-center mb-4 shrink-0">
                   {step.num}
                 </div>
-
-                {/* ↓ image placeholder — 64×64, tinted per step */}
                 <ImgPlaceholder
                   label={step.imgLabel}
                   className="w-16 h-16 mb-4 rounded-xl"
                   bg={step.bg}
                   borderColor={step.border}
                 />
-
                 <h3 className="font-heading font-bold text-[15px] text-gray-900 mb-2">
                   {step.label}
                 </h3>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   {step.desc}
                 </p>
-
               </div>
             ))}
           </div>
@@ -258,7 +305,6 @@ export default function Home() {
       <footer className="bg-[#0D3F6B]">
         <div className="max-w-[1280px] mx-auto px-8 py-12 flex items-start justify-between gap-16">
 
-          {/* Left — logo + tagline */}
           <div className="max-w-[280px]">
             <div className="mb-4">
               <span className="font-heading font-extrabold text-xl text-white">Labada</span>
@@ -269,7 +315,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Right — Company + Support link columns */}
           <div className="flex gap-16 shrink-0">
             {Object.entries(FOOTER_LINKS).map(([heading, links]) => (
               <div key={heading}>
@@ -291,7 +336,6 @@ export default function Home() {
 
         </div>
 
-        {/* Copyright bar */}
         <div className="border-t border-white/10">
           <div className="max-w-[1280px] mx-auto px-8 py-4 flex items-center justify-between">
             <p className="text-xs text-white/40">© 2026 LabadaGo. All rights reserved.</p>

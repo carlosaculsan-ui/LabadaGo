@@ -10,6 +10,7 @@ import RiderDashboard from './pages/RiderDashboard'
 import MerchantDashboard from './pages/MerchantDashboard'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
+import SeedPage from './pages/SeedPage'
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
   },
   { path: '/signin', element: <SignIn /> },
   { path: '/signup', element: <SignUp /> },
+  { path: '/seed', element: <SeedPage /> },
 ])
 
 export default function App() {
