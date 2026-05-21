@@ -25,6 +25,25 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Float the label up when the browser autofills the input */
+input:-webkit-autofill ~ label,
+input:autofill ~ label {
+  top: 0.25rem !important;
+  font-size: 0.75rem !important;
+  color: #1B6CA8 !important;
+}
+
+/* Turn icons blue when the browser autofills */
+input:-webkit-autofill ~ div > svg,
+input:autofill ~ div > svg {
+  color: #1B6CA8 !important;
+}
+
+input:-webkit-autofill ~ button,
+input:autofill ~ button {
+  color: #1B6CA8 !important;
+}
+
 /* Hide Firebase emulator warning banner */
 .firebase-emulator-warning {
   display: none !important;
