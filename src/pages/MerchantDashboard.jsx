@@ -300,6 +300,7 @@ export default function MerchantDashboard() {
   const [orders,       setOrders]       = useState([])
   const [ordersLoaded, setOrdersLoaded] = useState(false)
   const [isOpen,       setIsOpen]       = useState(true)
+  const [shopName,     setShopName]     = useState('')
   const [activeNav,    setActiveNav]    = useState('dashboard')
   const [activeTab,    setActiveTab]    = useState('All')
 
@@ -325,7 +326,13 @@ export default function MerchantDashboard() {
 
     const unsubscribe = onSnapshot(
       doc(db, 'shops', String(shopId)),
-      snap => { if (snap.exists()) setIsOpen(snap.data().isOpen ?? true) }
+      snap => {
+        if (snap.exists()) {
+          const data = snap.data()
+          setIsOpen(data.isOpen ?? true)
+          setShopName(data.name ?? '')
+        }
+      }
     )
 
     return unsubscribe
@@ -406,6 +413,11 @@ export default function MerchantDashboard() {
             <span className="font-heading font-extrabold text-xl text-[#F5A623]">Go</span>
           </div>
           <p className="text-[10px] text-gray-400 mt-0.5 font-medium tracking-wide">Merchant portal</p>
+          {shopName && (
+            <p className="text-[13px] font-semibold text-gray-800 mt-2 truncate" title={shopName}>
+              {shopName}
+            </p>
+          )}
         </div>
 
         <div className="px-5 py-4 border-b border-[#e5e7eb]">

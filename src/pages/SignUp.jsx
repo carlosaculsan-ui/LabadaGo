@@ -6,7 +6,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth'
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -202,6 +202,27 @@ export default function SignUp() {
         createdAt: serverTimestamp(),
         isActive: true,
       })
+
+      if (role === 'merchant') {
+        const shopRef = await addDoc(collection(db, 'shops'), {
+          name: `${fullName}'s Laundry Shop`,
+          address: '',
+          rating: 0,
+          pricePerKg: 50,
+          services: [],
+          detergents: [],
+          isOpen: false,
+          isSameDay: false,
+          isFeatured: false,
+          ownerId: user.uid,
+          geoPoint: null,
+          photoURL: null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+        await updateDoc(doc(db, 'users', user.uid), { shopId: shopRef.id })
+      }
+
       navigate(ROLE_REDIRECT[role] ?? '/browse', { replace: true })
     } catch (err) {
       setError(err.message)
