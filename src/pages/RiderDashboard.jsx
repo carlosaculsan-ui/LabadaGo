@@ -109,10 +109,12 @@ export default function RiderDashboard() {
   const navigate = useNavigate()
   const { user, userProfile } = useAuth()
 
-  const [orders,       setOrders]       = useState([])
-  const [loaded,       setLoaded]       = useState(false)
-  const [isAvailable,  setIsAvailable]  = useState(true)
-  const [activeNav,    setActiveNav]    = useState('dashboard')
+  const [orders,          setOrders]          = useState([])
+  const [loaded,          setLoaded]          = useState(false)
+  const [availableOrders, setAvailableOrders] = useState([])
+  const [refreshKey,      setRefreshKey]      = useState(0)
+  const [isAvailable,     setIsAvailable]     = useState(true)
+  const [activeNav,       setActiveNav]       = useState('dashboard')
 
   // Sync availability from userProfile
   useEffect(() => {
@@ -147,6 +149,31 @@ export default function RiderDashboard() {
     } catch {
       setIsAvailable(!newStatus)
     }
+  }
+
+  // ── Live unclaimed orders (ACCEPTED + no rider) ──────────────────────────
+  useEffect(() => {
+    if (!user?.uid) return
+
+    const q = query(
+      collection(db, 'orders'),
+      where('status', '==', 'ACCEPTED'),
+      where('riderId', '==', null)
+    )
+    const unsubscribe = onSnapshot(q, snap => {
+      setAvailableOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+
+    return unsubscribe
+  }, [user?.uid, refreshKey])
+
+  async function handleClaimOrder(orderId) {
+    await updateDoc(doc(db, 'orders', orderId), {
+      riderId: user.uid,
+      riderName: userProfile?.fullName ?? '',
+      status: 'PICKUP_EN_ROUTE',
+      updatedAt: serverTimestamp(),
+    })
   }
 
   async function handleAdvanceStatus(order) {
@@ -257,7 +284,7 @@ export default function RiderDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                 </svg>
               </div>
-              {upcomingTasks.length > 0 && (
+              {(upcomingTasks.length > 0 || (isAvailable && availableOrders.length > 0)) && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
               )}
             </div>
@@ -383,6 +410,101 @@ export default function RiderDashboard() {
                 </>
               )}
             </div>
+          </div>
+
+          {/* Available orders */}
+          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="font-heading font-bold text-[17px] text-gray-900">
+                  Available orders
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Unclaimed orders you can pick up
+                </p>
+              </div>
+              {isAvailable && (
+                <span className="text-[11px] font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                  {availableOrders.length} available
+                </span>
+              )}
+            </div>
+
+            {!isAvailable ? (
+              <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
+                <p className="text-sm font-medium text-gray-400">
+                  You are currently off duty.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Toggle availability to see orders.
+                </p>
+              </div>
+            ) : availableOrders.length === 0 ? (
+              <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
+                <p className="text-sm font-medium text-gray-500 mb-3">
+                  No orders available right now. Check back soon.
+                </p>
+                <button
+                  onClick={() => setRefreshKey(k => k + 1)}
+                  className="text-xs font-medium text-[#1B6CA8] border border-[#1B6CA8] px-4 py-1.5 rounded-lg hover:bg-[#F0F7FF] transition-colors"
+                >
+                  Refresh
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availableOrders.map(order => (
+                  <div
+                    key={order.id}
+                    className="flex items-center gap-5 border border-[#e5e7eb] rounded-xl p-4 hover:border-[#1B6CA8]/40 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 items-center">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                          Order
+                        </p>
+                        <p className="font-heading font-bold text-[14px] text-gray-900">
+                          LBG-{order.id.substring(0, 8).toUpperCase()}
+                        </p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                          Shop
+                        </p>
+                        <p className="text-sm text-gray-700 truncate">{order.shopName ?? '—'}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                          Pickup
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {order.pickupAddress?.street ?? '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                          Service
+                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[11px] font-medium bg-[#E8F4FD] text-[#1B6CA8] px-2 py-0.5 rounded-full whitespace-nowrap">
+                            {order.serviceType ?? '—'}
+                          </span>
+                          <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                            {order.estimatedWeight} kg
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleClaimOrder(order.id)}
+                      className="shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap"
+                    >
+                      Claim order
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Upcoming tasks table */}
