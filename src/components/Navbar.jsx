@@ -1,28 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
 export default function Navbar() {
-  const [search, setSearch] = useState('')
-  const navigate = useNavigate()
-  const { user, userProfile } = useAuth()
+  const [search,       setSearch]       = useState('')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+  const navigate    = useNavigate()
+  const { user, userProfile, role } = useAuth()
+
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function onClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [dropdownOpen])
 
   async function handleSignOut() {
+    setDropdownOpen(false)
     await signOut(auth)
     navigate('/', { replace: true })
   }
+
+  const firstName = (userProfile?.fullName ?? user?.displayName ?? '').split(' ')[0] || 'Account'
 
   return (
     <header className="w-full bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
       <div className="max-w-[1280px] mx-auto px-8 h-16 flex items-center gap-6">
 
+        {/* Logo */}
         <Link to="/" className="shrink-0">
           <span className="font-heading font-extrabold text-2xl text-[#1B6CA8]">Labada</span>
           <span className="font-heading font-extrabold text-2xl text-[#F5A623]">Go</span>
         </Link>
 
+        {/* Search + location */}
         <div className="flex items-center gap-3 flex-1">
           <button className="flex items-center gap-1.5 bg-[#E8F4FD] text-[#0C447C] text-sm font-medium px-3 py-1.5 rounded-full shrink-0 whitespace-nowrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
@@ -50,49 +68,114 @@ export default function Navbar() {
           </div>
         </div>
 
+        {/* Nav links */}
         <nav className="flex items-center gap-5 shrink-0">
-          <NavLink
-            to="/browse"
-            className={({ isActive }) =>
-              `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
-            }
-          >
-            Browse shops
-          </NavLink>
 
-          {user && (
+          {/* Browse — always visible for guests, and for customers */}
+          {(!user || role === 'customer' || !role) && (
+            <NavLink
+              to="/browse"
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
+              }
+            >
+              Browse shops
+            </NavLink>
+          )}
+
+          {/* Customer links */}
+          {user && role === 'customer' && (
             <>
-              <Link to="/order-tracking" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
+              <NavLink
+                to="/my-orders"
+                className={({ isActive }) =>
+                  `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
+                }
+              >
                 My orders
-              </Link>
-              <Link to="/order-tracking" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
+              </NavLink>
+              <NavLink
+                to="/order-tracking"
+                className={({ isActive }) =>
+                  `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
+                }
+              >
                 Track
-              </Link>
+              </NavLink>
             </>
           )}
 
-          {user ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 font-medium">
-                {userProfile?.fullName ?? user.displayName ?? user.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors"
-              >
-                Sign out
-              </button>
-            </div>
-          ) : (
+          {/* Merchant link */}
+          {user && role === 'merchant' && (
+            <NavLink
+              to="/merchant"
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
+              }
+            >
+              My Dashboard
+            </NavLink>
+          )}
+
+          {/* Rider link */}
+          {user && role === 'rider' && (
+            <NavLink
+              to="/rider"
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
+              }
+            >
+              My Deliveries
+            </NavLink>
+          )}
+
+          {/* Auth area */}
+          {!user ? (
             <Link
               to="/signin"
               className="bg-[#1B6CA8] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors"
             >
               Sign in
             </Link>
-          )}
-        </nav>
+          ) : (
+            <div ref={dropdownRef} className="relative">
+              <button
+                onClick={() => setDropdownOpen(v => !v)}
+                className="flex items-center gap-2 border border-[#e5e7eb] rounded-full pl-2 pr-3 py-1.5 hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-6 h-6 rounded-full border border-dashed border-[#1B6CA8] bg-[#E8F4FD] shrink-0" />
+                <span className="text-sm font-medium text-gray-700 max-w-[96px] truncate">
+                  {firstName}
+                </span>
+                <svg
+                  className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-150 ${dropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border border-[#e5e7eb] overflow-hidden z-50 py-1">
+                  <button
+                    onClick={() => setDropdownOpen(false)}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    My profile
+                  </button>
+                  <div className="h-px bg-[#e5e7eb] mx-2" />
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-50 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+        </nav>
       </div>
     </header>
   )

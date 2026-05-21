@@ -11,6 +11,7 @@ import MerchantDashboard from './pages/MerchantDashboard'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import SeedPage from './pages/SeedPage'
+import MyOrders from './pages/MyOrders'
 
 const router = createBrowserRouter([
   {
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
         children: [
           { path: 'checkout', element: <Checkout /> },
           { path: 'order-tracking', element: <OrderTracking /> },
+          { path: 'my-orders', element: <MyOrders /> },
         ],
       },
     ],
