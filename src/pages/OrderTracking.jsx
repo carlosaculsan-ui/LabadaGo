@@ -46,7 +46,7 @@ function fmtPayment(method) {
 function ImgPlaceholder({ label, className }) {
   return (
     <div className={['border border-dashed flex items-center justify-center', className].join(' ')}>
-      <span className="text-[7px] font-medium text-gray-400 text-center leading-snug px-1.5">
+      <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1.5">
         {label}
       </span>
     </div>
@@ -57,7 +57,7 @@ function Spinner({ text }) {
   return (
     <div className="min-h-screen bg-[#F4F7FA] flex flex-col items-center justify-center gap-3">
       <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-[#1B6CA8] animate-spin" />
-      {text && <p className="text-sm text-gray-500">{text}</p>}
+      {text && <p className="text-sm text-gray-600">{text}</p>}
     </div>
   )
 }
@@ -127,7 +127,7 @@ export default function OrderTracking() {
       <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
         <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
           <p className="font-heading font-bold text-gray-900 text-lg mb-2">Something went wrong</p>
-          <p className="text-sm text-gray-400 mb-6">{error}</p>
+          <p className="text-sm text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => navigate('/')}
             className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
@@ -162,7 +162,7 @@ export default function OrderTracking() {
                   <h1 className="font-heading font-bold text-[22px] text-gray-900 leading-tight">
                     Order #{orderRef}
                   </h1>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-gray-600 mt-1">
                     {order.createdAt?.toDate
                       ? order.createdAt.toDate().toLocaleString('en-PH', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
                       : 'Just placed'}
@@ -230,13 +230,13 @@ export default function OrderTracking() {
                         <div className="flex-1">
                           <p className={[
                             'font-heading text-[14px]',
-                            isCompleted || isActive ? 'font-bold text-gray-900' : 'font-semibold text-gray-400',
+                            isCompleted || isActive ? 'font-bold text-gray-900' : 'font-semibold text-gray-600',
                           ].join(' ')}>
                             {status.label}
                           </p>
                           <p className={[
                             'text-xs mt-0.5 leading-relaxed',
-                            isCompleted || isActive ? 'text-gray-500' : 'text-gray-300',
+                            isCompleted || isActive ? 'text-gray-600' : 'text-gray-600',
                           ].join(' ')}>
                             {status.desc}
                           </p>
@@ -256,7 +256,7 @@ export default function OrderTracking() {
               </h2>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">
                     Laundry details
                   </p>
                   <div className="space-y-2">
@@ -267,14 +267,14 @@ export default function OrderTracking() {
                       ['Conditioner', order.conditioner ?? '—'],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between text-sm">
-                        <span className="text-gray-400">{label}</span>
+                        <span className="text-gray-600">{label}</span>
                         <span className="font-medium text-gray-700">{value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">
                     Schedule
                   </p>
                   <div className="space-y-2">
@@ -283,7 +283,7 @@ export default function OrderTracking() {
                       ['Delivery', `${fmtDate(order.deliveryDate)} · ${order.deliveryTime ?? '—'}` ],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between text-sm">
-                        <span className="text-gray-400">{label}</span>
+                        <span className="text-gray-600">{label}</span>
                         <span className="font-medium text-gray-700 text-right">{value}</span>
                       </div>
                     ))}
@@ -320,7 +320,7 @@ export default function OrderTracking() {
                   ['Delivery fee',                            `₱${order.deliveryFee}`],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-400">{label}</span>
+                    <span className="text-gray-600">{label}</span>
                     <span className="font-medium text-gray-700">{value}</span>
                   </div>
                 ))}
@@ -335,12 +335,12 @@ export default function OrderTracking() {
                 </span>
               </div>
               <div className="flex justify-between items-center mt-2">
-                <p className="text-[11px] text-gray-400 leading-relaxed">
+                <p className="text-[11px] text-gray-600 leading-relaxed">
                   {order.finalPrice != null
                     ? 'This is the final confirmed price.'
                     : 'Final price adjusted after the shop weighs your actual laundry.'}
                 </p>
-                <span className="text-[11px] font-medium text-gray-500">{fmtPayment(order.paymentMethod)}</span>
+                <span className="text-[11px] font-medium text-gray-600">{fmtPayment(order.paymentMethod)}</span>
               </div>
             </div>
 
@@ -362,7 +362,7 @@ export default function OrderTracking() {
 
             {/* Rider info card */}
             <div className="bg-white rounded-xl border border-[#e5e7eb] p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-4">
                 Your rider
               </p>
               {order.riderId ? (
@@ -374,7 +374,7 @@ export default function OrderTracking() {
                     />
                     <div className="min-w-0">
                       <p className="font-heading font-bold text-[15px] text-gray-900">Assigned</p>
-                      <p className="text-xs text-gray-400">Rider</p>
+                      <p className="text-xs text-gray-600">Rider</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 shrink-0">
@@ -387,7 +387,7 @@ export default function OrderTracking() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">No rider assigned yet.</p>
+                <p className="text-sm text-gray-600">No rider assigned yet.</p>
               )}
             </div>
 
@@ -402,7 +402,7 @@ export default function OrderTracking() {
                   Pickup window: {order.pickupTime ?? '—'}
                 </p>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed pl-7">
+              <p className="text-xs text-gray-600 leading-relaxed pl-7">
                 {fmtDate(order.pickupDate)}
               </p>
             </div>
@@ -417,7 +417,7 @@ export default function OrderTracking() {
                 >
                   {cancelling ? 'Cancelling...' : 'Cancel order'}
                 </button>
-                <p className="text-[11px] text-gray-400 mt-1">(Only available before pickup)</p>
+                <p className="text-[11px] text-gray-600 mt-1">(Only available before pickup)</p>
               </div>
             )}
 

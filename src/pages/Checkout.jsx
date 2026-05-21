@@ -41,7 +41,7 @@ function SectionTitle({ children }) {
 
 function FieldLabel({ children }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">
+    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
       {children}
     </p>
   )
@@ -50,7 +50,7 @@ function FieldLabel({ children }) {
 function SummaryRow({ label, value }) {
   return (
     <div className="flex justify-between items-start gap-3 text-sm">
-      <span className="text-gray-400">{label}</span>
+      <span className="text-gray-600">{label}</span>
       <span className="font-medium text-gray-700 text-right">{value}</span>
     </div>
   )
@@ -87,7 +87,7 @@ function ImgPlaceholder({ label, className }) {
         className,
       ].join(' ')}
     >
-      <span className="text-[8px] font-medium text-gray-400 text-center leading-snug px-1.5">
+      <span className="text-[8px] font-medium text-gray-600 text-center leading-snug px-1.5">
         {label}
       </span>
     </div>
@@ -186,7 +186,7 @@ export default function Checkout() {
           <h1 className="font-heading font-extrabold text-[26px] text-gray-900">
             Book your laundry pickup
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             Booking with <span className="font-medium text-gray-600">{shopName}</span>
           </p>
         </div>
@@ -205,14 +205,14 @@ export default function Checkout() {
                   value={street}
                   onChange={e => setStreet(e.target.value)}
                   placeholder="Street address"
-                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
                 />
                 <input
                   type="text"
                   value={landmark}
                   onChange={e => setLandmark(e.target.value)}
                   placeholder="Landmark / Unit / Floor (optional)"
-                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
                 />
               </div>
             </div>
@@ -330,7 +330,7 @@ export default function Checkout() {
                 >
                   +
                 </button>
-                <span className="text-sm text-gray-400">kg</span>
+                <span className="text-sm text-gray-600">kg</span>
               </div>
 
               {/* Detergent */}
@@ -367,7 +367,7 @@ export default function Checkout() {
                       className="w-10 h-10 mb-3 rounded-lg"
                     />
                     <p className="text-sm font-semibold text-gray-900">{pm.label}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">{pm.desc}</p>
+                    <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">{pm.desc}</p>
                   </button>
                 ))}
               </div>
@@ -409,7 +409,7 @@ export default function Checkout() {
                 </span>
               </div>
 
-              <p className="text-[11px] text-gray-400 mt-2 mb-5 leading-relaxed">
+              <p className="text-[11px] text-gray-600 mt-2 mb-5 leading-relaxed">
                 Final price adjusted after shop weighs your laundry.
               </p>
 

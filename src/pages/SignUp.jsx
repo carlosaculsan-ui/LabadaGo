@@ -55,7 +55,7 @@ function AuthToggle({ active }) {
         onClick={() => navigate('/signin')}
         className={[
           'relative z-10 flex-1 py-1.5 text-sm font-semibold rounded-full transition-colors',
-          active === 'signin' ? 'text-[#1B6CA8]' : 'text-gray-400',
+          active === 'signin' ? 'text-[#1B6CA8]' : 'text-gray-600',
         ].join(' ')}
       >
         Sign in
@@ -64,7 +64,7 @@ function AuthToggle({ active }) {
         onClick={() => navigate('/signup')}
         className={[
           'relative z-10 flex-1 py-1.5 text-sm font-semibold rounded-full transition-colors',
-          active === 'signup' ? 'text-[#1B6CA8]' : 'text-gray-400',
+          active === 'signup' ? 'text-[#1B6CA8]' : 'text-gray-600',
         ].join(' ')}
       >
         Sign up
@@ -79,7 +79,7 @@ function ImgPlaceholder({ label, className }) {
   return (
     <div className={['border border-dashed flex items-center justify-center shrink-0', className].join(' ')}>
       {label && (
-        <span className="text-[7px] font-medium text-gray-400 text-center leading-snug px-1">
+        <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1">
           {label}
         </span>
       )}
@@ -100,7 +100,7 @@ function FloatingInput({ id, label, type = 'text', value, onChange }) {
       />
       <label
         htmlFor={id}
-        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
+        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-600 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
       >
         {label}
       </label>
@@ -122,7 +122,7 @@ function PasswordInput({ id, label, value, onChange }) {
       />
       <label
         htmlFor={id}
-        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
+        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-600 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
       >
         {label}
       </label>
@@ -130,7 +130,7 @@ function PasswordInput({ id, label, value, onChange }) {
         type="button"
         tabIndex={-1}
         onClick={() => setShow(v => !v)}
-        className="absolute right-0 bottom-2 text-gray-400 hover:text-gray-600 transition-colors"
+        className="absolute right-0 bottom-2 text-gray-600 hover:text-gray-600 transition-colors"
       >
         {show ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -268,25 +268,52 @@ export default function SignUp() {
         {/* Logo + tagline */}
         <div className="text-center">
           <div>
-            <span className="font-heading font-extrabold text-4xl text-[#1B6CA8]">Labada</span>
-            <span className="font-heading font-extrabold text-4xl text-[#F5A623]">Go</span>
+            <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-20 w-auto mx-auto" />
           </div>
-          <p className="text-sm text-gray-400 mt-1.5">Fresh laundry, delivered to your door.</p>
+          <p className="text-sm text-gray-600 mt-1.5">Fresh laundry, delivered to your door.</p>
         </div>
 
         {/* Tab toggle */}
         <AuthToggle active="signup" />
 
         {/* Form card */}
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] px-10 py-10 mt-6">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-8 mt-6">
 
-          <div className="space-y-6">
-            <FloatingInput
-              id="fullname"
-              label="Full name"
-              value={fullName}
-              onChange={e => setFullName(e.target.value)}
-            />
+          <div className="space-y-4">
+            {/* Row 1: Full name | Mobile number */}
+            <div className="grid grid-cols-2 gap-4">
+              <FloatingInput
+                id="fullname"
+                label="Full name"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+              />
+
+              {/* Mobile number — +63 prefix + floating label input */}
+              <div className="flex border-b border-gray-300 focus-within:border-[#1B6CA8] transition-colors">
+                <div className="bg-[#F0F7FF] px-3 flex items-end pb-1.5 text-sm font-semibold text-[#1B6CA8] shrink-0 rounded-tl-md">
+                  +63
+                </div>
+                <div className="relative flex-1 pl-2">
+                  <input
+                    id="mobile"
+                    type="tel"
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value)}
+                    placeholder=" "
+                    className="peer w-full bg-transparent pt-5 pb-1.5 text-sm text-gray-900 focus:outline-none"
+                  />
+                  <label
+                    htmlFor="mobile"
+                    className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-600 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
+                  >
+                    Mobile number
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Email — full width */}
             <FloatingInput
               id="email"
               label="Email address"
@@ -295,46 +322,26 @@ export default function SignUp() {
               onChange={e => setEmail(e.target.value)}
             />
 
-            {/* Mobile number — +63 prefix + floating label input */}
-            <div className="flex border-b border-gray-300 focus-within:border-[#1B6CA8] transition-colors">
-              <div className="bg-[#F0F7FF] px-3 flex items-end pb-1.5 text-sm font-semibold text-[#1B6CA8] shrink-0 rounded-tl-md">
-                +63
-              </div>
-              <div className="relative flex-1 pl-2">
-                <input
-                  id="mobile"
-                  type="tel"
-                  value={mobile}
-                  onChange={e => setMobile(e.target.value)}
-                  placeholder=" "
-                  className="peer w-full bg-transparent pt-5 pb-1.5 text-sm text-gray-900 focus:outline-none"
-                />
-                <label
-                  htmlFor="mobile"
-                  className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
-                >
-                  Mobile number
-                </label>
-              </div>
+            {/* Row 2: Password | Confirm password */}
+            <div className="grid grid-cols-2 gap-4">
+              <PasswordInput
+                id="password"
+                label="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
+              <PasswordInput
+                id="confirm-password"
+                label="Confirm password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+              />
             </div>
-
-            <PasswordInput
-              id="password"
-              label="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-            <PasswordInput
-              id="confirm-password"
-              label="Confirm password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-            />
           </div>
 
           {/* Role selector */}
-          <div className="mt-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-3">
+          <div className="mt-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">
               I am a...
             </p>
             <div className="flex gap-2">
@@ -347,7 +354,7 @@ export default function SignUp() {
                     'flex-1 py-1.5 rounded-full text-sm font-semibold transition-colors border',
                     selectedRole === role
                       ? 'bg-[#1B6CA8] text-white border-[#1B6CA8]'
-                      : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600',
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-600',
                   ].join(' ')}
                 >
                   {role}
@@ -357,7 +364,7 @@ export default function SignUp() {
           </div>
 
           {/* Terms */}
-          <div className="mt-5 flex items-start gap-2.5">
+          <div className="mt-4 flex items-start gap-2.5">
             <input
               id="terms"
               type="checkbox"
@@ -365,7 +372,7 @@ export default function SignUp() {
               onChange={e => setTermsAccepted(e.target.checked)}
               className="mt-0.5 accent-[#1B6CA8] shrink-0 cursor-pointer"
             />
-            <label htmlFor="terms" className="text-xs text-gray-400 leading-relaxed cursor-pointer">
+            <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
               I agree to the{' '}
               <button type="button" className="text-[#1B6CA8] hover:underline">
                 Terms of Service
@@ -379,7 +386,7 @@ export default function SignUp() {
 
           {/* Error pill */}
           {error && (
-            <div className="mt-5 px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
+            <div className="mt-4 px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
               {error}
             </div>
           )}
@@ -407,7 +414,7 @@ export default function SignUp() {
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">or continue with</span>
+            <span className="text-xs text-gray-600">or continue with</span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
@@ -432,7 +439,7 @@ export default function SignUp() {
           </div>
 
           {/* Sign in nudge */}
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-gray-600">
             Already have an account?{' '}
             <button
               type="button"
@@ -448,14 +455,14 @@ export default function SignUp() {
             <button
               type="button"
               onClick={() => navigate('/merchant')}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-gray-600 hover:text-gray-600 transition-colors"
             >
               Merchant login →
             </button>
             <button
               type="button"
               onClick={() => navigate('/rider')}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-gray-600 hover:text-gray-600 transition-colors"
             >
               Rider login →
             </button>

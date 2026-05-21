@@ -8,4 +8,16 @@
 body {
   font-family: var(--font-sans);
   margin: 0;
+  color: #1a1a2e;
+}
+
+.text-muted {
+  color: #4b5563 !important;
+}
+
+/* Hide Firebase emulator warning banner */
+
+/* Hide Firebase emulator warning banner */
+.firebase-emulator-warning {
+  display: none !important;
 }

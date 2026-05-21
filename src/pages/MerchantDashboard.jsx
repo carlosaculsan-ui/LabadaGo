@@ -87,7 +87,7 @@ function ImgPlaceholder({ label, className }) {
   return (
     <div className={['border border-dashed flex items-center justify-center', className].join(' ')}>
       {label && (
-        <span className="text-[7px] font-medium text-gray-400 text-center leading-snug px-1.5">
+        <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1.5">
           {label}
         </span>
       )}
@@ -130,7 +130,7 @@ function OrderCard({ order }) {
       <div className="min-w-[148px]">
         <p className="font-heading font-bold text-[15px] text-gray-900">{displayRef}</p>
         <p className="text-sm text-gray-700 mt-0.5">{order.customerName}</p>
-        <p className="text-[11px] text-gray-400 mt-1">
+        <p className="text-[11px] text-gray-600 mt-1">
           {order.createdAt?.toDate
             ? order.createdAt.toDate().toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
             : '—'}
@@ -199,7 +199,7 @@ function OrderCard({ order }) {
         )}
 
         {isCompleted && (
-          <button className="border border-gray-300 text-gray-500 text-xs font-semibold py-1.5 px-4 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
+          <button className="border border-gray-300 text-gray-600 text-xs font-semibold py-1.5 px-4 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap">
             View receipt
           </button>
         )}
@@ -229,15 +229,15 @@ function WeightConfirmCard({ order }) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-6 pb-4 border-b border-[#e5e7eb]">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">Order ID</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Order ID</p>
           <p className="font-heading font-bold text-[15px] text-gray-900">{displayRef}</p>
         </div>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">Customer</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Customer</p>
           <p className="text-sm font-medium text-gray-700">{order.customerName}</p>
         </div>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">Customer estimate</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Customer estimate</p>
           <p className="text-sm font-medium text-gray-700">{order.estimatedWeight} kg</p>
         </div>
       </div>
@@ -265,7 +265,7 @@ function WeightConfirmCard({ order }) {
           >
             +
           </button>
-          <span className="text-sm text-gray-500 ml-1">kg</span>
+          <span className="text-sm text-gray-600 ml-1">kg</span>
         </div>
       </div>
 
@@ -285,7 +285,7 @@ function WeightConfirmCard({ order }) {
         >
           Confirm weight & update invoice
         </button>
-        <p className="text-xs text-gray-400">Customer will be notified with updated price</p>
+        <p className="text-xs text-gray-600">Customer will be notified with updated price</p>
       </div>
     </div>
   )
@@ -385,7 +385,7 @@ export default function MerchantDashboard() {
       <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
         <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
           <p className="font-heading font-bold text-gray-900 text-lg mb-2">Shop not set up yet</p>
-          <p className="text-sm text-gray-400">Your shop is not set up yet. Contact support.</p>
+          <p className="text-sm text-gray-600">Your shop is not set up yet. Contact support.</p>
         </div>
       </div>
     )
@@ -396,7 +396,7 @@ export default function MerchantDashboard() {
     return (
       <div className="min-h-screen bg-[#F4F7FA] flex flex-col items-center justify-center gap-3">
         <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-[#1B6CA8] animate-spin" />
-        <p className="text-sm text-gray-500">Loading orders...</p>
+        <p className="text-sm text-gray-600">Loading orders...</p>
       </div>
     )
   }
@@ -409,10 +409,9 @@ export default function MerchantDashboard() {
 
         <div className="px-5 pt-6 pb-5 border-b border-[#e5e7eb]">
           <div>
-            <span className="font-heading font-extrabold text-xl text-[#1B6CA8]">Labada</span>
-            <span className="font-heading font-extrabold text-xl text-[#F5A623]">Go</span>
+            <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-8 w-auto" />
           </div>
-          <p className="text-[10px] text-gray-400 mt-0.5 font-medium tracking-wide">Merchant portal</p>
+          <p className="text-[10px] text-gray-600 mt-0.5 font-medium tracking-wide">Merchant portal</p>
           {shopName && (
             <p className="text-[13px] font-semibold text-gray-800 mt-2 truncate" title={shopName}>
               {shopName}
@@ -421,7 +420,7 @@ export default function MerchantDashboard() {
         </div>
 
         <div className="px-5 py-4 border-b border-[#e5e7eb]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400 mb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-600 mb-2">
             Shop status
           </p>
           <button
@@ -459,7 +458,7 @@ export default function MerchantDashboard() {
             <p className="text-sm font-semibold text-gray-800 truncate">
               {userProfile?.fullName ?? 'Merchant'}
             </p>
-            <p className="text-[11px] text-gray-400">Shop owner</p>
+            <p className="text-[11px] text-gray-600">Shop owner</p>
           </div>
         </div>
 
@@ -473,14 +472,14 @@ export default function MerchantDashboard() {
             <h1 className="font-heading font-bold text-[18px] text-gray-900 leading-tight">
               Good morning, {userProfile?.fullName?.split(' ')[0] ?? 'Merchant'}
             </h1>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-600 mt-0.5">
               {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                 </svg>
               </div>
@@ -501,7 +500,7 @@ export default function MerchantDashboard() {
                 <p className="font-heading font-bold text-[1.6rem] text-[#1B6CA8] leading-none">
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-400 mt-2">{stat.label}</p>
+                <p className="text-xs text-gray-600 mt-2">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -519,7 +518,7 @@ export default function MerchantDashboard() {
                     'px-4 py-2.5 text-sm font-medium transition-colors',
                     activeTab === tab
                       ? 'text-[#1B6CA8] border-b-2 border-[#1B6CA8] -mb-px'
-                      : 'text-gray-400 hover:text-gray-600',
+                      : 'text-gray-600 hover:text-gray-600',
                   ].join(' ')}
                 >
                   {tab}
@@ -533,7 +532,7 @@ export default function MerchantDashboard() {
               ))}
               {filteredOrders.length === 0 && (
                 <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center">
-                  <p className="text-gray-400 text-sm">No orders in this category</p>
+                  <p className="text-gray-600 text-sm">No orders in this category</p>
                 </div>
               )}
             </div>
@@ -547,7 +546,7 @@ export default function MerchantDashboard() {
                 Weight confirmations needed
               </h2>
               {weightPending.length === 0 ? (
-                <p className="text-sm text-gray-400">No weight confirmations needed right now.</p>
+                <p className="text-sm text-gray-600">No weight confirmations needed right now.</p>
               ) : (
                 <div className="space-y-8">
                   {weightPending.map(order => (
@@ -582,10 +581,10 @@ export default function MerchantDashboard() {
             <div className="flex gap-2 mt-3">
               {EARNINGS_DATA.map(entry => (
                 <div key={entry.day} className="flex-1 text-center">
-                  <p className={`text-[10px] font-medium ${entry.day === ACTIVE_DAY ? 'text-[#1B6CA8]' : 'text-gray-500'}`}>
+                  <p className={`text-[10px] font-medium ${entry.day === ACTIVE_DAY ? 'text-[#1B6CA8]' : 'text-gray-600'}`}>
                     ₱{entry.amount.toLocaleString()}
                   </p>
-                  <p className={`text-[11px] mt-0.5 ${entry.day === ACTIVE_DAY ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>
+                  <p className={`text-[11px] mt-0.5 ${entry.day === ACTIVE_DAY ? 'text-gray-700 font-semibold' : 'text-gray-600'}`}>
                     {entry.day}
                   </p>
                 </div>

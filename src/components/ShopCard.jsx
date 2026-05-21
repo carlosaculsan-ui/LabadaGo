@@ -34,12 +34,12 @@ export default function ShopCard({
         <h3 className="font-heading font-bold text-[15px] text-gray-900 mb-0.5 leading-snug">
           {name}
         </h3>
-        <p className="text-xs text-gray-400 mb-3">{address}</p>
+        <p className="text-xs text-gray-600 mb-3">{address}</p>
 
         <div className="flex items-center gap-1.5 text-xs mb-3">
           <span className="font-semibold text-gray-800">⭐ {rating}</span>
-          <span className="text-gray-300">•</span>
-          <span className="text-gray-500">{distanceKm} km away</span>
+          <span className="text-gray-600">•</span>
+          <span className="text-gray-600">{distanceKm} km away</span>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -56,7 +56,7 @@ export default function ShopCard({
         <div className="flex items-center justify-between pt-3 border-t border-[#e5e7eb] mt-auto">
           <p className="text-sm font-bold text-gray-800">
             ₱{pricePerKg}
-            <span className="text-xs font-normal text-gray-400"> /kg</span>
+            <span className="text-xs font-normal text-gray-600"> /kg</span>
           </p>
           <button
             onClick={() => navigate(`/checkout?shopId=${id}&shop=${encodeURIComponent(name)}`)}

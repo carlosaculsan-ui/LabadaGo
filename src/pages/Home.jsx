@@ -17,7 +17,7 @@ function ImgPlaceholder({ label, className, bg, borderColor }) {
         className,
       ].join(' ')}
     >
-      <span className="text-[8px] font-medium text-gray-400 text-center leading-snug px-2">
+      <span className="text-[8px] font-medium text-gray-600 text-center leading-snug px-2">
         {label}
       </span>
     </div>
@@ -270,7 +270,7 @@ export default function Home() {
                 <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-500 mt-1.5">{stat.label}</p>
+                <p className="text-xs text-gray-600 mt-1.5">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -316,7 +316,7 @@ export default function Home() {
             <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
               {isLoggedIn ? "Your laundry journey" : "How LabadaGo works"}
             </h2>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-600 mt-2">
               {isLoggedIn
                 ? <span>You&rsquo;re all set! Here&rsquo;s a reminder of how it works.</span>
                 : 'From your door to the wash and back — four simple steps.'}
@@ -340,7 +340,7 @@ export default function Home() {
                 <h3 className="font-heading font-bold text-[15px] text-gray-900 mb-2">
                   {step.label}
                 </h3>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <p className="text-xs text-gray-600 leading-relaxed">
                   {step.desc}
                 </p>
               </div>
@@ -356,8 +356,7 @@ export default function Home() {
 
           <div className="max-w-[280px]">
             <div className="mb-4">
-              <span className="font-heading font-extrabold text-xl text-white">Labada</span>
-              <span className="font-heading font-extrabold text-xl text-[#F5A623]">Go</span>
+              <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-8 w-auto" />
             </div>
             <p className="text-[#8DB8D8] text-sm leading-relaxed">
               Pickup, wash, and delivery — connecting you with verified local laundry shops across the Philippines.

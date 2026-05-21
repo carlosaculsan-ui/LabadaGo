@@ -137,7 +137,7 @@ export default function Browse() {
         <div className="flex-1 min-w-0">
           {/* Sort + count bar */}
           <div className="flex items-center gap-2 mb-6">
-            <span className="text-sm text-gray-400 mr-1">Sort by</span>
+            <span className="text-sm text-gray-600 mr-1">Sort by</span>
             {SORT_OPTIONS.map(opt => (
               <button
                 key={opt.key}
@@ -153,7 +153,7 @@ export default function Browse() {
               </button>
             ))}
             {!loading && (
-              <span className="ml-auto text-sm text-gray-400">
+              <span className="ml-auto text-sm text-gray-600">
                 {displayed.length} shop{displayed.length !== 1 ? 's' : ''}
               </span>
             )}
@@ -172,7 +172,7 @@ export default function Browse() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+            <div className="flex flex-col items-center justify-center py-24 text-gray-600">
               <span className="text-4xl mb-3">🧺</span>
               <p className="text-sm">No shops match your filters.</p>
             </div>

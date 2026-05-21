@@ -56,7 +56,7 @@ export default function CalendarPicker({ label, value, onChange }) {
   return (
     <div className="border border-[#e5e7eb] rounded-xl p-4 bg-white">
       {label && (
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-4">
           {label}
         </p>
       )}
@@ -64,7 +64,7 @@ export default function CalendarPicker({ label, value, onChange }) {
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={prevMonth}
-          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-base leading-none"
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 text-base leading-none"
         >
           ‹
         </button>
@@ -73,7 +73,7 @@ export default function CalendarPicker({ label, value, onChange }) {
         </span>
         <button
           onClick={nextMonth}
-          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-base leading-none"
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 text-base leading-none"
         >
           ›
         </button>
@@ -81,7 +81,7 @@ export default function CalendarPicker({ label, value, onChange }) {
 
       <div className="grid grid-cols-7 mb-2">
         {DAY_HEADERS.map(h => (
-          <div key={h} className="text-[10px] font-semibold text-gray-400 text-center py-1">
+          <div key={h} className="text-[10px] font-semibold text-gray-600 text-center py-1">
             {h}
           </div>
         ))}
@@ -99,7 +99,7 @@ export default function CalendarPicker({ label, value, onChange }) {
                   isSelected(day)
                     ? 'bg-[#1B6CA8] text-white font-semibold'
                     : isPast(day)
-                      ? 'text-gray-300 cursor-not-allowed'
+                      ? 'text-gray-600 cursor-not-allowed'
                       : isToday(day)
                         ? 'border border-[#1B6CA8] text-[#1B6CA8] font-semibold hover:bg-[#E8F4FD]'
                         : 'text-gray-700 hover:bg-gray-100',

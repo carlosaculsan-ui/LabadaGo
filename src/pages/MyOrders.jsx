@@ -92,7 +92,7 @@ function OrderCard({ order }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="font-heading font-bold text-[15px] text-gray-900 leading-none">{ref}</p>
-          <p className="text-xs text-gray-400 mt-1">{createdDate}</p>
+          <p className="text-xs text-gray-600 mt-1">{createdDate}</p>
         </div>
         <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
           {STATUS_LABEL[order.status] ?? order.status}
@@ -128,13 +128,13 @@ function OrderCard({ order }) {
             ₱{price?.toLocaleString() ?? '—'}
           </span>
           {priceNote && (
-            <span className="text-xs text-gray-400 ml-1">{priceNote}</span>
+            <span className="text-xs text-gray-600 ml-1">{priceNote}</span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           {isCancelled && (
-            <span className="text-xs text-gray-400">Order cancelled</span>
+            <span className="text-xs text-gray-600">Order cancelled</span>
           )}
           {isCompleted && (
             <button
@@ -207,7 +207,7 @@ export default function MyOrders() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-heading font-bold text-[1.75rem] text-gray-900">My Orders</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             {loading ? 'Loading…' : `${orders.length} order${orders.length !== 1 ? 's' : ''} total`}
           </p>
         </div>
@@ -224,14 +224,14 @@ export default function MyOrders() {
                   'flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors',
                   activeTab === tab
                     ? 'text-[#1B6CA8] border-b-2 border-[#1B6CA8] -mb-px'
-                    : 'text-gray-400 hover:text-gray-600',
+                    : 'text-gray-600 hover:text-gray-600',
                 ].join(' ')}
               >
                 {tab}
                 {!loading && count > 0 && (
                   <span className={[
                     'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center',
-                    activeTab === tab ? 'bg-[#DBEAFE] text-[#1B6CA8]' : 'bg-gray-100 text-gray-500',
+                    activeTab === tab ? 'bg-[#DBEAFE] text-[#1B6CA8]' : 'bg-gray-100 text-gray-600',
                   ].join(' ')}>
                     {count}
                   </span>
@@ -254,7 +254,7 @@ export default function MyOrders() {
             <p className="font-heading font-semibold text-gray-700 mb-1">
               {activeTab === 'All' ? 'No orders yet' : `No ${activeTab.toLowerCase()} orders`}
             </p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-600">
               {activeTab === 'All'
                 ? 'Book your first pickup and your orders will appear here.'
                 : 'Switch tabs to see other orders.'}

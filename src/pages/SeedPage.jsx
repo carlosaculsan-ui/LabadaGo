@@ -26,7 +26,7 @@ export default function SeedPage() {
         </div>
 
         <h1 className="font-heading font-bold text-xl text-gray-900 mb-2">Seed Firestore</h1>
-        <p className="text-sm text-gray-500 mb-8">
+        <p className="text-sm text-gray-600 mb-8">
           Writes all shops from{' '}
           <code className="bg-gray-100 px-1 rounded text-xs">shops.js</code> into the{' '}
           <code className="bg-gray-100 px-1 rounded text-xs">shops</code> collection.

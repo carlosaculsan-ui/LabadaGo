@@ -55,7 +55,7 @@ function AuthToggle({ active }) {
         onClick={() => navigate('/signin')}
         className={[
           'relative z-10 flex-1 py-1.5 text-sm font-semibold rounded-full transition-colors',
-          active === 'signin' ? 'text-[#1B6CA8]' : 'text-gray-400',
+          active === 'signin' ? 'text-[#1B6CA8]' : 'text-gray-600',
         ].join(' ')}
       >
         Sign in
@@ -64,7 +64,7 @@ function AuthToggle({ active }) {
         onClick={() => navigate('/signup')}
         className={[
           'relative z-10 flex-1 py-1.5 text-sm font-semibold rounded-full transition-colors',
-          active === 'signup' ? 'text-[#1B6CA8]' : 'text-gray-400',
+          active === 'signup' ? 'text-[#1B6CA8]' : 'text-gray-600',
         ].join(' ')}
       >
         Sign up
@@ -79,7 +79,7 @@ function ImgPlaceholder({ label, className }) {
   return (
     <div className={['border border-dashed flex items-center justify-center shrink-0', className].join(' ')}>
       {label && (
-        <span className="text-[7px] font-medium text-gray-400 text-center leading-snug px-1">
+        <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1">
           {label}
         </span>
       )}
@@ -100,7 +100,7 @@ function FloatingInput({ id, label, type = 'text', value, onChange }) {
       />
       <label
         htmlFor={id}
-        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
+        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-600 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
       >
         {label}
       </label>
@@ -122,7 +122,7 @@ function PasswordInput({ id, label, value, onChange }) {
       />
       <label
         htmlFor={id}
-        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
+        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-600 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
       >
         {label}
       </label>
@@ -130,7 +130,7 @@ function PasswordInput({ id, label, value, onChange }) {
         type="button"
         tabIndex={-1}
         onClick={() => setShow(v => !v)}
-        className="absolute right-0 bottom-2 text-gray-400 hover:text-gray-600 transition-colors"
+        className="absolute right-0 bottom-2 text-gray-600 hover:text-gray-600 transition-colors"
       >
         {show ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -252,10 +252,9 @@ export default function SignIn() {
         {/* Logo + tagline */}
         <div className="text-center">
           <div>
-            <span className="font-heading font-extrabold text-4xl text-[#1B6CA8]">Labada</span>
-            <span className="font-heading font-extrabold text-4xl text-[#F5A623]">Go</span>
+            <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-20 w-auto mx-auto" />
           </div>
-          <p className="text-sm text-gray-400 mt-1.5">Fresh laundry, delivered to your door.</p>
+          <p className="text-sm text-gray-600 mt-1.5">Fresh laundry, delivered to your door.</p>
         </div>
 
         {/* Tab toggle */}
@@ -323,7 +322,7 @@ export default function SignIn() {
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">or continue with</span>
+            <span className="text-xs text-gray-600">or continue with</span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
@@ -348,7 +347,7 @@ export default function SignIn() {
           </div>
 
           {/* Sign up nudge */}
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-gray-600">
             New to LabadaGo?{' '}
             <button
               type="button"
@@ -364,14 +363,14 @@ export default function SignIn() {
             <button
               type="button"
               onClick={() => navigate('/merchant')}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-gray-600 hover:text-gray-600 transition-colors"
             >
               Merchant login →
             </button>
             <button
               type="button"
               onClick={() => navigate('/rider')}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-gray-600 hover:text-gray-600 transition-colors"
             >
               Rider login →
             </button>

@@ -95,7 +95,7 @@ function ImgPlaceholder({ label, className }) {
   return (
     <div className={['border border-dashed flex items-center justify-center', className].join(' ')}>
       {label && (
-        <span className="text-[7px] font-medium text-gray-400 text-center leading-snug px-1.5">
+        <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1.5">
           {label}
         </span>
       )}
@@ -203,7 +203,7 @@ export default function RiderDashboard() {
     return (
       <div className="min-h-screen bg-[#F4F7FA] flex flex-col items-center justify-center gap-3">
         <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-[#1B6CA8] animate-spin" />
-        <p className="text-sm text-gray-500">Loading deliveries...</p>
+        <p className="text-sm text-gray-600">Loading deliveries...</p>
       </div>
     )
   }
@@ -216,8 +216,7 @@ export default function RiderDashboard() {
 
         <div className="px-5 pt-6 pb-5 border-b border-white/10">
           <div>
-            <span className="font-heading font-extrabold text-xl text-white">Labada</span>
-            <span className="font-heading font-extrabold text-xl text-[#F5A623]">Go</span>
+            <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-8 w-auto" />
           </div>
           <p className="text-[10px] text-white/40 mt-0.5 font-medium tracking-wide">Rider portal</p>
         </div>
@@ -275,12 +274,12 @@ export default function RiderDashboard() {
             Rider Dashboard
           </h1>
           <div className="flex items-center gap-4">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-600">
               {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
             <div className="relative">
               <div className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                 </svg>
               </div>
@@ -300,7 +299,7 @@ export default function RiderDashboard() {
                 <p className="font-heading font-bold text-[1.6rem] text-[#1B6CA8] leading-none">
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-400 mt-2">{stat.label}</p>
+                <p className="text-xs text-gray-600 mt-2">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -322,7 +321,7 @@ export default function RiderDashboard() {
               {!activeTask ? (
                 <div className="py-10 text-center">
                   <p className="font-heading font-semibold text-gray-700 mb-1">No active deliveries</p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-gray-600">
                     {upcomingTasks.length > 0
                       ? 'You have upcoming tasks assigned below.'
                       : 'New tasks will appear here when a merchant assigns you.'}
@@ -334,7 +333,7 @@ export default function RiderDashboard() {
 
                     <div className="space-y-4">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-1">
                           Order ID
                         </p>
                         <p className="font-heading font-bold text-[18px] text-gray-900">
@@ -343,7 +342,7 @@ export default function RiderDashboard() {
                       </div>
 
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
                           Customer
                         </p>
                         <div className="flex items-center gap-2.5">
@@ -356,7 +355,7 @@ export default function RiderDashboard() {
                       </div>
 
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
                           Pickup address
                         </p>
                         <div className="flex items-start gap-2">
@@ -403,7 +402,7 @@ export default function RiderDashboard() {
                     >
                       {ACTIVE_ACTION[activeTask.status]?.label ?? 'Update status'}
                     </button>
-                    <p className="text-[11px] text-gray-400 text-center mt-2">
+                    <p className="text-[11px] text-gray-600 text-center mt-2">
                       This will notify the customer and update order status
                     </p>
                   </div>
@@ -419,7 +418,7 @@ export default function RiderDashboard() {
                 <h2 className="font-heading font-bold text-[17px] text-gray-900">
                   Available orders
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-gray-600 mt-0.5">
                   Unclaimed orders you can pick up
                 </p>
               </div>
@@ -432,16 +431,16 @@ export default function RiderDashboard() {
 
             {!isAvailable ? (
               <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
-                <p className="text-sm font-medium text-gray-400">
+                <p className="text-sm font-medium text-gray-600">
                   You are currently off duty.
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   Toggle availability to see orders.
                 </p>
               </div>
             ) : availableOrders.length === 0 ? (
               <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
-                <p className="text-sm font-medium text-gray-500 mb-3">
+                <p className="text-sm font-medium text-gray-600 mb-3">
                   No orders available right now. Check back soon.
                 </p>
                 <button
@@ -460,7 +459,7 @@ export default function RiderDashboard() {
                   >
                     <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 items-center">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
                           Order
                         </p>
                         <p className="font-heading font-bold text-[14px] text-gray-900">
@@ -468,28 +467,28 @@ export default function RiderDashboard() {
                         </p>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
                           Shop
                         </p>
                         <p className="text-sm text-gray-700 truncate">{order.shopName ?? '—'}</p>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
                           Pickup
                         </p>
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className="text-sm text-gray-600 truncate">
                           {order.pickupAddress?.street ?? '—'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
                           Service
                         </p>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[11px] font-medium bg-[#E8F4FD] text-[#1B6CA8] px-2 py-0.5 rounded-full whitespace-nowrap">
                             {order.serviceType ?? '—'}
                           </span>
-                          <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                          <span className="text-[11px] text-gray-600 whitespace-nowrap">
                             {order.estimatedWeight} kg
                           </span>
                         </div>
@@ -514,7 +513,7 @@ export default function RiderDashboard() {
             </h2>
 
             {upcomingTasks.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4">No upcoming tasks assigned yet.</p>
+              <p className="text-sm text-gray-600 py-4">No upcoming tasks assigned yet.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -522,7 +521,7 @@ export default function RiderDashboard() {
                     {['Order ID', 'Customer', 'Pickup address', 'Shop', 'Status', 'Action'].map(col => (
                       <th
                         key={col}
-                        className="text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 pb-3 pr-4 last:pr-0"
+                        className="text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 pb-3 pr-4 last:pr-0"
                       >
                         {col}
                       </th>
@@ -543,10 +542,10 @@ export default function RiderDashboard() {
                           <span className="text-gray-700 whitespace-nowrap">{order.customerName}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 pr-4 text-gray-500">
+                      <td className="py-3.5 pr-4 text-gray-600">
                         {order.pickupAddress?.street ?? '—'}
                       </td>
-                      <td className="py-3.5 pr-4 text-gray-500">
+                      <td className="py-3.5 pr-4 text-gray-600">
                         {order.shopName ?? '—'}
                       </td>
                       <td className="py-3.5 pr-4">
@@ -588,10 +587,10 @@ export default function RiderDashboard() {
             <div className="flex gap-2 mt-3">
               {EARNINGS_DATA.map(entry => (
                 <div key={entry.day} className="flex-1 text-center">
-                  <p className={`text-[10px] font-medium ${entry.day === ACTIVE_DAY ? 'text-[#1B6CA8]' : 'text-gray-500'}`}>
+                  <p className={`text-[10px] font-medium ${entry.day === ACTIVE_DAY ? 'text-[#1B6CA8]' : 'text-gray-600'}`}>
                     {entry.amount > 0 ? `₱${entry.amount}` : '—'}
                   </p>
-                  <p className={`text-[11px] mt-0.5 ${entry.day === ACTIVE_DAY ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>
+                  <p className={`text-[11px] mt-0.5 ${entry.day === ACTIVE_DAY ? 'text-gray-700 font-semibold' : 'text-gray-600'}`}>
                     {entry.day}
                   </p>
                 </div>

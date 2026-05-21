@@ -5,7 +5,7 @@ const DETERGENTS = ['Any', 'Ariel', 'Tide', 'Breeze', 'Hypoallergenic']
 
 function SectionLabel({ children }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400 mb-3">
+    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-600 mb-3">
       {children}
     </p>
   )
@@ -56,7 +56,7 @@ export default function FilterSidebar({ onFilterChange }) {
             }}
             className="w-full accent-[#1B6CA8]"
           />
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <div className="flex justify-between text-xs text-gray-600 mt-1">
             <span>0 km</span>
             <span className="font-semibold text-[#1B6CA8]">{maxDistance} km</span>
           </div>
@@ -108,7 +108,7 @@ export default function FilterSidebar({ onFilterChange }) {
             }}
             className="w-full accent-[#1B6CA8]"
           />
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <div className="flex justify-between text-xs text-gray-600 mt-1">
             <span>₱30</span>
             <span className="font-semibold text-[#1B6CA8]">₱{maxPrice}</span>
           </div>
