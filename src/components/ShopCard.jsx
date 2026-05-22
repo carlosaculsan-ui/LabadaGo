@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function ShopCard({
   id, name, address, rating, distanceKm, pricePerKg,
-  services, isOpen, isFeatured, color,
+  services, isOpen, isFeatured, color, image,
 }) {
   const navigate = useNavigate()
 
@@ -13,13 +13,15 @@ export default function ShopCard({
         isFeatured ? 'border border-[#1B6CA8]' : 'border border-[#e5e7eb]',
       ].join(' ')}
     >
-      {isFeatured && (
-        <div className="bg-[#1B6CA8] text-white text-[11px] font-semibold text-center py-1.5 tracking-wide">
-          Most booked near you
-        </div>
-      )}
-
-      <div className={`${color} h-36 relative shrink-0`}>
+      <div className={`${color} h-36 relative shrink-0 overflow-hidden`}>
+        {image && (
+          <img src={image} alt={name} className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {isFeatured && (
+          <div className="absolute top-0 left-0 right-0 bg-[#1B6CA8]/90 text-white text-[11px] font-semibold text-center py-1.5 tracking-wide">
+            Most booked near you
+          </div>
+        )}
         <span
           className={[
             'absolute top-2.5 right-2.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full',

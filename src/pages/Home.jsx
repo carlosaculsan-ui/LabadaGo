@@ -35,22 +35,22 @@ const MOCK_SHOPS = [
   {
     id: 'mock-1', name: 'Sunshine Laundry',   address: '12 Rizal St, Barangay Sta. Cruz',
     rating: 4.9, distanceKm: 0.8, pricePerKg: 65,
-    services: ['Wash & Fold', 'Dry Cleaning'], isOpen: true,  isFeatured: true,  color: CARD_COLORS[0],
+    services: ['Wash & Fold', 'Dry Cleaning'], isOpen: true,  isFeatured: true,  color: CARD_COLORS[0], image: '/SunshineLaundry.png',
   },
   {
     id: 'mock-2', name: 'CleanWave Express',  address: '45 Mabini Ave, Poblacion',
     rating: 4.7, distanceKm: 1.4, pricePerKg: 55,
-    services: ['Wash & Fold', 'Comforters'],   isOpen: true,  isFeatured: false, color: CARD_COLORS[1],
+    services: ['Wash & Fold', 'Comforters'],   isOpen: true,  isFeatured: false, color: CARD_COLORS[1], image: '/CleanwaveExpress.png',
   },
   {
     id: 'mock-3', name: 'FreshFold Laundromat', address: '8 Del Pilar Rd, San Antonio',
     rating: 4.6, distanceKm: 2.1, pricePerKg: 50,
-    services: ['Wash & Fold', 'Towels & Linens'], isOpen: false, isFeatured: false, color: CARD_COLORS[2],
+    services: ['Wash & Fold', 'Towels & Linens'], isOpen: false, isFeatured: false, color: CARD_COLORS[2], image: '/FreshFold.png',
   },
   {
     id: 'mock-4', name: 'BubbleKing Laundry', address: '33 Luna Blvd, Bagong Silang',
     rating: 4.8, distanceKm: 2.7, pricePerKg: 60,
-    services: ['Dry Cleaning', 'Comforters'],  isOpen: true,  isFeatured: false, color: CARD_COLORS[3],
+    services: ['Dry Cleaning', 'Comforters'],  isOpen: true,  isFeatured: false, color: CARD_COLORS[3], image: '/BubbleKingLaundry.png',
   },
 ]
 
@@ -94,6 +94,36 @@ const HOW_STEPS = [
     bg: 'bg-[#CCFBF1]',
     border: 'border-teal-300',
     imgLabel: 'Step 4 illustration — delivery rider handing folded laundry bag to customer at door',
+  },
+]
+
+const TESTIMONIALS = [
+  {
+    name: 'Maria Santos',
+    location: 'Quezon City',
+    rating: 5,
+    text: 'Super convenient! Kinuha nila yung labada ko ng umaga, tapos delivered na agad ng hapon — fresh pa! Uulitin ko talaga.',
+    initials: 'MS',
+    color: 'bg-[#DBEAFE]',
+    textColor: 'text-[#1B6CA8]',
+  },
+  {
+    name: 'Carlo Reyes',
+    location: 'Makati',
+    rating: 5,
+    text: 'Sa wakas may laundry service na nakakarating talaga on time. Ang ganda pa ng pagkakafold ng damit, parang bagong laba. 10/10.',
+    initials: 'CR',
+    color: 'bg-[#D1FAE5]',
+    textColor: 'text-[#059669]',
+  },
+  {
+    name: 'Jessa Flores',
+    location: 'Pasig',
+    rating: 5,
+    text: 'Dalawang buwan na akong gumagamit ng LabadaGo every week. Grabe ang naiipon kong oras — consistent pa ang quality lagi!',
+    initials: 'JF',
+    color: 'bg-[#EDE9FE]',
+    textColor: 'text-[#7C3AED]',
   },
 ]
 
@@ -144,7 +174,7 @@ export default function Home() {
   // Fetch shops — count + first 4 for preview; pad with mocks if fewer than 4
   useEffect(() => {
     getDocs(collection(db, 'shops')).then(snap => {
-      setShopsCount(snap.size)
+      setShopsCount(snap.size || 14)
       const real = snap.docs.slice(0, 4).map((d, i) => ({
         ...d.data(),
         id: d.id,
@@ -255,56 +285,73 @@ export default function Home() {
 
       </section>
 
-      {/* ── Service chips ─────────────────────────────────────────────────────── */}
-      <section className="bg-white border-b border-[#e5e7eb]">
+      {/* ── Stats ────────────────────────────────────────────────────────────── */}
+      <section className="bg-[#EEF5FB] py-10 border-b border-[#dce8f5]">
         <div className="max-w-[1280px] mx-auto px-8">
-          <div className="flex items-center gap-3 overflow-x-auto py-4">
-            {SERVICE_CHIPS.map(chip => (
-              <button
-                key={chip.id}
-                onClick={() => handleChipClick(chip)}
-                className={[
-                  'flex items-center gap-2.5 pl-2.5 pr-4 py-1.5 rounded-full border text-sm font-medium whitespace-nowrap transition-colors shrink-0',
-                  activeChip === chip.id
-                    ? 'bg-[#1B6CA8] border-[#1B6CA8] text-white'
-                    : 'border-[#e5e7eb] text-gray-700 hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
-                ].join(' ')}
-              >
-                <div
-                  className={[
-                    'w-6 h-6 rounded border border-dashed shrink-0',
-                    chip.iconBg,
-                    chip.iconBorder,
-                  ].join(' ')}
-                />
-                {chip.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+          <div className={`grid gap-4 ${showPersonalStat ? 'grid-cols-6' : 'grid-cols-5'}`}>
 
-      {/* ── Stats bar ─────────────────────────────────────────────────────────── */}
-      <section className="bg-white border-b border-[#e5e7eb]">
-        <div className="max-w-[1280px] mx-auto px-8 py-8">
-          <div className="grid grid-cols-4 divide-x divide-[#e5e7eb]">
-            {coreStats.map(stat => (
-              <div
-                key={stat.label}
-                className="h-16 flex flex-col items-center justify-center px-6"
-              >
-                <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-gray-600 mt-1.5">{stat.label}</p>
+            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
+              <div className="w-11 h-11 rounded-xl bg-[#DBEAFE] flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="2" className="w-5 h-5">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+                </svg>
               </div>
-            ))}
-            <div className={`h-16 flex flex-col items-center justify-center px-6 transition-opacity duration-300 ${showPersonalStat ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">
-                {userOrderCount}
-              </p>
-              <p className="text-xs text-gray-600 mt-1.5">your orders</p>
+              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">{shopsCount}+</p>
+              <p className="text-[11px] text-gray-500 mt-2">partner shops</p>
             </div>
+
+            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
+              <div className="w-11 h-11 rounded-xl bg-[#FEF3C7] flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="#F5A623" className="w-5 h-5">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">4.8★</p>
+              <p className="text-[11px] text-gray-500 mt-2">avg rating</p>
+            </div>
+
+            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
+              <div className="w-11 h-11 rounded-xl bg-[#D1FAE5] flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="#059669" className="w-5 h-5">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </div>
+              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">Same-day</p>
+              <p className="text-[11px] text-gray-500 mt-2">pickup available</p>
+            </div>
+
+            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
+              <div className="w-11 h-11 rounded-xl bg-[#EDE9FE] flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" className="w-5 h-5">
+                  <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                </svg>
+              </div>
+              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">₱48+</p>
+              <p className="text-[11px] text-gray-500 mt-2">starting price / kg</p>
+            </div>
+
+            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
+              <div className="w-11 h-11 rounded-xl bg-[#CCFBF1] flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2" className="w-5 h-5">
+                  <rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
+              </div>
+              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">2-hr</p>
+              <p className="text-[11px] text-gray-500 mt-2">pickup window</p>
+            </div>
+
+            {showPersonalStat && (
+              <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
+                <div className="w-11 h-11 rounded-xl bg-[#FEE2E2] flex items-center justify-center mb-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" className="w-5 h-5">
+                    <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                  </svg>
+                </div>
+                <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">{userOrderCount}</p>
+                <p className="text-[11px] text-gray-500 mt-2">your orders</p>
+              </div>
+            )}
+
           </div>
         </div>
       </section>
@@ -356,30 +403,106 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative grid grid-cols-4 gap-8">
-            <div className="absolute top-4 left-[12.5%] right-[12.5%] border-t-2 border-dashed border-gray-300 pointer-events-none" />
+          <div className="relative grid grid-cols-4 gap-6">
+            <div className="absolute top-[1.1rem] left-[14%] right-[14%] border-t-2 border-dashed border-[#CBD5E1] pointer-events-none z-0" />
 
             {HOW_STEPS.map(step => (
-              <div key={step.num} className="flex flex-col items-center text-center">
-                <div className="relative z-10 w-8 h-8 rounded-full bg-[#1B6CA8] text-white text-sm font-bold flex items-center justify-center mb-4 shrink-0">
+              <div key={step.num} className="relative z-10 bg-white rounded-2xl p-6 pt-10 flex flex-col items-center text-center shadow-sm">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#1B6CA8] text-white text-sm font-bold flex items-center justify-center shadow-md border-2 border-[#F4F7FA]">
                   {step.num}
                 </div>
-                <ImgPlaceholder
-                  label={step.imgLabel}
-                  className="w-16 h-16 mb-4 rounded-xl"
-                  bg={step.bg}
-                  borderColor={step.border}
-                />
-                <h3 className="font-heading font-bold text-[15px] text-gray-900 mb-2">
-                  {step.label}
-                </h3>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  {step.desc}
-                </p>
+
+                <div className={`w-16 h-16 rounded-2xl ${step.bg} flex items-center justify-center mb-5`}>
+                  {step.num === 1 && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="2" className="w-7 h-7">
+                      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                  )}
+                  {step.num === 2 && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" className="w-7 h-7">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/>
+                    </svg>
+                  )}
+                  {step.num === 3 && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" className="w-7 h-7">
+                      <path d="M3 7h18M3 7a2 2 0 00-2 2v10a2 2 0 002 2h18a2 2 0 002-2V9a2 2 0 00-2-2M3 7V5a2 2 0 012-2h14a2 2 0 012 2v2"/><circle cx="12" cy="14" r="3"/>
+                    </svg>
+                  )}
+                  {step.num === 4 && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2" className="w-7 h-7">
+                      <rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                    </svg>
+                  )}
+                </div>
+
+                <h3 className="font-heading font-bold text-[15px] text-gray-900 mb-2">{step.label}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
 
+        </div>
+      </section>
+
+      {/* ── Testimonials ─────────────────────────────────────────────────────── */}
+      <section className="bg-white py-16">
+        <div className="max-w-[1280px] mx-auto px-8">
+
+          <div className="text-center mb-12">
+            <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">What our customers say</h2>
+            <p className="text-sm text-gray-500 mt-2">Trusted by hundreds of households across the Philippines.</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6">
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} className="bg-[#F4F7FA] rounded-2xl p-6 flex flex-col gap-4">
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: t.rating }).map((_, i) => (
+                    <svg key={i} viewBox="0 0 24 24" fill="#F5A623" className="w-4 h-4">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed flex-1">&ldquo;{t.text}&rdquo;</p>
+                <div className="flex items-center gap-3 pt-2 border-t border-[#e5e7eb]">
+                  <div className={`w-9 h-9 rounded-full ${t.color} flex items-center justify-center shrink-0`}>
+                    <span className={`text-xs font-bold ${t.textColor}`}>{t.initials}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+                    <p className="text-[11px] text-gray-500">{t.location}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── CTA Banner ───────────────────────────────────────────────────────── */}
+      <section className="bg-[#0D3F6B] py-16">
+        <div className="max-w-[1280px] mx-auto px-8 flex items-center justify-between gap-8">
+          <div>
+            <h2 className="font-heading font-bold text-[2rem] text-white leading-tight mb-2">
+              Ready for fresh laundry<br />at your doorstep?
+            </h2>
+            <p className="text-white/60 text-sm">Book a pickup in under a minute. No contracts, no hassle.</p>
+          </div>
+          <div className="flex items-center gap-4 shrink-0">
+            <button
+              onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
+              className="bg-[#F5A623] text-[#0D3F6B] font-bold px-10 py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base whitespace-nowrap"
+            >
+              Book a pickup
+            </button>
+            <button
+              onClick={() => navigate('/browse')}
+              className="border-2 border-white/40 text-white font-semibold px-10 py-4 rounded-xl hover:bg-white/10 transition-colors text-base whitespace-nowrap"
+            >
+              Browse shops
+            </button>
+          </div>
         </div>
       </section>
 
