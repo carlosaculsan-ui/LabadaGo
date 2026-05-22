@@ -347,7 +347,7 @@ export default function SignIn() {
                 </label>
                 <button
                   type="button"
-                  onClick={handleForgotPassword}
+                  onClick={() => navigateTo('/forgot-password')}
                   className="text-xs text-white/70 hover:text-orange-400 transition-colors"
                 >
                   Forgot password?

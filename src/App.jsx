@@ -10,6 +10,7 @@ import RiderDashboard from './pages/RiderDashboard'
 import MerchantDashboard from './pages/MerchantDashboard'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
+import ForgotPassword from './pages/ForgotPassword'
 import SeedPage from './pages/SeedPage'
 import MyOrders from './pages/MyOrders'
 
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
   },
   { path: '/signin', element: <SignIn /> },
   { path: '/signup', element: <SignUp /> },
+  { path: '/forgot-password', element: <ForgotPassword /> },
   { path: '/seed', element: <SeedPage /> },
 ])
 

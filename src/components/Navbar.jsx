@@ -39,8 +39,8 @@ export default function Navbar() {
       <div className="max-w-[1280px] mx-auto rounded-2xl pl-4 pr-6 h-16 flex items-center gap-6 pointer-events-auto bg-white border border-[#e5e7eb] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
 
         {/* Logo */}
-        <Link to="/" className="shrink-0">
-          <Logo scrolled />
+        <Link to="/" className="shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <img src="/CleanLogo.png" alt="LabadaGo" className="h-12 w-auto" />
         </Link>
 
         {/* Search */}
