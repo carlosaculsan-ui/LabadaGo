@@ -54,10 +54,16 @@ export function AuthProvider({ children }) {
 
   const role = userProfile?.role ?? null
 
+  async function refreshProfile() {
+    if (!auth.currentUser) return
+    const snap = await getDoc(doc(db, 'users', auth.currentUser.uid))
+    setUserProfile(snap.exists() ? snap.data() : null)
+  }
+
   if (loading) return <Spinner />
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, profileLoading, role }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, profileLoading, role, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )

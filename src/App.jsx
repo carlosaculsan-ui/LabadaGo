@@ -11,6 +11,8 @@ import MerchantDashboard from './pages/MerchantDashboard'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import ForgotPassword from './pages/ForgotPassword'
+import Profile from './pages/Profile'
+import NotFound from './pages/NotFound'
 import SeedPage from './pages/SeedPage'
 import MyOrders from './pages/MyOrders'
 
@@ -27,6 +29,7 @@ const router = createBrowserRouter([
           { path: 'checkout', element: <Checkout /> },
           { path: 'order-tracking', element: <OrderTracking /> },
           { path: 'my-orders', element: <MyOrders /> },
+          { path: 'profile', element: <Profile /> },
         ],
       },
     ],
@@ -43,6 +46,7 @@ const router = createBrowserRouter([
   { path: '/signup', element: <SignUp /> },
   { path: '/forgot-password', element: <ForgotPassword /> },
   { path: '/seed', element: <SeedPage /> },
+  { path: '*', element: <NotFound /> },
 ])
 
 export default function App() {

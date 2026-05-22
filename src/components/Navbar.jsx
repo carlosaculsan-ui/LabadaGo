@@ -132,18 +132,22 @@ export default function Navbar() {
               {dropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border border-[#e5e7eb] overflow-hidden z-50 py-1">
                   <button
-                    onClick={() => setDropdownOpen(false)}
+                    onClick={() => { setDropdownOpen(false); navigate('/profile') }}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     My profile
                   </button>
-                  <div className="h-px bg-[#e5e7eb] mx-2" />
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-50 transition-colors"
-                  >
-                    Sign out
-                  </button>
+                  {role === 'customer' && (
+                    <>
+                      <div className="h-px bg-[#e5e7eb] mx-2" />
+                      <button
+                        onClick={() => { setDropdownOpen(false); navigate('/my-orders') }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        My orders
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
