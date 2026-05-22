@@ -217,7 +217,7 @@ export default function Home() {
         <video
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay muted loop playsInline
-          src=""
+          src="/Hero.mp4"
         />
 
         {/* Dark overlay — adjust opacity to taste once video is in */}
@@ -225,29 +225,31 @@ export default function Home() {
 
         {/* Content */}
         <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-24">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623] mb-5">
-            {isLoggedIn && firstName ? `Welcome back, ${firstName}!` : 'Your neighborhood laundry service'}
-          </p>
-          <h1 className="font-heading font-bold text-[5rem] leading-[1.0] tracking-tight text-white mb-6 max-w-[700px]">
-            Laundry picked up,<br />
-            <span className="text-[#F5A623]">washed, delivered.</span>
-          </h1>
-          <p className="text-white/70 text-[1.1rem] leading-relaxed mb-12 max-w-[480px]">
-            Connecting you with verified local laundry shops in your neighborhood. Pickup, wash, fold, and deliver — all in one place.
-          </p>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
-              className="bg-[#F5A623] text-[#0D3F6B] font-bold px-10 py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base"
-            >
-              Book a pickup
-            </button>
-            <button
-              onClick={() => navigate('/browse')}
-              className="border-2 border-white/60 text-white font-semibold px-10 py-4 rounded-xl hover:bg-white/10 transition-colors text-base"
-            >
-              Browse shops
-            </button>
+          <div className="max-w-[55%]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623] mb-5">
+              {isLoggedIn && firstName ? `Welcome back, ${firstName}!` : 'Your neighborhood laundry service'}
+            </p>
+            <h1 className="font-heading font-bold text-[5rem] leading-[1.0] tracking-tight text-white mb-6">
+              Laundry picked up,<br />
+              <span className="text-[#F5A623]">washed, delivered.</span>
+            </h1>
+            <p className="text-white/70 text-[1.1rem] leading-relaxed mb-12">
+              Connecting you with verified local laundry shops in your neighborhood. Pickup, wash, fold, and deliver — all in one place.
+            </p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
+                className="bg-[#F5A623] text-[#0D3F6B] font-bold px-10 py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base"
+              >
+                Book a pickup
+              </button>
+              <button
+                onClick={() => navigate('/browse')}
+                className="border-2 border-white/60 text-white font-semibold px-10 py-4 rounded-xl hover:bg-white/10 transition-colors text-base"
+              >
+                Browse shops
+              </button>
+            </div>
           </div>
         </div>
 

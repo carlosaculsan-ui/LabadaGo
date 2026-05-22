@@ -144,33 +144,35 @@ export default function Browse() {
         <video
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay muted loop playsInline
-          src=""
+          src="/Hero.mp4"
         />
         <div className="absolute inset-0 bg-[#0D3F6B]/80" />
 
         <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-20">
-          <h1 className="font-heading font-extrabold text-[4rem] leading-[1.0] tracking-tight text-white mb-5">
-            Laundry picked up,{' '}
-            <span className="text-[#F5A623]">washed, delivered.</span>
-          </h1>
-          <p className="text-white/70 text-[1.05rem] leading-relaxed mb-8 max-w-[480px]">
-            Browse verified laundry shops near you. Filter by service, price, and availability.
-          </p>
-          <div className="flex flex-wrap gap-2.5">
-            {CHIPS.map(chip => (
-              <button
-                key={chip}
-                onClick={() => setActiveChip(chip)}
-                className={[
-                  'text-sm font-medium px-5 py-2 rounded-full transition-colors',
-                  activeChip === chip
-                    ? 'bg-[#F5A623] text-[#0D3F6B] font-semibold'
-                    : 'bg-white/10 text-white hover:bg-white/20',
-                ].join(' ')}
-              >
-                {chip}
-              </button>
-            ))}
+          <div className="max-w-[55%]">
+            <h1 className="font-heading font-extrabold text-[4rem] leading-[1.0] tracking-tight text-white mb-5">
+              Laundry picked up,{' '}
+              <span className="text-[#F5A623]">washed, delivered.</span>
+            </h1>
+            <p className="text-white/70 text-[1.05rem] leading-relaxed mb-8">
+              Browse verified laundry shops near you. Filter by service, price, and availability.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              {CHIPS.map(chip => (
+                <button
+                  key={chip}
+                  onClick={() => setActiveChip(chip)}
+                  className={[
+                    'text-sm font-medium px-5 py-2 rounded-full transition-colors',
+                    activeChip === chip
+                      ? 'bg-[#F5A623] text-[#0D3F6B] font-semibold'
+                      : 'bg-white/10 text-white hover:bg-white/20',
+                  ].join(' ')}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
