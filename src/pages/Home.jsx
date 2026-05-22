@@ -31,6 +31,29 @@ const CARD_COLORS = [
   'bg-[#EDE9FE]', 'bg-[#FEF3C7]', 'bg-[#CCFBF1]',
 ]
 
+const MOCK_SHOPS = [
+  {
+    id: 'mock-1', name: 'Sunshine Laundry',   address: '12 Rizal St, Barangay Sta. Cruz',
+    rating: 4.9, distanceKm: 0.8, pricePerKg: 65,
+    services: ['Wash & Fold', 'Dry Cleaning'], isOpen: true,  isFeatured: true,  color: CARD_COLORS[0],
+  },
+  {
+    id: 'mock-2', name: 'CleanWave Express',  address: '45 Mabini Ave, Poblacion',
+    rating: 4.7, distanceKm: 1.4, pricePerKg: 55,
+    services: ['Wash & Fold', 'Comforters'],   isOpen: true,  isFeatured: false, color: CARD_COLORS[1],
+  },
+  {
+    id: 'mock-3', name: 'FreshFold Laundromat', address: '8 Del Pilar Rd, San Antonio',
+    rating: 4.6, distanceKm: 2.1, pricePerKg: 50,
+    services: ['Wash & Fold', 'Towels & Linens'], isOpen: false, isFeatured: false, color: CARD_COLORS[2],
+  },
+  {
+    id: 'mock-4', name: 'BubbleKing Laundry', address: '33 Luna Blvd, Bagong Silang',
+    rating: 4.8, distanceKm: 2.7, pricePerKg: 60,
+    services: ['Dry Cleaning', 'Comforters'],  isOpen: true,  isFeatured: false, color: CARD_COLORS[3],
+  },
+]
+
 const SERVICE_CHIPS = [
   { id: 'all',    label: 'All services',    param: null,              iconBg: 'bg-gray-200',   iconBorder: 'border-gray-400'   },
   { id: 'wash',   label: 'Wash & Fold',     param: 'Wash & Fold',     iconBg: 'bg-[#DBEAFE]',  iconBorder: 'border-blue-300'   },
@@ -118,19 +141,26 @@ export default function Home() {
   const [activeOrderCount, setActiveOrderCount] = useState(0)
   const [userDataLoaded,  setUserDataLoaded]  = useState(false)
 
-  // Fetch shops — count + first 3 for preview
+  // Fetch shops — count + first 4 for preview; pad with mocks if fewer than 4
   useEffect(() => {
     getDocs(collection(db, 'shops')).then(snap => {
       setShopsCount(snap.size)
-      const data = snap.docs.slice(0, 3).map((d, i) => ({
+      const real = snap.docs.slice(0, 4).map((d, i) => ({
         ...d.data(),
         id: d.id,
         color: CARD_COLORS[i % CARD_COLORS.length],
         distanceKm: d.data().distanceKm ?? +(Math.random() * 4 + 0.5).toFixed(1),
       }))
-      setNearbyShops(data)
+      const padded = [
+        ...real,
+        ...MOCK_SHOPS.slice(real.length, 4),
+      ]
+      setNearbyShops(padded)
       setShopsLoading(false)
-    }).catch(() => setShopsLoading(false))
+    }).catch(() => {
+      setNearbyShops(MOCK_SHOPS)
+      setShopsLoading(false)
+    })
   }, [])
 
   // Fetch user's orders once — derive total count + active count
@@ -152,15 +182,12 @@ export default function Home() {
     navigate(chip.param ? `/browse?service=${encodeURIComponent(chip.param)}` : '/browse')
   }
 
-  // Stats bar — add personal stat when logged in
-  const displayStats = [
+  const coreStats = [
     { value: String(shopsCount), label: 'partner shops'    },
     { value: '4.8★',             label: 'avg rating'       },
     { value: 'Same-day',         label: 'pickup available' },
-    ...(user && userDataLoaded
-      ? [{ value: String(userOrderCount), label: 'your orders' }]
-      : []),
   ]
+  const showPersonalStat = user && userDataLoaded && userOrderCount > 0
 
   const isLoggedIn = !!user
 
@@ -184,48 +211,52 @@ export default function Home() {
       )}
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="bg-[#0D3F6B] relative overflow-hidden">
+      <section className="relative overflow-hidden min-h-screen flex flex-col justify-center -mt-[88px]">
 
-        {/* Decorative circles */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full border border-white/10 pointer-events-none" />
-        <div className="absolute top-12 right-52 w-52 h-52 rounded-full border border-white/[0.06] pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full border border-white/10 pointer-events-none" />
-        <div className="absolute bottom-10 left-[38%] w-36 h-36 rounded-full bg-white/[0.03] pointer-events-none" />
+        {/* Video background — drop your mp4 src here */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay muted loop playsInline
+          src=""
+        />
 
-        <div className="max-w-[1280px] mx-auto px-8 py-16 relative z-10 grid grid-cols-2 gap-16 items-center">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F5A623] mb-4">
-              {isLoggedIn && firstName ? `Welcome back, ${firstName}!` : 'Welcome back'}
-            </p>
-            <h1 className="font-heading font-bold text-5xl leading-[1.1] tracking-tight text-white mb-5">
-              Laundry picked up,<br />
-              <span className="text-[#F5A623]">washed, delivered.</span>
-            </h1>
-            <p className="text-[#8DB8D8] text-base leading-relaxed mb-8 max-w-[420px]">
-              Connecting you with verified local laundry shops in your neighborhood. Pickup, wash, fold, and deliver — all in one place.
-            </p>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(isLoggedIn ? '/checkout' : '/signin')}
-                className="bg-[#F5A623] text-[#0D3F6B] font-semibold px-6 py-2.5 rounded-lg hover:bg-[#e89b15] transition-colors text-sm"
-              >
-                Book a pickup
-              </button>
-              <button
-                onClick={() => navigate('/browse')}
-                className="border border-white/70 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm"
-              >
-                Browse shops
-              </button>
-            </div>
+        {/* Dark overlay — adjust opacity to taste once video is in */}
+        <div className="absolute inset-0 bg-[#0D3F6B]/80" />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-24">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623] mb-5">
+            {isLoggedIn && firstName ? `Welcome back, ${firstName}!` : 'Your neighborhood laundry service'}
+          </p>
+          <h1 className="font-heading font-bold text-[5rem] leading-[1.0] tracking-tight text-white mb-6 max-w-[700px]">
+            Laundry picked up,<br />
+            <span className="text-[#F5A623]">washed, delivered.</span>
+          </h1>
+          <p className="text-white/70 text-[1.1rem] leading-relaxed mb-12 max-w-[480px]">
+            Connecting you with verified local laundry shops in your neighborhood. Pickup, wash, fold, and deliver — all in one place.
+          </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
+              className="bg-[#F5A623] text-[#0D3F6B] font-bold px-10 py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base"
+            >
+              Book a pickup
+            </button>
+            <button
+              onClick={() => navigate('/browse')}
+              className="border-2 border-white/60 text-white font-semibold px-10 py-4 rounded-xl hover:bg-white/10 transition-colors text-base"
+            >
+              Browse shops
+            </button>
           </div>
+        </div>
 
-          <ImgPlaceholder
-            label="Hero image — rider handing laundry bag at doorstep, warm natural light, local PH feel"
-            className="h-[280px]"
-            bg="bg-white/10"
-            borderColor="border-white/30"
-          />
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 opacity-50">
+          <span className="text-white text-[10px] tracking-widest uppercase">Scroll</span>
+          <svg className="w-4 h-4 text-white animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
       </section>
 
@@ -261,11 +292,11 @@ export default function Home() {
       {/* ── Stats bar ─────────────────────────────────────────────────────────── */}
       <section className="bg-white border-b border-[#e5e7eb]">
         <div className="max-w-[1280px] mx-auto px-8 py-8">
-          <div className="flex items-center justify-center divide-x divide-[#e5e7eb]">
-            {displayStats.map(stat => (
+          <div className="grid grid-cols-4 divide-x divide-[#e5e7eb]">
+            {coreStats.map(stat => (
               <div
                 key={stat.label}
-                className="h-16 flex-1 flex flex-col items-center justify-center px-6"
+                className="h-16 flex flex-col items-center justify-center px-6"
               >
                 <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">
                   {stat.value}
@@ -273,6 +304,12 @@ export default function Home() {
                 <p className="text-xs text-gray-600 mt-1.5">{stat.label}</p>
               </div>
             ))}
+            <div className={`h-16 flex flex-col items-center justify-center px-6 transition-opacity duration-300 ${showPersonalStat ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">
+                {userOrderCount}
+              </p>
+              <p className="text-xs text-gray-600 mt-1.5">your orders</p>
+            </div>
           </div>
         </div>
       </section>
@@ -292,9 +329,10 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-4 gap-5">
             {shopsLoading ? (
               <>
+                <ShopSkeleton />
                 <ShopSkeleton />
                 <ShopSkeleton />
                 <ShopSkeleton />

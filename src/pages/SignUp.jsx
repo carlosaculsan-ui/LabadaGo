@@ -150,6 +150,13 @@ function PasswordInput({ id, label, value, onChange, autoComplete = 'new-passwor
 // ─── Terms modal ───────────────────────────────────────────────────────────
 
 function TermsModal({ onAgree, onDisagree }) {
+  const [reachedBottom, setReachedBottom] = useState(false)
+
+  function handleScroll(e) {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
+    if (scrollTop + clientHeight >= scrollHeight - 12) setReachedBottom(true)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="w-full max-w-lg bg-[#0c2d54] border border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] flex flex-col max-h-[80vh]">
@@ -161,7 +168,7 @@ function TermsModal({ onAgree, onDisagree }) {
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto px-7 py-5 space-y-5 text-white/70 text-sm leading-relaxed">
+        <div onScroll={handleScroll} className="overflow-y-auto px-7 py-5 space-y-5 text-white/70 text-sm leading-relaxed">
 
           <section>
             <h3 className="text-white font-semibold mb-1.5">1. Acceptance of Terms</h3>
@@ -216,7 +223,7 @@ function TermsModal({ onAgree, onDisagree }) {
         </div>
 
         {/* Footer actions */}
-        <div className="px-7 py-5 border-t border-white/10 shrink-0 flex gap-3">
+        <div className="px-7 py-5 border-t border-white/10 shrink-0 flex gap-3 items-center">
           <button
             type="button"
             onClick={onDisagree}
@@ -224,13 +231,20 @@ function TermsModal({ onAgree, onDisagree }) {
           >
             I Don't Agree
           </button>
-          <button
-            type="button"
-            onClick={onAgree}
-            className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white text-sm font-semibold hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(245,166,35,0.4)] transition-all duration-200"
-          >
-            I Agree
-          </button>
+
+          {reachedBottom ? (
+            <button
+              type="button"
+              onClick={onAgree}
+              className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white text-sm font-semibold hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(245,166,35,0.4)] transition-all duration-200 animate-[fadeIn_0.3s_ease]"
+            >
+              I Agree
+            </button>
+          ) : (
+            <div className="flex-1 py-2.5 rounded-full border border-white/10 text-white/30 text-sm font-semibold text-center select-none">
+              ↓ Scroll to continue
+            </div>
+          )}
         </div>
 
       </div>

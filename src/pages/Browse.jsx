@@ -27,6 +27,45 @@ const CARD_COLORS = [
   'bg-[#EDE9FE]', 'bg-[#FEF3C7]', 'bg-[#CCFBF1]',
 ]
 
+const MOCK_SHOPS = [
+  {
+    id: 'mock-1', name: 'Sunshine Laundry',      address: '12 Rizal St, Barangay Sta. Cruz',
+    rating: 4.9, distanceKm: 0.8, pricePerKg: 65,
+    services: ['Wash & Fold', 'Dry Cleaning'],    detergents: ['Any', 'Ariel', 'Tide'],
+    isOpen: true,  isSameDay: true,  isFeatured: true,  color: CARD_COLORS[0],
+  },
+  {
+    id: 'mock-2', name: 'CleanWave Express',      address: '45 Mabini Ave, Poblacion',
+    rating: 4.7, distanceKm: 1.4, pricePerKg: 55,
+    services: ['Wash & Fold', 'Comforters'],       detergents: ['Any', 'Breeze'],
+    isOpen: true,  isSameDay: true,  isFeatured: false, color: CARD_COLORS[1],
+  },
+  {
+    id: 'mock-3', name: 'FreshFold Laundromat',   address: '8 Del Pilar Rd, San Antonio',
+    rating: 4.6, distanceKm: 2.1, pricePerKg: 50,
+    services: ['Wash & Fold', 'Towels & Linens'],  detergents: ['Any', 'Tide', 'Hypoallergenic'],
+    isOpen: false, isSameDay: false, isFeatured: false, color: CARD_COLORS[2],
+  },
+  {
+    id: 'mock-4', name: 'BubbleKing Laundry',     address: '33 Luna Blvd, Bagong Silang',
+    rating: 4.8, distanceKm: 2.7, pricePerKg: 60,
+    services: ['Dry Cleaning', 'Comforters'],      detergents: ['Any', 'Ariel'],
+    isOpen: true,  isSameDay: false, isFeatured: false, color: CARD_COLORS[3],
+  },
+  {
+    id: 'mock-5', name: 'SpinCycle PH',           address: '21 Bonifacio St, Laging Handa',
+    rating: 4.5, distanceKm: 3.2, pricePerKg: 48,
+    services: ['Wash & Fold'],                     detergents: ['Any', 'Breeze', 'Tide'],
+    isOpen: true,  isSameDay: true,  isFeatured: false, color: CARD_COLORS[4],
+  },
+  {
+    id: 'mock-6', name: 'PureFresh Laundry',      address: '9 Aguinaldo St, Pinyahan',
+    rating: 4.4, distanceKm: 4.1, pricePerKg: 52,
+    services: ['Wash & Fold', 'Dry Cleaning', 'Comforters'], detergents: ['Any', 'Hypoallergenic'],
+    isOpen: false, isSameDay: false, isFeatured: false, color: CARD_COLORS[5],
+  },
+]
+
 function ShopSkeleton() {
   return (
     <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden animate-pulse">
@@ -66,9 +105,12 @@ export default function Browse() {
           distanceKm: d.distanceKm ?? +(Math.random() * 4 + 0.5).toFixed(1),
         }
       })
-      setShops(data)
+      setShops(data.length > 0 ? data : MOCK_SHOPS)
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch(() => {
+      setShops(MOCK_SHOPS)
+      setLoading(false)
+    })
   }, [])
 
   const displayed = useMemo(() => {
@@ -96,36 +138,39 @@ export default function Browse() {
   return (
     <>
       {/* Hero strip */}
-      <section className="bg-[#0D3F6B]">
-        <div className="max-w-[1280px] mx-auto px-8 py-14 grid grid-cols-2 gap-16 items-center">
-          <div>
-            <h1 className="font-heading font-extrabold text-[2.75rem] leading-tight text-white mb-4">
-              Laundry picked up,{' '}
-              <span className="text-[#F5A623]">washed, delivered.</span>
-            </h1>
-            <p className="text-[#8DB8D8] text-[15px] leading-relaxed mb-8">
-              Browse verified laundry shops near you. Filter by service, price, and availability.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {CHIPS.map(chip => (
-                <button
-                  key={chip}
-                  onClick={() => setActiveChip(chip)}
-                  className={[
-                    'text-sm font-medium px-4 py-1.5 rounded-full transition-colors',
-                    activeChip === chip
-                      ? 'bg-[#F5A623] text-[#0D3F6B] font-semibold'
-                      : 'bg-white/10 text-white hover:bg-white/20',
-                  ].join(' ')}
-                >
-                  {chip}
-                </button>
-              ))}
-            </div>
-          </div>
+      <section className="relative overflow-hidden min-h-screen flex flex-col justify-center -mt-[88px]">
 
-          <div className="h-64 rounded-2xl border-2 border-dashed border-white/25 flex items-center justify-center">
-            <span className="text-white/40 text-sm">Hero image slot</span>
+        {/* Video background — same video as home */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay muted loop playsInline
+          src=""
+        />
+        <div className="absolute inset-0 bg-[#0D3F6B]/80" />
+
+        <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-20">
+          <h1 className="font-heading font-extrabold text-[4rem] leading-[1.0] tracking-tight text-white mb-5">
+            Laundry picked up,{' '}
+            <span className="text-[#F5A623]">washed, delivered.</span>
+          </h1>
+          <p className="text-white/70 text-[1.05rem] leading-relaxed mb-8 max-w-[480px]">
+            Browse verified laundry shops near you. Filter by service, price, and availability.
+          </p>
+          <div className="flex flex-wrap gap-2.5">
+            {CHIPS.map(chip => (
+              <button
+                key={chip}
+                onClick={() => setActiveChip(chip)}
+                className={[
+                  'text-sm font-medium px-5 py-2 rounded-full transition-colors',
+                  activeChip === chip
+                    ? 'bg-[#F5A623] text-[#0D3F6B] font-semibold'
+                    : 'bg-white/10 text-white hover:bg-white/20',
+                ].join(' ')}
+              >
+                {chip}
+              </button>
+            ))}
           </div>
         </div>
       </section>
