@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
@@ -271,6 +272,12 @@ export default function SignIn() {
   const [error,    setError]    = useState('')
   const [success,  setSuccess]  = useState('')
   const [loading,  setLoading]  = useState(false)
+  const [exiting,  setExiting]  = useState(false)
+
+  function navigateTo(path) {
+    setExiting(true)
+    setTimeout(() => navigate(path), 280)
+  }
 
   useEffect(() => {
     if (user && !profileLoading) {
@@ -375,8 +382,20 @@ export default function SignIn() {
           <p className="text-sm text-white/70 mt-1.5">Fresh laundry, delivered to your door.</p>
         </div>
 
+        <motion.div
+          className="w-full max-w-md flex flex-col items-center gap-3 mt-4"
+          initial={{ scale: 0.05, opacity: 0, filter: 'blur(24px)' }}
+          animate={exiting
+            ? { scale: 0.05, opacity: 0, filter: 'blur(24px)' }
+            : { scale: 1,    opacity: 1, filter: 'blur(0px)'  }
+          }
+          transition={exiting
+            ? { duration: 0.25, ease: [0.4, 0, 1, 1] }
+            : { type: 'spring', stiffness: 320, damping: 22 }
+          }
+        >
         {/* Form card */}
-        <div className="w-full max-w-md bg-[#0c2d54] border border-white/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] px-10 py-8 mt-4">
+        <div className="w-full bg-[#0c2d54] border border-white/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] px-10 py-8">
           <div className="mb-6">
             <h2 className="text-white font-heading font-bold text-xl">Welcome back</h2>
             <p className="text-white/50 text-xs mt-0.5">Sign in to continue</p>
@@ -447,7 +466,7 @@ export default function SignIn() {
         </div>
 
         {/* Below card */}
-        <div className="w-full max-w-md mt-3 space-y-3">
+        <div className="w-full space-y-3">
 
           {/* Social buttons */}
           <button
@@ -470,15 +489,15 @@ export default function SignIn() {
             New to LabadaGo?{' '}
             <button
               type="button"
-              onClick={() => navigate('/signup')}
+              onClick={() => navigateTo('/signup')}
               className="text-orange-400 font-medium hover:text-orange-300 hover:drop-shadow-[0_0_8px_rgba(245,166,35,0.6)] transition-all"
             >
               Sign up free
             </button>
           </p>
 
-
         </div>
+        </motion.div>
         </div>
       </div>
     </div>

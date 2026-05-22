@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -350,6 +351,12 @@ export default function SignUp() {
   const [showTermsModal,  setShowTermsModal]  = useState(false)
   const [error,           setError]           = useState('')
   const [loading,         setLoading]         = useState(false)
+  const [exiting,         setExiting]         = useState(false)
+
+  function navigateTo(path) {
+    setExiting(true)
+    setTimeout(() => navigate(path), 280)
+  }
 
   useEffect(() => {
     if (user && !profileLoading) {
@@ -460,7 +467,19 @@ export default function SignUp() {
         </div>
 
         {/* Form card */}
-        <div className="w-full max-w-md bg-[#0c2d54] border border-white/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] p-8 mt-4">
+        <motion.div
+          className="w-full max-w-md flex flex-col items-center gap-3 mt-4"
+          initial={{ scale: 0.05, opacity: 0, filter: 'blur(24px)' }}
+          animate={exiting
+            ? { scale: 0.05, opacity: 0, filter: 'blur(24px)' }
+            : { scale: 1,    opacity: 1, filter: 'blur(0px)'  }
+          }
+          transition={exiting
+            ? { duration: 0.25, ease: [0.4, 0, 1, 1] }
+            : { type: 'spring', stiffness: 320, damping: 22 }
+          }
+        >
+        <div className="w-full bg-[#0c2d54] border border-white/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] p-8">
 
           <div className="space-y-4">
             {/* Row 1: Full name | Mobile number */}
@@ -581,7 +600,7 @@ export default function SignUp() {
         </div>
 
         {/* Below card */}
-        <div className="w-full max-w-md mt-3 space-y-3">
+        <div className="w-full space-y-3">
 
           {/* Social buttons */}
           <button
@@ -604,15 +623,15 @@ export default function SignUp() {
             Already have an account?{' '}
             <button
               type="button"
-              onClick={() => navigate('/signin')}
+              onClick={() => navigateTo('/signin')}
               className="text-orange-400 font-medium hover:text-orange-300 hover:drop-shadow-[0_0_8px_rgba(245,166,35,0.6)] transition-all"
             >
               Sign in
             </button>
           </p>
 
-
         </div>
+        </motion.div>
         </div>
       </div>
     </div>
