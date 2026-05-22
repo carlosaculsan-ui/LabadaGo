@@ -89,6 +89,7 @@ function ImgPlaceholder({ label, className }) {
 }
 
 function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete, showEmailIcon }) {
+  const hasValue = !!value
   return (
     <div className="relative h-14">
       <input
@@ -102,7 +103,12 @@ function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete
       />
       <label
         htmlFor={id}
-        className="absolute left-5 top-1.5 text-xs text-white transition-all duration-200 pointer-events-none peer-placeholder-shown:top-[18px] peer-placeholder-shown:text-sm peer-placeholder-shown:text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white"
+        className={[
+          'absolute left-5 transition-all duration-200 pointer-events-none',
+          hasValue
+            ? 'top-1.5 text-xs text-white'
+            : 'top-[18px] text-sm text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white',
+        ].join(' ')}
       >
         {label}
       </label>
@@ -120,7 +126,7 @@ function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete
   )
 }
 
-function PasswordInput({ id, label, value, onChange, autoComplete = 'new-password' }) {
+function PasswordInput({ id, label, value, onChange, autoComplete = 'new-password', error }) {
   const [show, setShow] = useState(false)
   const hasValue = !!value
   return (
@@ -132,7 +138,10 @@ function PasswordInput({ id, label, value, onChange, autoComplete = 'new-passwor
         onChange={onChange}
         autoComplete={autoComplete}
         placeholder=" "
-        className="peer w-full h-full rounded-full bg-[#0c3059] border border-white/20 text-white pl-5 pr-11 pt-5 pb-1.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 transition-all"
+        className={[
+          'peer w-full h-full rounded-full bg-[#0c3059] border text-white pl-5 pr-11 pt-5 pb-1.5 text-sm focus:outline-none focus:ring-2 transition-all',
+          error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/30' : 'border-white/20 focus:border-orange-400 focus:ring-orange-400/30',
+        ].join(' ')}
       />
       <label
         htmlFor={id}
@@ -352,6 +361,7 @@ export default function SignUp() {
   const [error,           setError]           = useState('')
   const [loading,         setLoading]         = useState(false)
   const [exiting,         setExiting]         = useState(false)
+  const [fieldErrors,     setFieldErrors]     = useState({})
 
   function navigateTo(path) {
     setExiting(true)
@@ -366,20 +376,19 @@ export default function SignUp() {
 
   async function handleCreateAccount() {
     setError('')
-
-    if (!fullName || !email || !mobile || !password || !confirmPassword) {
-      setError('Please fill in all fields.')
-      return
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
-    if (!termsAccepted) {
-      setError('You must accept the Terms of Service and Privacy Policy.')
-      return
-    }
-
+    const errs = {}
+    if (!fullName.trim())  errs.fullName = 'Full name is required.'
+    if (!email)            errs.email    = 'Email address is required.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Enter a valid email address.'
+    if (!mobile)           errs.mobile   = 'Mobile number is required.'
+    else if (!/^\d{10}$/.test(mobile.replace(/\s/g, ''))) errs.mobile = 'Enter a valid 10-digit number.'
+    if (!password)         errs.password = 'Password is required.'
+    else if (password.length < 6) errs.password = 'Must be at least 6 characters.'
+    if (!confirmPassword)  errs.confirmPassword = 'Please confirm your password.'
+    else if (password !== confirmPassword) errs.confirmPassword = 'Passwords do not match.'
+    if (!termsAccepted)    errs.terms    = 'You must accept the Terms of Service.'
+    if (Object.keys(errs).length) { setFieldErrors(errs); return }
+    setFieldErrors({})
     setLoading(true)
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password)
@@ -484,64 +493,87 @@ export default function SignUp() {
           <div className="space-y-4">
             {/* Row 1: Full name | Mobile number */}
             <div className="grid grid-cols-2 gap-4">
-              <FloatingInput
-                id="fullname"
-                label="Full name"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                autoComplete="name"
-              />
+              <div>
+                <FloatingInput
+                  id="fullname"
+                  label="Full name"
+                  value={fullName}
+                  error={fieldErrors.fullName}
+                  onChange={e => { setFullName(e.target.value); setFieldErrors(f => ({ ...f, fullName: '' })) }}
+                  autoComplete="name"
+                />
+                {fieldErrors.fullName && <p className="text-red-400 text-xs mt-1.5 pl-5">{fieldErrors.fullName}</p>}
+              </div>
 
               {/* Mobile number — +63 prefix + floating label input */}
-              <div className="flex h-14 bg-[#0c3059] border border-white/20 rounded-full overflow-hidden focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-400/30 transition-all">
-                <div className="px-4 flex items-center text-sm font-semibold text-orange-400 shrink-0 border-r border-white/20">
-                  +63
+              <div>
+                <div className={['flex h-14 bg-[#0c3059] border rounded-full overflow-hidden focus-within:ring-2 transition-all',
+                  fieldErrors.mobile ? 'border-red-400 focus-within:border-red-400 focus-within:ring-red-400/30' : 'border-white/20 focus-within:border-orange-400 focus-within:ring-orange-400/30',
+                ].join(' ')}>
+                  <div className="px-4 flex items-center text-sm font-semibold text-orange-400 shrink-0 border-r border-white/20">
+                    +63
+                  </div>
+                  <div className="relative flex-1 pl-3">
+                    <input
+                      id="mobile"
+                      type="tel"
+                      value={mobile}
+                      onChange={e => { setMobile(e.target.value); setFieldErrors(f => ({ ...f, mobile: '' })) }}
+                      autoComplete="tel-national"
+                      placeholder=" "
+                      className="peer w-full h-full bg-transparent pt-5 pb-1.5 text-sm text-white focus:outline-none"
+                    />
+                    <label
+                      htmlFor="mobile"
+                      className={['absolute left-0 transition-all duration-200 pointer-events-none',
+                        mobile ? 'top-1.5 text-xs text-white' : 'top-[18px] text-sm text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white',
+                      ].join(' ')}
+                    >
+                      Mobile number
+                    </label>
+                  </div>
                 </div>
-                <div className="relative flex-1 pl-3">
-                  <input
-                    id="mobile"
-                    type="tel"
-                    value={mobile}
-                    onChange={e => setMobile(e.target.value)}
-                    autoComplete="tel-national"
-                    placeholder=" "
-                    className="peer w-full h-full bg-transparent pt-5 pb-1.5 text-sm text-white focus:outline-none"
-                  />
-                  <label
-                    htmlFor="mobile"
-                    className="absolute left-0 top-1.5 text-xs text-white transition-all duration-200 pointer-events-none peer-placeholder-shown:top-[18px] peer-placeholder-shown:text-sm peer-placeholder-shown:text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white"
-                  >
-                    Mobile number
-                  </label>
-                </div>
+                {fieldErrors.mobile && <p className="text-red-400 text-xs mt-1.5 pl-5">{fieldErrors.mobile}</p>}
               </div>
             </div>
 
             {/* Email — full width */}
-            <FloatingInput
-              id="email"
-              label="Email address"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoComplete="email"
-              showEmailIcon
-            />
+            <div>
+              <FloatingInput
+                id="email"
+                label="Email address"
+                type="email"
+                value={email}
+                error={fieldErrors.email}
+                onChange={e => { setEmail(e.target.value); setFieldErrors(f => ({ ...f, email: '' })) }}
+                autoComplete="email"
+                showEmailIcon
+              />
+              {fieldErrors.email && <p className="text-red-400 text-xs mt-1.5 pl-5">{fieldErrors.email}</p>}
+            </div>
 
             {/* Row 2: Password | Confirm password */}
             <div className="grid grid-cols-2 gap-4">
-              <PasswordInput
-                id="password"
-                label="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
-              <PasswordInput
-                id="confirm-password"
-                label="Confirm password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-              />
+              <div>
+                <PasswordInput
+                  id="password"
+                  label="Password"
+                  value={password}
+                  error={fieldErrors.password}
+                  onChange={e => { setPassword(e.target.value); setFieldErrors(f => ({ ...f, password: '' })) }}
+                />
+                {fieldErrors.password && <p className="text-red-400 text-xs mt-1.5 pl-5">{fieldErrors.password}</p>}
+              </div>
+              <div>
+                <PasswordInput
+                  id="confirm-password"
+                  label="Confirm password"
+                  value={confirmPassword}
+                  error={fieldErrors.confirmPassword}
+                  onChange={e => { setConfirmPassword(e.target.value); setFieldErrors(f => ({ ...f, confirmPassword: '' })) }}
+                />
+                {fieldErrors.confirmPassword && <p className="text-red-400 text-xs mt-1.5 pl-5">{fieldErrors.confirmPassword}</p>}
+              </div>
             </div>
           </div>
 
@@ -575,9 +607,13 @@ export default function SignUp() {
             </label>
           </div>
 
-          {/* Error pill */}
+          {fieldErrors.terms && (
+            <p className="text-red-400 text-xs mt-2 pl-1">{fieldErrors.terms}</p>
+          )}
+
+          {/* Server error pill */}
           {error && (
-            <div className="mt-4 px-4 py-2 bg-red-500/20 border border-red-400/30 rounded-full text-xs text-red-300 text-center">
+            <div className="mt-3 px-4 py-2 bg-red-500/20 border border-red-400/30 rounded-full text-xs text-red-300 text-center">
               {error}
             </div>
           )}
@@ -586,28 +622,29 @@ export default function SignUp() {
             type="button"
             onClick={handleCreateAccount}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white font-heading font-bold py-3 rounded-full mt-6 tracking-wide text-sm hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(245,166,35,0.5)] active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white font-heading font-bold py-3 rounded-full mt-5 tracking-wide text-sm hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(245,166,35,0.5)] active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <span
-                  className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"
-                />
+                <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 Creating account...
               </>
             ) : 'Create account'}
           </button>
-        </div>
 
-        {/* Below card */}
-        <div className="w-full space-y-3">
+          {/* Divider */}
+          <div className="flex items-center gap-3 mt-4">
+            <div className="flex-1 h-px bg-white/15" />
+            <span className="text-white/40 text-xs font-medium">or</span>
+            <div className="flex-1 h-px bg-white/15" />
+          </div>
 
-          {/* Social buttons */}
+          {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full py-2.5 hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 rounded-full py-2.5 hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -617,9 +654,11 @@ export default function SignUp() {
             </svg>
             <span className="text-sm font-medium text-white">Continue with Google</span>
           </button>
+        </div>
 
-          {/* Sign in nudge */}
-          <p className="text-center text-xs text-white/60">
+        {/* Below card — sign in nudge only */}
+        <div className="w-full text-center">
+          <p className="text-xs text-white/60">
             Already have an account?{' '}
             <button
               type="button"
@@ -629,7 +668,6 @@ export default function SignUp() {
               Sign in
             </button>
           </p>
-
         </div>
         </motion.div>
         </div>

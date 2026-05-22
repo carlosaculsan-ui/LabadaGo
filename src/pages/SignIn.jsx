@@ -91,7 +91,8 @@ function ImgPlaceholder({ label, className }) {
   )
 }
 
-function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete, showEmailIcon }) {
+function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete, showEmailIcon, inputMode, error }) {
+  const hasValue = !!value
   return (
     <div className="relative h-14">
       <input
@@ -100,12 +101,22 @@ function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
+        inputMode={inputMode}
         placeholder=" "
-        className={['peer w-full h-full rounded-full bg-[#0c3059] border border-white/20 text-white pt-5 pb-1.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 transition-all', showEmailIcon ? 'pl-5 pr-11' : 'px-5'].join(' ')}
+        className={[
+          'peer w-full h-full rounded-full bg-[#0c3059] border text-white pt-5 pb-1.5 text-sm focus:outline-none focus:ring-2 transition-all',
+          error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/30' : 'border-white/20 focus:border-orange-400 focus:ring-orange-400/30',
+          showEmailIcon ? 'pl-5 pr-11' : 'px-5',
+        ].join(' ')}
       />
       <label
         htmlFor={id}
-        className="absolute left-5 top-1.5 text-xs text-white transition-all duration-200 pointer-events-none peer-placeholder-shown:top-[18px] peer-placeholder-shown:text-sm peer-placeholder-shown:text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white"
+        className={[
+          'absolute left-5 transition-all duration-200 pointer-events-none',
+          hasValue
+            ? 'top-1.5 text-xs text-white'
+            : 'top-[18px] text-sm text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white',
+        ].join(' ')}
       >
         {label}
       </label>
@@ -123,7 +134,7 @@ function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete
   )
 }
 
-function PasswordInput({ id, label, value, onChange, autoComplete = 'current-password' }) {
+function PasswordInput({ id, label, value, onChange, autoComplete = 'current-password', error }) {
   const [show, setShow] = useState(false)
   const hasValue = !!value
   return (
@@ -135,7 +146,10 @@ function PasswordInput({ id, label, value, onChange, autoComplete = 'current-pas
         onChange={onChange}
         autoComplete={autoComplete}
         placeholder=" "
-        className="peer w-full h-full rounded-full bg-[#0c3059] border border-white/20 text-white pl-5 pr-11 pt-5 pb-1.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 transition-all"
+        className={[
+          'peer w-full h-full rounded-full bg-[#0c3059] border text-white pl-5 pr-11 pt-5 pb-1.5 text-sm focus:outline-none focus:ring-2 transition-all',
+          error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/30' : 'border-white/20 focus:border-orange-400 focus:ring-orange-400/30',
+        ].join(' ')}
       />
       <label
         htmlFor={id}
@@ -268,11 +282,12 @@ export default function SignIn() {
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(true)
+  const [remember, setRemember] = useState(false)
   const [error,    setError]    = useState('')
   const [success,  setSuccess]  = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [exiting,  setExiting]  = useState(false)
+  const [loading,     setLoading]     = useState(false)
+  const [exiting,     setExiting]     = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
 
   function navigateTo(path) {
     setExiting(true)
@@ -288,10 +303,15 @@ export default function SignIn() {
   async function handleSignIn() {
     setError('')
     setSuccess('')
-    if (!email || !password) {
-      setError('Enter your email and password.')
-      return
+    const errs = {}
+    if (!email) {
+      errs.email = 'Email or mobile number is required.'
+    } else if (!/^\d/.test(email) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errs.email = 'Enter a valid email address.'
     }
+    if (!password) errs.password = 'Password is required.'
+    if (Object.keys(errs).length) { setFieldErrors(errs); return }
+    setFieldErrors({})
     setLoading(true)
     try {
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence)
@@ -334,7 +354,7 @@ export default function SignIn() {
     setError('')
     setSuccess('')
     if (!email) {
-      setError('Enter your email address first.')
+      setFieldErrors(f => ({ ...f, email: 'Enter your email address first.' }))
       return
     }
     try {
@@ -400,23 +420,30 @@ export default function SignIn() {
             <h2 className="text-white font-heading font-bold text-xl">Welcome back</h2>
             <p className="text-white/50 text-xs mt-0.5">Sign in to continue</p>
           </div>
-          <div className="space-y-6">
-            <FloatingInput
-              id="email"
-              label="Email or Mobile Number"
-              type="text"
-              value={email}
-              autoComplete="username"
-              onChange={e => setEmail(e.target.value)}
-              showEmailIcon
-            />
+          <div className="space-y-4">
+            <div>
+              <FloatingInput
+                id="email"
+                label="Email or Mobile Number"
+                type="text"
+                value={email}
+                autoComplete="username"
+                inputMode={/^\d/.test(email) ? 'tel' : 'email'}
+                error={fieldErrors.email}
+                onChange={e => { setEmail(e.target.value); setFieldErrors(f => ({ ...f, email: '' })) }}
+                showEmailIcon
+              />
+              {fieldErrors.email && <p className="text-red-400 text-xs mt-1.5 pl-5">{fieldErrors.email}</p>}
+            </div>
             <div>
               <PasswordInput
                 id="password"
                 label="Password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                error={fieldErrors.password}
+                onChange={e => { setPassword(e.target.value); setFieldErrors(f => ({ ...f, password: '' })) }}
               />
+              {fieldErrors.password && <p className="text-red-400 text-xs mt-1.5 pl-5">{fieldErrors.password}</p>}
               <div className="flex items-center justify-between mt-2">
                 <label className="flex items-center gap-2 cursor-pointer select-none group">
                   <input
@@ -438,10 +465,10 @@ export default function SignIn() {
             </div>
           </div>
 
-          {/* Feedback pill */}
+          {/* Server feedback pill */}
           {(error || success) && (
             <div className={[
-              'mt-5 px-4 py-2 rounded-full text-xs text-center border',
+              'mt-4 px-4 py-2 rounded-full text-xs text-center border',
               error
                 ? 'bg-red-500/20 border-red-400/30 text-red-300'
                 : 'bg-green-500/20 border-green-400/30 text-green-300',
@@ -454,7 +481,7 @@ export default function SignIn() {
             type="button"
             onClick={handleSignIn}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white font-heading font-bold py-3 rounded-full mt-6 tracking-wide text-sm hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(245,166,35,0.5)] active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white font-heading font-bold py-3 rounded-full mt-5 tracking-wide text-sm hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(245,166,35,0.5)] active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -463,17 +490,20 @@ export default function SignIn() {
               </>
             ) : 'Sign in'}
           </button>
-        </div>
 
-        {/* Below card */}
-        <div className="w-full space-y-3">
+          {/* Divider */}
+          <div className="flex items-center gap-3 mt-4">
+            <div className="flex-1 h-px bg-white/15" />
+            <span className="text-white/40 text-xs font-medium">or</span>
+            <div className="flex-1 h-px bg-white/15" />
+          </div>
 
-          {/* Social buttons */}
+          {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full py-2.5 hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 rounded-full py-2.5 hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -483,9 +513,11 @@ export default function SignIn() {
             </svg>
             <span className="text-sm font-medium text-white">Continue with Google</span>
           </button>
+        </div>
 
-          {/* Sign up nudge */}
-          <p className="text-center text-xs text-white/60">
+        {/* Below card — sign up nudge only */}
+        <div className="w-full text-center">
+          <p className="text-xs text-white/60">
             New to LabadaGo?{' '}
             <button
               type="button"
