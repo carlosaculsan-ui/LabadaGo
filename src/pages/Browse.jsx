@@ -146,7 +146,7 @@ export default function Browse() {
           autoPlay muted loop playsInline
           src="/Hero.mp4"
         />
-        <div className="absolute inset-0 bg-[#0D3F6B]/80" />
+        <div className="absolute inset-0 bg-[#0D3F6B]/55" />
 
         <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-20">
           <div className="max-w-[55%]">

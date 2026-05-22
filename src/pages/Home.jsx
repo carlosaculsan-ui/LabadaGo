@@ -221,7 +221,7 @@ export default function Home() {
         />
 
         {/* Dark overlay — adjust opacity to taste once video is in */}
-        <div className="absolute inset-0 bg-[#0D3F6B]/80" />
+        <div className="absolute inset-0 bg-[#0D3F6B]/55" />
 
         {/* Content */}
         <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-24">
@@ -253,13 +253,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 opacity-50">
-          <span className="text-white text-[10px] tracking-widest uppercase">Scroll</span>
-          <svg className="w-4 h-4 text-white animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
       </section>
 
       {/* ── Service chips ─────────────────────────────────────────────────────── */}
@@ -349,7 +342,7 @@ export default function Home() {
       </section>
 
       {/* ── How it works ──────────────────────────────────────────────────────── */}
-      <section className="bg-[#F4F7FA] py-16">
+      <section id="how-it-works" className="bg-[#F4F7FA] py-16">
         <div className="max-w-[1280px] mx-auto px-8">
 
           <div className="text-center mb-14">
