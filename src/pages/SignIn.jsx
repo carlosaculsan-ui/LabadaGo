@@ -5,6 +5,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
@@ -97,18 +100,18 @@ function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete
         onChange={onChange}
         autoComplete={autoComplete}
         placeholder=" "
-        className={['peer w-full border-b border-gray-300 bg-transparent pt-5 pb-1.5 text-sm text-gray-900 focus:outline-none focus:border-[#1B6CA8] transition-colors', showEmailIcon ? 'pr-8' : ''].join(' ')}
+        className={['peer w-full h-full rounded-full bg-[#0c3059] border border-white/20 text-white pt-5 pb-1.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 transition-all', showEmailIcon ? 'pl-5 pr-11' : 'px-5'].join(' ')}
       />
       <label
         htmlFor={id}
-        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-600 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
+        className="absolute left-5 top-1.5 text-xs text-white transition-all duration-200 pointer-events-none peer-placeholder-shown:top-[18px] peer-placeholder-shown:text-sm peer-placeholder-shown:text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white"
       >
         {label}
       </label>
       {showEmailIcon && (
-        <div className="absolute right-0 bottom-2 pointer-events-none">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
           <svg
-            className={['w-[18px] h-[18px] transition-colors duration-200', value ? 'text-[#1B6CA8]' : 'text-gray-400'].join(' ')}
+            className={['w-[18px] h-[18px] transition-colors duration-200', value ? 'text-orange-400' : 'text-white/40'].join(' ')}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
@@ -131,11 +134,11 @@ function PasswordInput({ id, label, value, onChange, autoComplete = 'current-pas
         onChange={onChange}
         autoComplete={autoComplete}
         placeholder=" "
-        className="peer w-full border-b border-gray-300 bg-transparent pt-5 pb-1.5 pr-8 text-sm text-gray-900 focus:outline-none focus:border-[#1B6CA8] transition-colors"
+        className="peer w-full h-full rounded-full bg-[#0c3059] border border-white/20 text-white pl-5 pr-11 pt-5 pb-1.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/30 transition-all"
       />
       <label
         htmlFor={id}
-        className="absolute left-0 top-1 text-xs text-[#1B6CA8] transition-all duration-200 pointer-events-none peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-gray-600 peer-focus:top-1 peer-focus:text-xs peer-focus:text-[#1B6CA8]"
+        className="absolute left-5 top-1.5 text-xs text-white transition-all duration-200 pointer-events-none peer-placeholder-shown:top-[18px] peer-placeholder-shown:text-sm peer-placeholder-shown:text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white"
       >
         {label}
       </label>
@@ -143,7 +146,7 @@ function PasswordInput({ id, label, value, onChange, autoComplete = 'current-pas
         type="button"
         tabIndex={-1}
         onClick={() => hasValue && setShow(v => !v)}
-        className={['absolute right-0 bottom-2 transition-colors', hasValue ? 'text-[#1B6CA8] hover:text-[#0D3F6B]' : 'text-gray-400 cursor-default'].join(' ')}
+        className={['absolute right-4 top-1/2 -translate-y-1/2 transition-colors', hasValue ? 'text-orange-400 hover:text-orange-300' : 'text-white/40 cursor-default'].join(' ')}
       >
         {hasValue && !show ? (
           <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -174,6 +177,88 @@ function friendlyError(code) {
   }
 }
 
+// ─── Left panel ──────────────────────────────────────────────────────────────
+
+const FEATURES = [
+  {
+    paths: ['M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z'],
+    bg: 'bg-emerald-500/20',
+    color: 'text-emerald-300',
+    label: 'Same-day pickup & delivery',
+  },
+  {
+    paths: ['M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z'],
+    bg: 'bg-sky-400/20',
+    color: 'text-sky-300',
+    label: 'Professional wash & fold',
+  },
+  {
+    paths: ['M15 10.5a3 3 0 11-6 0 3 3 0 016 0z', 'M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z'],
+    bg: 'bg-rose-400/20',
+    color: 'text-rose-300',
+    label: 'Real-time order tracking',
+  },
+]
+
+function LeftPanel() {
+  return (
+    <div
+      className="hidden min-[980px]:flex flex-1 sticky top-0 h-screen flex-col justify-between p-12 overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease infinite' }}
+    >
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {BUBBLES.map((b, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full border border-white pointer-events-none"
+            style={{
+              width: b.w,
+              height: b.w,
+              top: b.top,
+              left: b.left,
+              opacity: 0.07 + (i % 3) * 0.025,
+              animation: `${i % 2 === 0 ? 'bubble-float' : 'bubble-drift'} ${7 + (i % 5) * 1.5}s ease-in-out ${-(i * 1.2).toFixed(1)}s infinite`,
+              willChange: 'transform',
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10">
+        <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 mb-10">
+          <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path fillRule="evenodd" d="M12.516 2.17a.75.75 0 00-1.032 0 11.209 11.209 0 01-7.877 3.08.75.75 0 00-.722.515A12.74 12.74 0 002.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 00.374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 00-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08z" clipRule="evenodd" />
+          </svg>
+          <span className="text-white text-[11px] font-semibold tracking-widest uppercase">Laundry Made Simple</span>
+        </div>
+
+        <h1 className="font-heading text-white text-4xl font-bold leading-tight">
+          Your laundry,<br />
+          <span className="text-[#F5A623]">picked up</span><br />
+          & delivered.
+        </h1>
+
+        <p className="text-white/70 text-sm mt-5 leading-relaxed max-w-[280px]">
+          Skip the laundromat. We pick up your clothes, wash them fresh, and deliver right to your door.
+        </p>
+      </div>
+
+      <div className="relative z-10 space-y-4">
+        {FEATURES.map(({ paths, bg, color, label }) => (
+          <div key={label} className="flex items-center gap-3.5">
+            <div className={['w-9 h-9 rounded-xl flex items-center justify-center shrink-0', bg].join(' ')}>
+              <svg className={['w-5 h-5', color].join(' ')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                {paths.map((d, i) => <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />)}
+              </svg>
+            </div>
+            <span className="text-white/90 text-sm font-medium">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function SignIn() {
@@ -182,6 +267,7 @@ export default function SignIn() {
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(true)
   const [error,    setError]    = useState('')
   const [success,  setSuccess]  = useState('')
   const [loading,  setLoading]  = useState(false)
@@ -201,6 +287,7 @@ export default function SignIn() {
     }
     setLoading(true)
     try {
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence)
       const { user } = await signInWithEmailAndPassword(auth, email, password)
       const snap = await getDoc(doc(db, 'users', user.uid))
       const role = snap.exists() ? snap.data().role : 'customer'
@@ -252,29 +339,48 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EEF5FB]">
+    <div className="flex min-h-screen">
+      <LeftPanel />
 
-      {/* Fixed bubble background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <Bubbles />
-      </div>
-
-      {/* Scrollable content layer */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
+      {/* Right panel */}
+      <div
+        className="w-full min-[980px]:w-[520px] min-[980px]:shrink-0 min-h-screen relative overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease 7.5s infinite' }}
+      >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {BUBBLES.map((b, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full border border-white pointer-events-none"
+              style={{
+                width: b.w,
+                height: b.w,
+                top: b.top,
+                left: b.left,
+                opacity: 0.06 + (i % 3) * 0.02,
+                animation: `${i % 2 === 0 ? 'bubble-float' : 'bubble-drift'} ${7 + (i % 5) * 1.5}s ease-in-out ${-(i * 1.2).toFixed(1)}s infinite`,
+                willChange: 'transform',
+              }}
+            />
+          ))}
+        </div>
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
+        <h1 className="sr-only">Sign In — LabadaGo</h1>
 
         {/* Logo + tagline */}
         <div className="text-center">
           <div>
             <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-20 w-auto mx-auto" />
           </div>
-          <p className="text-sm text-gray-600 mt-1.5">Fresh laundry, delivered to your door.</p>
+          <p className="text-sm text-white/70 mt-1.5">Fresh laundry, delivered to your door.</p>
         </div>
 
-        {/* Tab toggle */}
-        <AuthToggle active="signin" />
-
         {/* Form card */}
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] px-10 py-10 mt-6">
+        <div className="w-full max-w-md bg-[#0c2d54] border border-white/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] px-10 py-8 mt-4">
+          <div className="mb-6">
+            <h2 className="text-white font-heading font-bold text-xl">Welcome back</h2>
+            <p className="text-white/50 text-xs mt-0.5">Sign in to continue</p>
+          </div>
           <div className="space-y-6">
             <FloatingInput
               id="email"
@@ -292,11 +398,20 @@ export default function SignIn() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
-              <div className="flex justify-end mt-2">
+              <div className="flex items-center justify-between mt-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none group">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={e => setRemember(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded accent-orange-400 cursor-pointer"
+                  />
+                  <span className="text-xs text-white/70 group-hover:text-white/90 transition-colors">Remember me</span>
+                </label>
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-xs text-[#1B6CA8] hover:underline"
+                  className="text-xs text-white/70 hover:text-orange-400 transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -309,8 +424,8 @@ export default function SignIn() {
             <div className={[
               'mt-5 px-4 py-2 rounded-full text-xs text-center border',
               error
-                ? 'bg-red-50 border-red-200 text-red-600'
-                : 'bg-green-50 border-green-200 text-green-700',
+                ? 'bg-red-500/20 border-red-400/30 text-red-300'
+                : 'bg-green-500/20 border-green-400/30 text-green-300',
             ].join(' ')}>
               {error || success}
             </div>
@@ -320,7 +435,7 @@ export default function SignIn() {
             type="button"
             onClick={handleSignIn}
             disabled={loading}
-            className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-3 rounded-xl mt-4 hover:bg-[#0D3F6B] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white font-heading font-bold py-3 rounded-full mt-6 tracking-wide text-sm hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(245,166,35,0.5)] active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -332,21 +447,14 @@ export default function SignIn() {
         </div>
 
         {/* Below card */}
-        <div className="w-full max-w-md mt-6 space-y-4">
-
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-600">or continue with</span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
+        <div className="w-full max-w-md mt-3 space-y-3">
 
           {/* Social buttons */}
           <button
             type="button"
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-xl py-2.5 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full py-2.5 hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -354,39 +462,23 @@ export default function SignIn() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            <span className="text-sm font-medium text-gray-700">Continue with Google</span>
+            <span className="text-sm font-medium text-white">Continue with Google</span>
           </button>
 
           {/* Sign up nudge */}
-          <p className="text-center text-xs text-gray-600">
+          <p className="text-center text-xs text-white/60">
             New to LabadaGo?{' '}
             <button
               type="button"
               onClick={() => navigate('/signup')}
-              className="text-[#1B6CA8] font-medium hover:underline"
+              className="text-orange-400 font-medium hover:text-orange-300 hover:drop-shadow-[0_0_8px_rgba(245,166,35,0.6)] transition-all"
             >
               Sign up free
             </button>
           </p>
 
-          {/* Dashboard links */}
-          <div className="flex justify-center gap-6">
-            <button
-              type="button"
-              onClick={() => navigate('/merchant')}
-              className="text-xs text-gray-600 hover:text-gray-600 transition-colors"
-            >
-              Merchant login →
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/rider')}
-              className="text-xs text-gray-600 hover:text-gray-600 transition-colors"
-            >
-              Rider login →
-            </button>
-          </div>
 
+        </div>
         </div>
       </div>
     </div>

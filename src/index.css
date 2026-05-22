@@ -15,36 +15,53 @@ body {
   color: #4b5563 !important;
 }
 
-/* Suppress Chrome/Edge autofill blue background on all inputs */
+/* Suppress Chrome/Edge autofill background on dark pill inputs */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px white inset !important;
-  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0 1000px #0c3059 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Float the label up when the browser autofills the input */
 input:-webkit-autofill ~ label,
 input:autofill ~ label {
-  top: 0.25rem !important;
+  top: 0.375rem !important;
   font-size: 0.75rem !important;
-  color: #1B6CA8 !important;
+  color: #ffffff !important;
 }
 
-/* Turn icons blue when the browser autofills */
+/* Keep icons white when the browser autofills */
 input:-webkit-autofill ~ div > svg,
 input:autofill ~ div > svg {
-  color: #1B6CA8 !important;
+  color: #ffffff !important;
 }
 
 input:-webkit-autofill ~ button,
 input:autofill ~ button {
-  color: #1B6CA8 !important;
+  color: #ffffff !important;
 }
 
 /* Hide Firebase emulator warning banner */
 .firebase-emulator-warning {
   display: none !important;
+}
+
+/* Left panel animations */
+@keyframes bubble-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-18px) scale(1.03); }
+}
+
+@keyframes bubble-drift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(10px, -14px); }
+  66% { transform: translate(-7px, -24px); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
