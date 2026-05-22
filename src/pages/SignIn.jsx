@@ -29,19 +29,6 @@ const BUBBLES = [
   { w: 90,  top: '73%', left: '72%' },
 ]
 
-function Bubbles() {
-  return (
-    <>
-      {BUBBLES.map((b, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full border border-[#1B6CA8] opacity-[0.06] pointer-events-none"
-          style={{ width: b.w, height: b.w, top: b.top, left: b.left }}
-        />
-      ))}
-    </>
-  )
-}
 
 // ─── Auth tab toggle ───────────────────────────────────────────────────────
 
@@ -79,17 +66,6 @@ function AuthToggle({ active }) {
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
-function ImgPlaceholder({ label, className }) {
-  return (
-    <div className={['border border-dashed flex items-center justify-center shrink-0', className].join(' ')}>
-      {label && (
-        <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1">
-          {label}
-        </span>
-      )}
-    </div>
-  )
-}
 
 function FloatingInput({ id, label, type = 'text', value, onChange, autoComplete, showEmailIcon, inputMode, error }) {
   const hasValue = !!value
@@ -192,87 +168,6 @@ function friendlyError(code) {
   }
 }
 
-// ─── Left panel ──────────────────────────────────────────────────────────────
-
-const FEATURES = [
-  {
-    paths: ['M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z'],
-    bg: 'bg-emerald-500/20',
-    color: 'text-emerald-300',
-    label: 'Same-day pickup & delivery',
-  },
-  {
-    paths: ['M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z'],
-    bg: 'bg-sky-400/20',
-    color: 'text-sky-300',
-    label: 'Professional wash & fold',
-  },
-  {
-    paths: ['M15 10.5a3 3 0 11-6 0 3 3 0 016 0z', 'M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z'],
-    bg: 'bg-rose-400/20',
-    color: 'text-rose-300',
-    label: 'Real-time order tracking',
-  },
-]
-
-function LeftPanel() {
-  return (
-    <div
-      className="hidden min-[980px]:flex flex-1 sticky top-0 h-screen flex-col justify-between p-12 overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease infinite' }}
-    >
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {BUBBLES.map((b, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full border border-white pointer-events-none"
-            style={{
-              width: b.w,
-              height: b.w,
-              top: b.top,
-              left: b.left,
-              opacity: 0.07 + (i % 3) * 0.025,
-              animation: `${i % 2 === 0 ? 'bubble-float' : 'bubble-drift'} ${7 + (i % 5) * 1.5}s ease-in-out ${-(i * 1.2).toFixed(1)}s infinite`,
-              willChange: 'transform',
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10">
-        <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 mb-10">
-          <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path fillRule="evenodd" d="M12.516 2.17a.75.75 0 00-1.032 0 11.209 11.209 0 01-7.877 3.08.75.75 0 00-.722.515A12.74 12.74 0 002.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 00.374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 00-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08z" clipRule="evenodd" />
-          </svg>
-          <span className="text-white text-[11px] font-semibold tracking-widest uppercase">Laundry Made Simple</span>
-        </div>
-
-        <h1 className="font-heading text-white text-4xl font-bold leading-tight">
-          Your laundry,<br />
-          <span className="text-[#F5A623]">picked up</span><br />
-          & delivered.
-        </h1>
-
-        <p className="text-white/70 text-sm mt-5 leading-relaxed max-w-[280px]">
-          Skip the laundromat. We pick up your clothes, wash them fresh, and deliver right to your door.
-        </p>
-      </div>
-
-      <div className="relative z-10 space-y-4">
-        {FEATURES.map(({ paths, bg, color, label }) => (
-          <div key={label} className="flex items-center gap-3.5">
-            <div className={['w-9 h-9 rounded-xl flex items-center justify-center shrink-0', bg].join(' ')}>
-              <svg className={['w-5 h-5', color].join(' ')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                {paths.map((d, i) => <path key={i} strokeLinecap="round" strokeLinejoin="round" d={d} />)}
-              </svg>
-            </div>
-            <span className="text-white/90 text-sm font-medium">{label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
@@ -366,14 +261,10 @@ export default function SignIn() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <LeftPanel />
-
-      {/* Right panel */}
-      <div
-        className="w-full min-[980px]:w-[520px] min-[980px]:shrink-0 min-h-screen relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease 7.5s infinite' }}
-      >
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease infinite' }}
+    >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {BUBBLES.map((b, i) => (
             <div
@@ -384,8 +275,8 @@ export default function SignIn() {
                 height: b.w,
                 top: b.top,
                 left: b.left,
-                opacity: 0.06 + (i % 3) * 0.02,
-                animation: `${i % 2 === 0 ? 'bubble-float' : 'bubble-drift'} ${7 + (i % 5) * 1.5}s ease-in-out ${-(i * 1.2).toFixed(1)}s infinite`,
+                opacity: 0.12 + (i % 3) * 0.04,
+                animation: `${i % 2 === 0 ? 'bubble-float' : 'bubble-drift'} ${5 + (i % 5) * 1.2}s ease-in-out ${-(i * 1.0).toFixed(1)}s infinite`,
                 willChange: 'transform',
               }}
             />
@@ -531,7 +422,6 @@ export default function SignIn() {
         </div>
         </motion.div>
         </div>
-      </div>
     </div>
   )
 }

@@ -52,13 +52,13 @@ input:autofill ~ button {
 /* Left panel animations */
 @keyframes bubble-float {
   0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-18px) scale(1.03); }
+  50% { transform: translateY(-40px) scale(1.06); }
 }
 
 @keyframes bubble-drift {
   0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(10px, -14px); }
-  66% { transform: translate(-7px, -24px); }
+  33% { transform: translate(28px, -36px); }
+  66% { transform: translate(-20px, -56px); }
 }
 
 @keyframes gradient-shift {
