@@ -1,16 +1,57 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { auth } from '../lib/firebase'
+import { collection, getDocs } from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import Logo from './Logo'
+
+const MOCK_SHOPS = [
+  { id: 'mock-1', name: 'Sunshine Laundry',    address: '12 Rizal St, Barangay Sta. Cruz' },
+  { id: 'mock-2', name: 'CleanWave Express',   address: '45 Mabini Ave, Poblacion'        },
+  { id: 'mock-3', name: 'FreshFold Laundromat',address: '8 Del Pilar Rd, San Antonio'     },
+  { id: 'mock-4', name: 'BubbleKing Laundry',  address: '33 Luna Blvd, Bagong Silang'     },
+  { id: 'mock-5', name: 'SpinCycle PH',        address: '21 Bonifacio St, Laging Handa'  },
+  { id: 'mock-6', name: 'PureFresh Laundry',   address: '9 Aguinaldo St, Pinyahan'        },
+]
 
 export default function Navbar() {
   const [search,       setSearch]       = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef(null)
-  const navigate    = useNavigate()
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [allShops,     setAllShops]     = useState([])
+  const [shopsFetched, setShopsFetched] = useState(false)
+  const dropdownRef   = useRef(null)
+  const searchRef     = useRef(null)
+  const navigate      = useNavigate()
   const { user, userProfile, role } = useAuth()
+
+  async function fetchShops() {
+    if (shopsFetched) return
+    setShopsFetched(true)
+    try {
+      const snap = await getDocs(collection(db, 'shops'))
+      const real = snap.docs.map(d => ({ id: d.id, name: d.data().name, address: d.data().address }))
+      setAllShops(real.length > 0 ? real : MOCK_SHOPS)
+    } catch {
+      setAllShops(MOCK_SHOPS)
+    }
+  }
+
+  const suggestions = search.trim().length === 0 ? [] : allShops.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.address.toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 6)
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
 
   useEffect(() => {
     if (!dropdownOpen) return
@@ -43,9 +84,9 @@ export default function Navbar() {
           <img src="/CleanLogo.png" alt="LabadaGo" className="h-12 w-auto" />
         </Link>
 
-        {/* Search */}
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative flex-1 max-w-sm">
+        {/* Search + Nav + User */}
+        <div className="flex items-center gap-4 flex-1">
+          <div ref={searchRef} className="relative w-64">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               width="15" height="15" viewBox="0 0 24 24"
@@ -57,43 +98,101 @@ export default function Navbar() {
             <input
               type="text"
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search laundry shops..."
+              onChange={e => {
+                setSearch(e.target.value)
+                setShowSuggestions(true)
+                fetchShops()
+              }}
+              onFocus={() => { if (search.trim()) setShowSuggestions(true) }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && search.trim()) {
+                  navigate(`/browse?search=${encodeURIComponent(search.trim())}`)
+                  setSearch('')
+                  setShowSuggestions(false)
+                }
+                if (e.key === 'Escape') setShowSuggestions(false)
+              }}
+              placeholder="Search shops or locations..."
               className="w-full pl-9 pr-4 py-2 rounded-full text-sm outline-none bg-gray-100 text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B6CA8]/30"
             />
+
+            {/* Autocomplete dropdown */}
+            {showSuggestions && search.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#e5e7eb] overflow-hidden z-50">
+                {suggestions.length > 0 ? (
+                  <>
+                    {suggestions.map(shop => (
+                      <button
+                        key={shop.id}
+                        onMouseDown={() => {
+                          navigate(`/browse?search=${encodeURIComponent(shop.name)}`)
+                          setSearch('')
+                          setShowSuggestions(false)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#F4F7FA] transition-colors text-left"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-[#EEF5FB] flex items-center justify-center shrink-0">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="2" className="w-3.5 h-3.5">
+                            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                          </svg>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{shop.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{shop.address}</p>
+                        </div>
+                      </button>
+                    ))}
+                    <div className="border-t border-[#e5e7eb]">
+                      <button
+                        onMouseDown={() => {
+                          navigate(`/browse?search=${encodeURIComponent(search.trim())}`)
+                          setSearch('')
+                          setShowSuggestions(false)
+                        }}
+                        className="w-full px-4 py-2.5 text-xs text-[#1B6CA8] font-medium hover:bg-[#F4F7FA] transition-colors text-left"
+                      >
+                        See all results for &ldquo;{search}&rdquo; →
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="px-4 py-5 text-center">
+                    <p className="text-sm text-gray-500 mb-1">No shops found for &ldquo;{search}&rdquo;</p>
+                    <button
+                      onMouseDown={() => { navigate('/browse'); setSearch(''); setShowSuggestions(false) }}
+                      className="text-xs text-[#1B6CA8] font-medium hover:underline"
+                    >
+                      Browse all shops →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Nav links */}
-        <nav className="flex items-center gap-5 shrink-0">
-
-          {(!user || role === 'customer' || !role) && (
-            <NavLink to="/browse" className={linkClass}>Browse shops</NavLink>
-          )}
-
-          {!user && (
-            <a
-              href="/#how-it-works"
-              className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors"
-            >
-              How it works
-            </a>
-          )}
-
-          {user && role === 'customer' && (
-            <>
-              <NavLink to="/my-orders"      className={linkClass}>My orders</NavLink>
-              <NavLink to="/order-tracking" className={linkClass}>Track</NavLink>
-            </>
-          )}
-
-          {user && role === 'merchant' && (
-            <NavLink to="/merchant" className={linkClass}>My Dashboard</NavLink>
-          )}
-
-          {user && role === 'rider' && (
-            <NavLink to="/rider" className={linkClass}>My Deliveries</NavLink>
-          )}
+          {/* Nav links — fills the middle */}
+          <nav className="flex items-center gap-8 flex-1 justify-center">
+            {(!user || role === 'customer' || !role) && (
+              <NavLink to="/browse" className={linkClass}>Browse shops</NavLink>
+            )}
+            {!user && (
+              <a href="/#how-it-works" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
+                How it works
+              </a>
+            )}
+            {user && role === 'customer' && (
+              <>
+                <NavLink to="/my-orders"      className={linkClass}>My orders</NavLink>
+                <NavLink to="/order-tracking" className={linkClass}>Track</NavLink>
+              </>
+            )}
+            {user && role === 'merchant' && (
+              <NavLink to="/merchant" className={linkClass}>My Dashboard</NavLink>
+            )}
+            {user && role === 'rider' && (
+              <NavLink to="/rider" className={linkClass}>My Deliveries</NavLink>
+            )}
+          </nav>
 
           {/* Auth area */}
           {!user ? (
@@ -137,23 +236,19 @@ export default function Navbar() {
                   >
                     My profile
                   </button>
-                  {role === 'customer' && (
-                    <>
-                      <div className="h-px bg-[#e5e7eb] mx-2" />
-                      <button
-                        onClick={() => { setDropdownOpen(false); navigate('/my-orders') }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        My orders
-                      </button>
-                    </>
-                  )}
+                  <div className="h-px bg-[#e5e7eb] mx-2" />
+                  <button
+                    onClick={() => { setDropdownOpen(false); handleSignOut() }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-50 transition-colors"
+                  >
+                    Sign out
+                  </button>
                 </div>
               )}
             </div>
           )}
+        </div>
 
-        </nav>
       </div>
     </header>
   )

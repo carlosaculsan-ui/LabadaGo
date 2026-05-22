@@ -96,6 +96,9 @@ export default function Browse() {
     const param = new URLSearchParams(location.search).get('service')
     return param && CHIPS.includes(param) ? param : 'All'
   })
+  const [searchQuery, setSearchQuery] = useState(() =>
+    new URLSearchParams(location.search).get('search') ?? ''
+  )
   const [sortBy, setSortBy] = useState('nearest')
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
 
@@ -119,7 +122,9 @@ export default function Browse() {
   }, [])
 
   const displayed = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
     const filtered = shops.filter(shop => {
+      if (q && !shop.name.toLowerCase().includes(q) && !shop.address.toLowerCase().includes(q)) return false
       if (shop.distanceKm > filters.maxDistance) return false
       if (filters.services.length > 0 && !filters.services.some(s => shop.services.includes(s))) return false
       if (activeChip !== 'All' && !shop.services.includes(activeChip)) return false
@@ -138,7 +143,7 @@ export default function Browse() {
       if (sortBy === 'price')   return a.pricePerKg - b.pricePerKg
       return 0
     })
-  }, [shops, filters, activeChip, sortBy])
+  }, [shops, filters, activeChip, sortBy, searchQuery])
 
   return (
     <>

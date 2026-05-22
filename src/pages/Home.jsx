@@ -286,69 +286,93 @@ export default function Home() {
       </section>
 
       {/* ── Stats ────────────────────────────────────────────────────────────── */}
-      <section className="bg-[#EEF5FB] py-10 border-b border-[#dce8f5]">
-        <div className="max-w-[1280px] mx-auto px-8">
+      <section
+        className="relative overflow-hidden py-12"
+        style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease infinite' }}
+      >
+        {/* Bubbles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[
+            { w: 200, top: '10%', left: '5%'  },
+            { w: 100, top: '60%', left: '2%'  },
+            { w: 260, top: '5%',  left: '80%' },
+            { w: 80,  top: '70%', left: '90%' },
+            { w: 140, top: '40%', left: '50%' },
+          ].map((b, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full border border-white"
+              style={{
+                width: b.w, height: b.w, top: b.top, left: b.left,
+                opacity: 0.08 + (i % 3) * 0.04,
+                animation: `${i % 2 === 0 ? 'bubble-float' : 'bubble-drift'} ${5 + i * 1.2}s ease-in-out ${-(i * 1.0).toFixed(1)}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="relative z-10 max-w-[1280px] mx-auto px-8">
           <div className={`grid gap-4 ${showPersonalStat ? 'grid-cols-6' : 'grid-cols-5'}`}>
 
-            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
-              <div className="w-11 h-11 rounded-xl bg-[#DBEAFE] flex items-center justify-center mb-4">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="2" className="w-5 h-5">
+            <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
+              <div className="w-11 h-11 rounded-xl bg-[#DBEAFE]/20 flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-5 h-5">
                   <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
                 </svg>
               </div>
-              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">{shopsCount}+</p>
-              <p className="text-[11px] text-gray-500 mt-2">partner shops</p>
+              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">{shopsCount}+</p>
+              <p className="text-[11px] text-white/60 mt-2">partner shops</p>
             </div>
 
-            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
-              <div className="w-11 h-11 rounded-xl bg-[#FEF3C7] flex items-center justify-center mb-4">
+            <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
+              <div className="w-11 h-11 rounded-xl bg-[#FEF3C7]/20 flex items-center justify-center mb-4">
                 <svg viewBox="0 0 24 24" fill="#F5A623" className="w-5 h-5">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
-              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">4.8★</p>
-              <p className="text-[11px] text-gray-500 mt-2">avg rating</p>
+              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">4.8★</p>
+              <p className="text-[11px] text-white/60 mt-2">avg rating</p>
             </div>
 
-            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
-              <div className="w-11 h-11 rounded-xl bg-[#D1FAE5] flex items-center justify-center mb-4">
-                <svg viewBox="0 0 24 24" fill="#059669" className="w-5 h-5">
+            <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
+              <div className="w-11 h-11 rounded-xl bg-[#D1FAE5]/20 flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="#34D399" className="w-5 h-5">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
               </div>
-              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">Same-day</p>
-              <p className="text-[11px] text-gray-500 mt-2">pickup available</p>
+              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">Same-day</p>
+              <p className="text-[11px] text-white/60 mt-2">pickup available</p>
             </div>
 
-            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
-              <div className="w-11 h-11 rounded-xl bg-[#EDE9FE] flex items-center justify-center mb-4">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2" className="w-5 h-5">
+            <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
+              <div className="w-11 h-11 rounded-xl bg-[#EDE9FE]/20 flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="2" className="w-5 h-5">
                   <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
                 </svg>
               </div>
-              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">₱48+</p>
-              <p className="text-[11px] text-gray-500 mt-2">starting price / kg</p>
+              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">₱48+</p>
+              <p className="text-[11px] text-white/60 mt-2">starting price / kg</p>
             </div>
 
-            <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
-              <div className="w-11 h-11 rounded-xl bg-[#CCFBF1] flex items-center justify-center mb-4">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2" className="w-5 h-5">
+            <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
+              <div className="w-11 h-11 rounded-xl bg-[#CCFBF1]/20 flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2DD4BF" strokeWidth="2" className="w-5 h-5">
                   <rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
                 </svg>
               </div>
-              <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">2-hr</p>
-              <p className="text-[11px] text-gray-500 mt-2">pickup window</p>
+              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">2-hr</p>
+              <p className="text-[11px] text-white/60 mt-2">pickup window</p>
             </div>
 
             {showPersonalStat && (
-              <div className="bg-white rounded-2xl px-6 py-6 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
-                <div className="w-11 h-11 rounded-xl bg-[#FEE2E2] flex items-center justify-center mb-4">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" className="w-5 h-5">
+              <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
+                <div className="w-11 h-11 rounded-xl bg-[#FEE2E2]/20 flex items-center justify-center mb-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#FCA5A5" strokeWidth="2" className="w-5 h-5">
                     <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
                   </svg>
                 </div>
-                <p className="font-heading font-bold text-[1.75rem] text-[#1B6CA8] leading-none">{userOrderCount}</p>
-                <p className="text-[11px] text-gray-500 mt-2">your orders</p>
+                <p className="font-heading font-bold text-[1.75rem] text-white leading-none">{userOrderCount}</p>
+                <p className="text-[11px] text-white/60 mt-2">your orders</p>
               </div>
             )}
 
