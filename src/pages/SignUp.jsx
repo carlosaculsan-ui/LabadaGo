@@ -242,6 +242,97 @@ function LeftPanel() {
   )
 }
 
+// ─── Terms modal ───────────────────────────────────────────────────────────
+
+function TermsModal({ onAgree, onDisagree }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-[#0c2d54] border border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] flex flex-col max-h-[80vh]">
+
+        {/* Header */}
+        <div className="px-7 pt-6 pb-4 border-b border-white/10 shrink-0">
+          <h2 className="text-white font-heading font-bold text-lg">Terms of Service &amp; Privacy Policy</h2>
+          <p className="text-white/50 text-xs mt-0.5">Please read carefully before creating your account.</p>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto px-7 py-5 space-y-5 text-white/70 text-sm leading-relaxed">
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">1. Acceptance of Terms</h3>
+            <p>By creating an account on LabadaGo, you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, please do not register or use our services. We reserve the right to update these terms at any time, and continued use of the platform constitutes acceptance of any changes.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">2. Description of Service</h3>
+            <p>LabadaGo is an on-demand laundry platform that connects customers with laundry service providers (merchants) and delivery personnel (riders). We facilitate the pickup, cleaning, and delivery of laundry items. LabadaGo acts as an intermediary and is not directly responsible for the quality of laundry services provided by third-party merchants.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">3. Account Registration</h3>
+            <p>You must provide accurate, current, and complete information during registration. You are responsible for maintaining the confidentiality of your account credentials. You agree to notify us immediately of any unauthorized use of your account. LabadaGo will not be liable for any loss resulting from unauthorized use of your account.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">4. Orders and Payments</h3>
+            <p>All orders placed through LabadaGo are subject to availability. Prices are set by individual merchants and may vary. Payment is due at the time of order confirmation. We accept various payment methods as displayed in the app. Refunds and disputes are handled on a case-by-case basis in accordance with our Refund Policy.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">5. Pickup and Delivery</h3>
+            <p>Estimated pickup and delivery times are provided as a courtesy and are not guaranteed. LabadaGo is not liable for delays caused by traffic, weather, or other circumstances beyond our control. You are responsible for ensuring someone is available at the designated address during the scheduled pickup and delivery window.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">6. Items and Liability</h3>
+            <p>LabadaGo and its merchants are not liable for damage to items caused by undisclosed defects, pre-existing conditions, or improper care label instructions provided by the manufacturer. High-value items such as luxury garments, heirlooms, or items with sentimental value are submitted at your own risk. We recommend not submitting irreplaceable items.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">7. Privacy Policy</h3>
+            <p>We collect personal information including your name, email address, mobile number, and location data for the purpose of providing our services. Your data is stored securely and will never be sold to third parties. We may share necessary information with merchants and riders solely to fulfill your orders. By using LabadaGo, you consent to the collection and use of your information as described herein.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">8. Data Retention</h3>
+            <p>We retain your personal data for as long as your account is active or as needed to provide services. You may request deletion of your account and associated data at any time by contacting our support team. Some data may be retained for legal or regulatory compliance purposes even after account deletion.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">9. Prohibited Conduct</h3>
+            <p>You agree not to use LabadaGo for any unlawful purpose, to submit hazardous materials, illegal substances, or items prohibited by Philippine law. Harassment of merchants, riders, or support staff will result in immediate account termination. Fraudulent chargebacks or abuse of the refund system may result in legal action.</p>
+          </section>
+
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">10. Governing Law</h3>
+            <p>These Terms of Service are governed by the laws of the Republic of the Philippines. Any disputes arising from the use of LabadaGo shall be subject to the exclusive jurisdiction of the courts located in the Philippines. By using our service, you consent to the personal jurisdiction of such courts.</p>
+          </section>
+
+        </div>
+
+        {/* Footer actions */}
+        <div className="px-7 py-5 border-t border-white/10 shrink-0 flex gap-3">
+          <button
+            type="button"
+            onClick={onDisagree}
+            className="flex-1 py-2.5 rounded-full border border-white/20 text-white/70 text-sm font-semibold hover:bg-white/10 transition-colors"
+          >
+            I Don't Agree
+          </button>
+          <button
+            type="button"
+            onClick={onAgree}
+            className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-[#F5A623] to-[#FF6B35] text-white text-sm font-semibold hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(245,166,35,0.4)] transition-all duration-200"
+          >
+            I Agree
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider' }
@@ -256,6 +347,7 @@ export default function SignUp() {
   const [password,        setPassword]        = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [termsAccepted,   setTermsAccepted]   = useState(false)
+  const [showTermsModal,  setShowTermsModal]  = useState(false)
   const [error,           setError]           = useState('')
   const [loading,         setLoading]         = useState(false)
 
@@ -327,6 +419,12 @@ export default function SignUp() {
 
   return (
     <div className="flex min-h-screen">
+      {showTermsModal && (
+        <TermsModal
+          onAgree={() => { setTermsAccepted(true); setShowTermsModal(false) }}
+          onDisagree={() => { setTermsAccepted(false); setShowTermsModal(false) }}
+        />
+      )}
       <LeftPanel />
 
       {/* Right panel */}
@@ -434,16 +532,25 @@ export default function SignUp() {
               id="terms"
               type="checkbox"
               checked={termsAccepted}
-              onChange={e => setTermsAccepted(e.target.checked)}
+              readOnly
+              onClick={() => !termsAccepted && setShowTermsModal(true)}
               className="mt-0.5 accent-[#1B6CA8] shrink-0 cursor-pointer"
             />
-            <label htmlFor="terms" className="text-xs text-white/60 leading-relaxed cursor-pointer">
+            <label className="text-xs text-white/60 leading-relaxed">
               I agree to the{' '}
-              <button type="button" className="text-orange-400 hover:underline">
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-orange-400 hover:underline"
+              >
                 Terms of Service
               </button>
               {' '}and{' '}
-              <button type="button" className="text-orange-400 hover:underline">
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-orange-400 hover:underline"
+              >
                 Privacy Policy
               </button>
             </label>
