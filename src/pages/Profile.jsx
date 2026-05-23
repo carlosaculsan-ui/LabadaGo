@@ -18,7 +18,7 @@ const BUBBLES = [
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, userProfile, refreshProfile } = useAuth()
+  const { user, userProfile, role, refreshProfile } = useAuth()
 
   const [fullName, setFullName] = useState(
     userProfile?.fullName || user?.displayName || ''
@@ -61,6 +61,7 @@ export default function Profile() {
   }
 
   return (
+    <>
     <div
       className="min-h-screen relative overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease infinite' }}
@@ -185,7 +186,30 @@ export default function Profile() {
           </button>
         </div>
 
+        {/* Role badge — only shown if user is a merchant or rider */}
+        {(role === 'merchant' || role === 'rider') && (
+          <div className="bg-[#0c2d54] border border-white/20 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] px-8 py-7">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-white font-semibold text-sm mb-1">Your role</h2>
+                <p className="text-white/40 text-xs">You're registered as a partner on LabadaGo.</p>
+              </div>
+              <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${role === 'merchant' ? 'bg-[#1B6CA8]/30 text-[#60B4FF] border border-[#1B6CA8]/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                {role === 'merchant' ? '🏪 Merchant' : '🛵 Rider'}
+              </span>
+            </div>
+            <button
+              onClick={() => navigate(role === 'merchant' ? '/merchant' : '/rider')}
+              className="mt-4 border border-white/20 text-white/70 text-sm font-medium px-5 py-2 rounded-xl hover:bg-white/10 transition-colors"
+            >
+              Go to my dashboard →
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
+
+    </>
   )
 }

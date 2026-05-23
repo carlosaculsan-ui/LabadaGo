@@ -15,6 +15,7 @@ import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
 import SeedPage from './pages/SeedPage'
 import MyOrders from './pages/MyOrders'
+import Partner from './pages/Partner'
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'browse', element: <Browse /> },
+      { path: 'partner', element: <Partner /> },
       {
         element: <ProtectedRoute />,
         children: [

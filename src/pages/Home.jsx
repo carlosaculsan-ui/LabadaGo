@@ -499,6 +499,52 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Partner with us (teaser) ────────────────────────────────────── */}
+      <section className="bg-[#F4F7FA] py-20">
+        <div className="max-w-[1280px] mx-auto px-8 flex items-center gap-16">
+
+          {/* Left: text */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1B6CA8] mb-4">Join the network</p>
+            <h2 className="font-heading font-extrabold text-[2.8rem] leading-tight tracking-tight text-gray-900 mb-4">
+              Grow with<br /><span className="text-[#1B6CA8]">Labada</span><span className="text-[#F5A623]">Go</span>
+            </h2>
+            <p className="text-[15px] text-gray-500 leading-relaxed mb-8 max-w-sm">
+              Whether you run a laundry shop or want flexible delivery work, there&apos;s a place for you in our network.
+            </p>
+            <button
+              onClick={() => navigate('/partner')}
+              className="inline-flex items-center gap-2 bg-[#1B6CA8] text-white font-bold px-8 py-3.5 rounded-xl hover:bg-[#155a8a] transition-colors text-sm"
+            >
+              Partner with us
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Right: collage of 4 overlapping images */}
+          <div className="relative shrink-0 w-[500px] h-[270px]">
+            {/* top-left, large, tilted left */}
+            <div className="absolute w-[235px] h-[158px] rounded-2xl overflow-hidden border-4 border-white shadow-lg" style={{ left: 4, top: 4, transform: 'rotate(-5deg)', zIndex: 10 }}>
+              <img src="/Image1.jpg" className="w-full h-full object-cover" alt="" />
+            </div>
+            {/* top-right, tilted right, overlaps image 1 */}
+            <div className="absolute w-[205px] h-[148px] rounded-2xl overflow-hidden border-4 border-white shadow-lg" style={{ left: 198, top: 6, transform: 'rotate(4deg)', zIndex: 20 }}>
+              <img src="/Image2.jpg" className="w-full h-full object-cover" alt="" />
+            </div>
+            {/* bottom-left, slight tilt, overlaps image 1 */}
+            <div className="absolute w-[210px] h-[148px] rounded-2xl overflow-hidden border-4 border-white shadow-lg" style={{ left: 18, top: 106, transform: 'rotate(-2deg)', zIndex: 30 }}>
+              <img src="/Image3.jpg" className="w-full h-full object-cover" alt="" />
+            </div>
+            {/* bottom-right, tilted right, overlaps images 2 & 3 */}
+            <div className="absolute w-[220px] h-[152px] rounded-2xl overflow-hidden border-4 border-white shadow-xl" style={{ left: 228, top: 96, transform: 'rotate(5deg)', zIndex: 40 }}>
+              <img src="/Image4.jpg" className="w-full h-full object-cover" alt="" />
+            </div>
+          </div>
+
+        </div>
+      </section>
       {/* ── CTA Banner ───────────────────────────────────────────────────────── */}
       <section className="bg-[#0D3F6B] py-16 border-b-4 border-[#F5A623]">
         <div className="max-w-[1280px] mx-auto px-8 flex items-center justify-between gap-8">
