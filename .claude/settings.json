@@ -13,7 +13,10 @@
       "Bash(git restore *)",
       "Bash(node -e ' *)",
       "Bash(dir \"c:\\\\Users\\\\Admin\\\\Downloads\\\\labadago\\\\public\")",
-      "Bash(findstr /i \"gcash\")"
+      "Bash(findstr /i \"gcash\")",
+      "Bash(gsutil version *)",
+      "Bash(gcloud version *)",
+      "Bash(npx firebase-tools *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Admin\\.claude\\projects\\c--Users-Admin-Downloads-labadago\\memory"

@@ -5,6 +5,39 @@ import { useAuth } from '../hooks/useAuth'
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
+const NAV_ICONS = {
+  dashboard: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  ),
+  orders: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+    </svg>
+  ),
+  shop: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+    </svg>
+  ),
+  services: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/>
+    </svg>
+  ),
+  earnings: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+  ),
+  settings: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+  ),
+}
+
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard'          },
   { id: 'orders',    label: 'Orders'             },
@@ -83,17 +116,6 @@ function isToday(ts) {
          d.getDate()     === t.getDate()
 }
 
-function ImgPlaceholder({ label, className }) {
-  return (
-    <div className={['border border-dashed flex items-center justify-center', className].join(' ')}>
-      {label && (
-        <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1.5">
-          {label}
-        </span>
-      )}
-    </div>
-  )
-}
 
 // ─── OrderCard ─────────────────────────────────────────────────────────────────
 
@@ -401,195 +423,231 @@ export default function MerchantDashboard() {
     )
   }
 
+  const initials = userProfile?.fullName?.split(' ').map(n => n[0]).slice(0, 2).join('') ?? 'M'
+  const hour     = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
+  const STAT_STYLES = [
+    { num: 'text-[#F5A623]' },
+    { num: 'text-amber-300' },
+    { num: 'text-violet-400' },
+    { num: 'text-emerald-400' },
+  ]
+
   return (
-    <div className="flex h-screen bg-[#F4F7FA] overflow-hidden">
+    <div className="flex h-screen bg-[#EDF1F7] overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-[#e5e7eb] flex flex-col z-20">
+      <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20">
 
-        <div className="px-5 pt-6 pb-5 border-b border-[#e5e7eb]">
-          <div>
-            <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-8 w-auto" />
-          </div>
-          <p className="text-[10px] text-gray-600 mt-0.5 font-medium tracking-wide">Merchant portal</p>
-          {shopName && (
-            <p className="text-[13px] font-semibold text-gray-800 mt-2 truncate" title={shopName}>
-              {shopName}
-            </p>
-          )}
+        {/* Logo */}
+        <div className="px-6 pt-7 pb-5">
+          <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-7 w-auto brightness-0 invert" />
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mt-2">Merchant Portal</p>
         </div>
 
-        <div className="px-5 py-4 border-b border-[#e5e7eb]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-600 mb-2">
-            Shop status
-          </p>
+        {/* Shop card */}
+        <div className="mx-4 mb-5 bg-white/8 border border-white/10 rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">Your Shop</p>
+            <span className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: isOpen ? '#34d399' : '#f87171' }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: isOpen ? '#34d399' : '#f87171' }} />
+              {isOpen ? 'Open' : 'Closed'}
+            </span>
+          </div>
+          <p className="text-[13px] font-bold text-white truncate mb-3">{shopName || 'Your Shop'}</p>
           <button
             onClick={handleToggleOpen}
-            className={[
-              'w-full py-2 px-4 rounded-full text-sm font-semibold transition-colors',
-              isOpen ? 'bg-green-500 text-white' : 'bg-red-500 text-white',
-            ].join(' ')}
+            className="w-full py-1.5 rounded-lg text-[11px] font-bold transition-all border"
+            style={isOpen
+              ? { background: 'rgba(248,113,113,0.12)', color: '#f87171', borderColor: 'rgba(248,113,113,0.2)' }
+              : { background: 'rgba(52,211,153,0.12)', color: '#34d399', borderColor: 'rgba(52,211,153,0.2)' }
+            }
           >
-            {isOpen ? 'Open' : 'Closed'}
+            {isOpen ? 'Close shop' : 'Open shop'}
           </button>
         </div>
 
-        <nav className="flex-1 py-3 overflow-y-auto">
+        {/* Nav */}
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               onClick={() => setActiveNav(item.id)}
-              className={[
-                'w-full flex items-center gap-3 py-3 text-sm font-medium transition-colors text-left',
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                 activeNav === item.id
-                  ? 'border-l-4 border-[#1B6CA8] bg-[#EBF4FF] text-[#1B6CA8] pl-[17px] pr-5'
-                  : 'border-l-4 border-transparent pl-[17px] pr-5 text-gray-600 hover:bg-gray-50',
-              ].join(' ')}
+                  ? 'bg-white text-[#0A2540] font-semibold shadow-sm'
+                  : 'text-white/50 hover:text-white hover:bg-white/8'
+              }`}
             >
-              <ImgPlaceholder label="" className="w-5 h-5 rounded bg-gray-100 border-gray-300 shrink-0" />
+              {NAV_ICONS[item.id]}
               {item.label}
             </button>
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t border-[#e5e7eb] flex items-center gap-3">
-          <ImgPlaceholder label="Owner photo" className="w-10 h-10 rounded-full bg-[#EBF4FF] border-blue-200 shrink-0" />
+        {/* Profile */}
+        <div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[#F5A623] flex items-center justify-center shrink-0">
+            <span className="text-[#0A2540] text-xs font-bold">{initials}</span>
+          </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-800 truncate">
-              {userProfile?.fullName ?? 'Merchant'}
-            </p>
-            <p className="text-[11px] text-gray-600">Shop owner</p>
+            <p className="text-sm font-semibold text-white truncate">{userProfile?.fullName ?? 'Merchant'}</p>
+            <p className="text-[10px] text-white/35">Shop owner</p>
           </div>
         </div>
 
       </aside>
 
-      {/* ── Main area ───────────────────────────────────────────────────── */}
+      {/* ── Main ────────────────────────────────────────────────────────── */}
       <div className="ml-[240px] flex-1 flex flex-col overflow-y-auto">
 
-        <header className="bg-white border-b border-[#e5e7eb] h-16 flex items-center justify-between px-8 sticky top-0 z-10 shrink-0">
-          <div>
-            <h1 className="font-heading font-bold text-[18px] text-gray-900 leading-tight">
-              Good morning, {userProfile?.fullName?.split(' ')[0] ?? 'Merchant'}
-            </h1>
-            <p className="text-xs text-gray-600 mt-0.5">
-              {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                </svg>
-              </div>
-              {pendingOrders.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-              )}
+        {/* Top banner — greeting + stats */}
+        <div className="bg-[#0A2540] px-8 pt-7 pb-7 shrink-0">
+          <div className="flex items-start justify-between mb-7">
+            <div>
+              <p className="text-white/40 text-xs font-medium mb-1 tracking-wide">
+                {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
+              <h1 className="font-heading font-bold text-[1.6rem] text-white leading-tight">
+                {greeting},{' '}
+                <span className="text-[#F5A623]">{userProfile?.fullName?.split(' ')[0] ?? 'Merchant'}</span>
+              </h1>
             </div>
-            <ImgPlaceholder label="Owner avatar" className="w-9 h-9 rounded-full bg-[#EBF4FF] border-blue-200 shrink-0" />
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+                  <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                  </svg>
+                </button>
+                {pendingOrders.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F5A623] rounded-full text-[9px] font-bold text-[#0A2540] flex items-center justify-center">
+                    {pendingOrders.length}
+                  </span>
+                )}
+              </div>
+              <div className="w-9 h-9 rounded-full bg-[#F5A623] flex items-center justify-center shrink-0">
+                <span className="text-[#0A2540] text-xs font-bold">{initials}</span>
+              </div>
+            </div>
           </div>
-        </header>
 
-        <main className="flex-1 p-8 space-y-6">
-
-          {/* Stats row */}
-          <div className="grid grid-cols-4 gap-4">
-            {STATS.map(stat => (
-              <div key={stat.label} className="bg-white rounded-xl border border-[#e5e7eb] p-5">
-                <p className="font-heading font-bold text-[1.6rem] text-[#1B6CA8] leading-none">
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-3">
+            {STATS.map((stat, i) => (
+              <div key={stat.label} className="bg-white/8 border border-white/10 rounded-2xl px-5 py-4">
+                <p className={`font-heading font-bold text-[2rem] leading-none ${STAT_STYLES[i].num}`}>
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-600 mt-2">{stat.label}</p>
+                <p className="text-[11px] text-white/45 mt-1.5">{stat.label}</p>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Orders section */}
-          <div className="space-y-4">
-            <h2 className="font-heading font-bold text-[17px] text-gray-900">Today's orders</h2>
+        <main className="flex-1 p-8 space-y-6">
 
-            <div className="flex border-b border-[#e5e7eb]">
-              {TABS.map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={[
-                    'px-4 py-2.5 text-sm font-medium transition-colors',
-                    activeTab === tab
-                      ? 'text-[#1B6CA8] border-b-2 border-[#1B6CA8] -mb-px'
-                      : 'text-gray-600 hover:text-gray-600',
-                  ].join(' ')}
-                >
-                  {tab}
-                </button>
-              ))}
+          {/* Orders */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-heading font-bold text-[17px] text-gray-900">Orders</h2>
+              <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm">
+                {TABS.map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      activeTab === tab
+                        ? 'bg-[#0A2540] text-white shadow-sm'
+                        : 'text-gray-400 hover:text-gray-700'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-3">
-              {filteredOrders.map(order => (
-                <OrderCard key={order.id} order={order} />
-              ))}
+              {filteredOrders.map(order => <OrderCard key={order.id} order={order} />)}
               {filteredOrders.length === 0 && (
-                <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center">
-                  <p className="text-gray-600 text-sm">No orders in this category</p>
+                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-12 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-600">No orders here</p>
+                  <p className="text-xs text-gray-400 mt-1">Orders in this category will appear here</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Weight confirmations */}
-          <div className="bg-white rounded-xl border border-[#e5e7eb] flex overflow-hidden">
-            <div className="w-1 bg-amber-400 shrink-0" />
-            <div className="flex-1 p-6">
-              <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">
-                Weight confirmations needed
-              </h2>
-              {weightPending.length === 0 ? (
-                <p className="text-sm text-gray-600">No weight confirmations needed right now.</p>
-              ) : (
-                <div className="space-y-8">
-                  {weightPending.map(order => (
-                    <WeightConfirmCard key={order.id} order={order} />
+          {/* Bottom 2-col */}
+          <div className="grid grid-cols-2 gap-6">
+
+            {/* Weight confirms */}
+            <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                  </svg>
+                </div>
+                <h2 className="font-heading font-bold text-[15px] text-gray-900">Weight Confirmations</h2>
+                {weightPending.length > 0 && (
+                  <span className="ml-auto bg-amber-100 text-amber-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                    {weightPending.length} pending
+                  </span>
+                )}
+              </div>
+              <div className="p-6">
+                {weightPending.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">All clear — no confirmations needed.</p>
+                ) : (
+                  <div className="space-y-8">
+                    {weightPending.map(order => <WeightConfirmCard key={order.id} order={order} />)}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Earnings */}
+            <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <h2 className="font-heading font-bold text-[15px] text-gray-900">This Week</h2>
+                <p className="ml-auto font-heading font-bold text-[#1B6CA8] text-[17px]">₱{TOTAL_WEEKLY.toLocaleString()}</p>
+              </div>
+              <div className="p-6">
+                <div className="flex items-end gap-2 h-[96px] mb-2">
+                  {EARNINGS_DATA.map(entry => (
+                    <div key={entry.day} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        className={`w-full rounded-t-md transition-all ${entry.day === ACTIVE_DAY ? 'bg-[#0A2540]' : 'bg-[#DBEAFE]'}`}
+                        style={{ height: `${(entry.amount / MAX_EARNING) * 90}px` }}
+                      />
+                    </div>
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Earnings snapshot — hardcoded, wired separately later */}
-          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-heading font-bold text-[17px] text-gray-900">
-                This week's earnings
-              </h2>
-              <p className="font-heading font-bold text-[1.4rem] text-[#1B6CA8]">
-                ₱{TOTAL_WEEKLY.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="flex items-end gap-2 h-[120px]">
-              {EARNINGS_DATA.map(entry => (
-                <div
-                  key={entry.day}
-                  className={`flex-1 rounded-t-sm transition-all ${entry.day === ACTIVE_DAY ? 'bg-[#1B6CA8]' : 'bg-[#BFDBFE]'}`}
-                  style={{ height: `${(entry.amount / MAX_EARNING) * 120}px` }}
-                />
-              ))}
-            </div>
-
-            <div className="flex gap-2 mt-3">
-              {EARNINGS_DATA.map(entry => (
-                <div key={entry.day} className="flex-1 text-center">
-                  <p className={`text-[10px] font-medium ${entry.day === ACTIVE_DAY ? 'text-[#1B6CA8]' : 'text-gray-600'}`}>
-                    ₱{entry.amount.toLocaleString()}
-                  </p>
-                  <p className={`text-[11px] mt-0.5 ${entry.day === ACTIVE_DAY ? 'text-gray-700 font-semibold' : 'text-gray-600'}`}>
-                    {entry.day}
-                  </p>
+                <div className="flex gap-2">
+                  {EARNINGS_DATA.map(entry => (
+                    <div key={entry.day} className="flex-1 text-center">
+                      <p className={`text-[10px] font-semibold ${entry.day === ACTIVE_DAY ? 'text-[#0A2540]' : 'text-gray-300'}`}>
+                        {entry.day}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
+
           </div>
 
         </main>

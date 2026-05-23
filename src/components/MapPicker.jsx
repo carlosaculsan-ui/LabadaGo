@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -33,11 +33,38 @@ function ClickHandler({ onMapClick }) {
   return null
 }
 
+async function forwardGeocode(query) {
+  try {
+    const res  = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=ph&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    )
+    return await res.json()
+  } catch {
+    return []
+  }
+}
+
 export default function MapPicker({ label = 'Pickup address', address, onAddressChange, onCoordsChange }) {
-  const [position,  setPosition]  = useState(null)
-  const [detecting, setDetecting] = useState(false)
-  const [geocoding, setGeocoding] = useState(false)
-  const mapRef = useRef(null)
+  const [position,     setPosition]     = useState(null)
+  const [detecting,    setDetecting]    = useState(false)
+  const [geocoding,    setGeocoding]    = useState(false)
+  const [suggestions,  setSuggestions]  = useState([])
+  const [searching,    setSearching]    = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const mapRef      = useRef(null)
+  const debounceRef = useRef(null)
+  const wrapperRef  = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   async function placeMarker(latlng) {
     setPosition(latlng)
@@ -61,6 +88,30 @@ export default function MapPicker({ label = 'Pickup address', address, onAddress
       () => setDetecting(false),
       { timeout: 10000 }
     )
+  }
+
+  function handleAddressInput(e) {
+    const val = e.target.value
+    onAddressChange(val)
+    clearTimeout(debounceRef.current)
+    if (val.trim().length < 3) { setSuggestions([]); setShowDropdown(false); return }
+    setSearching(true)
+    debounceRef.current = setTimeout(async () => {
+      const results = await forwardGeocode(val)
+      setSuggestions(results)
+      setShowDropdown(results.length > 0)
+      setSearching(false)
+    }, 400)
+  }
+
+  async function selectSuggestion(place) {
+    const latlng = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) }
+    setSuggestions([])
+    setShowDropdown(false)
+    onAddressChange(place.display_name)
+    setPosition(latlng)
+    onCoordsChange?.(latlng)
+    mapRef.current?.flyTo(latlng, 16, { animate: true })
   }
 
   const inputCls = 'w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors'
@@ -109,17 +160,37 @@ export default function MapPicker({ label = 'Pickup address', address, onAddress
         {position ? 'Drag the map or click again to adjust.' : 'Click anywhere on the map to drop a pin.'}
       </p>
 
-      {/* Editable address field */}
-      <div className="relative">
+      {/* Editable address field + suggestions */}
+      <div className="relative" ref={wrapperRef}>
         <input
           type="text"
           value={address}
-          onChange={e => onAddressChange(e.target.value)}
-          placeholder="Address will appear here after selecting on map"
+          onChange={handleAddressInput}
+          onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
+          placeholder="Type an address or click the map"
           className={inputCls}
         />
-        {geocoding && (
+        {(geocoding || searching) && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-block w-4 h-4 rounded-full border-2 border-[#1B6CA8]/30 border-t-[#1B6CA8] animate-spin" />
+        )}
+        {showDropdown && (
+          <ul className="absolute z-[9999] left-0 right-0 top-full mt-1 bg-white border border-[#e5e7eb] rounded-xl shadow-lg overflow-hidden">
+            {suggestions.map((place, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  onMouseDown={() => selectSuggestion(place)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-[#F4F7FA] flex items-start gap-2.5 border-b border-[#f3f4f6] last:border-0"
+                >
+                  <svg className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="leading-snug">{place.display_name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 

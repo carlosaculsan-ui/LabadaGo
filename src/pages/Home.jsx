@@ -422,8 +422,8 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative grid grid-cols-4 gap-6">
-            <div className="absolute top-[1.1rem] left-[14%] right-[14%] border-t-2 border-dashed border-[#CBD5E1] pointer-events-none z-0" />
+          <div className="relative grid grid-cols-4 gap-6 pt-4">
+            <div className="absolute top-[18px] left-[12.5%] right-[12.5%] border-t-2 border-dashed border-[#CBD5E1] pointer-events-none z-0" />
 
             {HOW_STEPS.map(step => (
               <div key={step.num} className="relative z-10 bg-white rounded-2xl p-6 pt-10 flex flex-col items-center text-center shadow-sm">
