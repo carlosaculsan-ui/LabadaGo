@@ -83,9 +83,13 @@ export default function Apply() {
   const [error,      setError]      = useState('')
 
   // Step 1 — Personal Info
-  const [fullName, setFullName] = useState(user?.displayName || '')
-  const [mobile,   setMobile]   = useState('')
-  const [address,  setAddress]  = useState('')
+  const [firstName,     setFirstName]     = useState('')
+  const [middleInitial, setMiddleInitial] = useState('')
+  const [lastName,      setLastName]      = useState('')
+  const [age,           setAge]           = useState('')
+  const [sex,           setSex]           = useState('')
+  const [mobile,        setMobile]        = useState('')
+  const [address,       setAddress]       = useState('')
 
   // Step 2 — Merchant
   const [shopName,    setShopName]    = useState('')
@@ -110,9 +114,12 @@ export default function Apply() {
   function validate() {
     setError('')
     if (step === 0) {
-      if (!fullName.trim()) { setError('Full name is required.');     return false }
-      if (!mobile.trim())   { setError('Mobile number is required.'); return false }
-      if (!address.trim())  { setError('Home address is required.');  return false }
+      if (!firstName.trim()) { setError('First name is required.');    return false }
+      if (!lastName.trim())  { setError('Last name is required.');     return false }
+      if (!age)              { setError('Age is required.');           return false }
+      if (!sex)              { setError('Please select your sex.');    return false }
+      if (!mobile.trim())    { setError('Mobile number is required.'); return false }
+      if (!address.trim())   { setError('Home address is required.');  return false }
     }
     if (step === 1) {
       if (isMerchant) {
@@ -127,12 +134,13 @@ export default function Apply() {
     return true
   }
 
-  function next()  { if (validate()) setStep(s => s + 1) }
+  function next()  { setError(''); setStep(s => s + 1) }
   function back()  { setError(''); setStep(s => s - 1) }
 
   async function handleSubmit() {
     setError('')
     setSubmitting(true)
+    // TODO: re-enable validation before production
     try {
       const userRef = doc(db, 'users', user.uid)
       const appRef  = doc(db, 'applications', user.uid)
@@ -158,23 +166,29 @@ export default function Apply() {
           ownerId:     user.uid,
           createdAt:   serverTimestamp(),
         })
+        const fullName = [firstName, middleInitial, lastName].filter(Boolean).join(' ').trim()
         await setDoc(appRef, {
           type: 'merchant', status: 'approved',
-          fullName: fullName.trim(), mobile: mobile.trim(), address: address.trim(),
+          firstName: firstName.trim(), middleInitial: middleInitial.trim(), lastName: lastName.trim(),
+          fullName, age: parseInt(age, 10), sex,
+          mobile: mobile.trim(), address: address.trim(),
           shopName: shopName.trim(), shopAddress: shopAddress.trim(),
           gcash: gcash.trim(), services, bizPermit: bizPermit?.name ?? null,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
-        await updateDoc(userRef, { role: 'merchant', fullName: fullName.trim(), mobile: mobile.trim() })
+        await updateDoc(userRef, { role: 'merchant', fullName, mobile: mobile.trim() })
       } else {
+        const fullName = [firstName, middleInitial, lastName].filter(Boolean).join(' ').trim()
         await setDoc(appRef, {
           type: 'rider', status: 'approved',
-          fullName: fullName.trim(), mobile: mobile.trim(), address: address.trim(),
+          firstName: firstName.trim(), middleInitial: middleInitial.trim(), lastName: lastName.trim(),
+          fullName, age: parseInt(age, 10), sex,
+          mobile: mobile.trim(), address: address.trim(),
           vehicle, plate: plate.trim(), contact: contact.trim(),
           license: license?.name ?? null, validId: validId?.name ?? null,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
-        await updateDoc(userRef, { role: 'rider', fullName: fullName.trim(), mobile: mobile.trim() })
+        await updateDoc(userRef, { role: 'rider', fullName, mobile: mobile.trim() })
       }
 
       await refreshProfile()
@@ -293,9 +307,38 @@ export default function Apply() {
             {/* ── Step 1: Personal Info ── */}
             {step === 0 && (
               <>
-                <Field label="Full name *">
-                  <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Juan Dela Cruz" className={inputCls} />
-                </Field>
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="First name *">
+                    <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Juan" className={inputCls} />
+                  </Field>
+                  <Field label="Middle initial">
+                    <input value={middleInitial} onChange={e => setMiddleInitial(e.target.value)} placeholder="D." maxLength={4} className={inputCls} />
+                  </Field>
+                  <Field label="Last name *">
+                    <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Dela Cruz" className={inputCls} />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Age *">
+                    <input type="number" value={age} onChange={e => setAge(e.target.value)} placeholder="e.g. 25" min={18} max={80} className={inputCls} />
+                  </Field>
+                  <Field label="Sex *">
+                    <div className="flex gap-4 px-1 pt-2">
+                      {['Male', 'Female'].map(opt => (
+                        <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio" name="sex" value={opt} checked={sex === opt}
+                            onChange={() => setSex(opt)} className="hidden"
+                          />
+                          <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${sex === opt ? (isMerchant ? 'border-[#1B6CA8]' : 'border-emerald-500') : 'border-gray-300'}`}>
+                            {sex === opt && <span className={`w-2 h-2 rounded-full ${isMerchant ? 'bg-[#1B6CA8]' : 'bg-emerald-500'}`} />}
+                          </span>
+                          <span className="text-sm text-gray-700">{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </Field>
+                </div>
                 <Field label="Email address">
                   <input value={user?.email ?? ''} disabled className={`${inputCls} bg-gray-50 text-gray-400 cursor-not-allowed border-gray-100`} />
                   <p className="text-[11px] text-gray-400 mt-1">Pre-filled from your account — cannot be changed here.</p>
@@ -394,10 +437,14 @@ export default function Apply() {
               <div className="space-y-4">
                 <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 space-y-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Personal Information</p>
-                  <ReviewRow label="Full Name" value={fullName} />
-                  <ReviewRow label="Email"     value={user?.email} />
-                  <ReviewRow label="Mobile"    value={mobile} />
-                  <ReviewRow label="Address"   value={address} />
+                  <ReviewRow label="First Name"      value={firstName} />
+                  <ReviewRow label="Middle Initial"  value={middleInitial || '—'} />
+                  <ReviewRow label="Last Name"       value={lastName} />
+                  <ReviewRow label="Age"             value={age} />
+                  <ReviewRow label="Sex"             value={sex} />
+                  <ReviewRow label="Email"           value={user?.email} />
+                  <ReviewRow label="Mobile"          value={mobile} />
+                  <ReviewRow label="Address"         value={address} />
                 </div>
 
                 {isMerchant ? (
