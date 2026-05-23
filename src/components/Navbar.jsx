@@ -70,7 +70,15 @@ export default function Navbar() {
     navigate('/', { replace: true })
   }
 
-  const firstName = (userProfile?.fullName ?? user?.displayName ?? '').split(' ')[0] || 'Account'
+  const displayName = userProfile?.fullName ?? user?.displayName ?? ''
+  const firstName = displayName.split(' ')[0] || 'Account'
+  const initials = (() => {
+    const parts = displayName.trim().split(/\s+/).filter(Boolean)
+    if (parts.length === 0) return '?'
+    if (parts.length === 1) return parts[0][0].toUpperCase()
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  })()
+  const photoURL = user?.photoURL
 
   const linkClass = ({ isActive }) =>
     `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
@@ -185,27 +193,28 @@ export default function Navbar() {
 
           {/* Auth area */}
           {!user ? (
-            <div className="flex items-center gap-2">
-              <Link
-                to="/signup"
-                className="text-sm font-semibold px-4 py-2 rounded-lg border border-[#1B6CA8] text-[#1B6CA8] hover:bg-[#1B6CA8]/10 transition-colors"
-              >
-                Sign up
-              </Link>
-              <Link
-                to="/signin"
-                className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#1B6CA8] text-white hover:bg-[#155a8a] transition-colors"
-              >
-                Sign in
-              </Link>
-            </div>
+            <Link
+              to="/signin"
+              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-[#1B6CA8] text-white hover:bg-[#155a8a] transition-colors"
+            >
+              Login
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
           ) : (
             <div ref={dropdownRef} className="relative">
               <button
                 onClick={() => setDropdownOpen(v => !v)}
                 className="flex items-center gap-2 rounded-full pl-2 pr-3 py-1.5 border border-[#e5e7eb] hover:bg-gray-50 transition-colors"
               >
-                <div className="w-6 h-6 rounded-full border border-dashed border-[#1B6CA8] bg-[#E8F4FD] shrink-0" />
+                {photoURL ? (
+                  <img src={photoURL} alt={firstName} referrerPolicy="no-referrer" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-[#1B6CA8] flex items-center justify-center shrink-0">
+                    <span className="text-[9px] font-bold text-white leading-none">{initials}</span>
+                  </div>
+                )}
                 <span className="text-sm font-medium text-gray-700 max-w-[96px] truncate">
                   {firstName}
                 </span>

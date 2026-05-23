@@ -92,15 +92,19 @@ export default function Browse() {
   const location = useLocation()
   const [shops, setShops] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeChip, setActiveChip] = useState(() => {
-    const param = new URLSearchParams(location.search).get('service')
-    return param && CHIPS.includes(param) ? param : 'All'
-  })
   const [searchQuery, setSearchQuery] = useState(() =>
     new URLSearchParams(location.search).get('search') ?? ''
   )
   const [sortBy, setSortBy] = useState('nearest')
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState(() => {
+    const param = new URLSearchParams(location.search).get('service')
+    const service = param && CHIPS.slice(1).includes(param) ? [param] : []
+    return { ...DEFAULT_FILTERS, services: service }
+  })
+
+  const activeChip = filters.services.length === 1 && CHIPS.slice(1).includes(filters.services[0])
+    ? filters.services[0]
+    : 'All'
 
   useEffect(() => {
     getDocs(collection(db, 'shops')).then(snap => {
@@ -127,7 +131,6 @@ export default function Browse() {
       if (q && !shop.name.toLowerCase().includes(q) && !shop.address.toLowerCase().includes(q)) return false
       if (shop.distanceKm > filters.maxDistance) return false
       if (filters.services.length > 0 && !filters.services.some(s => shop.services.includes(s))) return false
-      if (activeChip !== 'All' && !shop.services.includes(activeChip)) return false
       if (filters.detergent !== 'Any' && !shop.detergents.includes(filters.detergent)) return false
       if (shop.pricePerKg > filters.maxPrice) return false
       if (filters.rating === '4.5+' && shop.rating < 4.5) return false
@@ -171,7 +174,7 @@ export default function Browse() {
               {CHIPS.map(chip => (
                 <button
                   key={chip}
-                  onClick={() => setActiveChip(chip)}
+                  onClick={() => setFilters(f => ({ ...f, services: chip === 'All' ? [] : [chip] }))}
                   className={[
                     'text-sm font-medium px-5 py-2 rounded-full transition-colors',
                     activeChip === chip
@@ -264,7 +267,11 @@ export default function Browse() {
 
       {/* Body */}
       <div className="max-w-[1280px] mx-auto px-8 py-8 flex gap-8">
-        <FilterSidebar onFilterChange={setFilters} />
+        <FilterSidebar
+          services={filters.services}
+          onServicesChange={services => setFilters(f => ({ ...f, services }))}
+          onFilterChange={setFilters}
+        />
 
         <div className="flex-1 min-w-0">
           {/* Sort + count bar */}

@@ -500,7 +500,7 @@ export default function Home() {
       </section>
 
       {/* ── CTA Banner ───────────────────────────────────────────────────────── */}
-      <section className="bg-[#0D3F6B] py-16">
+      <section className="bg-[#0D3F6B] py-16 border-b-4 border-[#F5A623]">
         <div className="max-w-[1280px] mx-auto px-8 flex items-center justify-between gap-8">
           <div>
             <h2 className="font-heading font-bold text-[2rem] text-white leading-tight mb-2">

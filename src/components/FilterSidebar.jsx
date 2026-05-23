@@ -11,9 +11,8 @@ function SectionLabel({ children }) {
   )
 }
 
-export default function FilterSidebar({ onFilterChange }) {
+export default function FilterSidebar({ onFilterChange, services, onServicesChange }) {
   const [maxDistance, setMaxDistance] = useState(5)
-  const [services, setServices] = useState([])
   const [detergent, setDetergent] = useState('Any')
   const [maxPrice, setMaxPrice] = useState(120)
   const [rating, setRating] = useState(null)
@@ -31,7 +30,7 @@ export default function FilterSidebar({ onFilterChange }) {
     const next = services.includes(svc)
       ? services.filter(s => s !== svc)
       : [...services, svc]
-    setServices(next)
+    onServicesChange?.(next)
     notify({ services: next })
   }
 
