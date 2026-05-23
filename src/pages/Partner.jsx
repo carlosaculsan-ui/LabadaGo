@@ -1,7 +1,5 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import ApplyModal from '../components/ApplyModal'
 
 const MERCHANT_PERKS = [
   'Free to list — no setup fees ever',
@@ -36,13 +34,12 @@ function PerkList({ perks, color }) {
 }
 
 export default function Partner() {
-  const navigate   = useNavigate()
+  const navigate       = useNavigate()
   const { user, role } = useAuth()
-  const [applyType, setApplyType] = useState(null)
 
   function handleApply(type) {
     if (!user) { navigate('/signin'); return }
-    setApplyType(type)
+    navigate(`/apply/${type}`)
   }
 
   return (
@@ -124,13 +121,7 @@ export default function Partner() {
             {/* Merchant */}
             <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden shadow-sm flex flex-col">
               <div className="relative h-56 bg-[#DBEAFE] overflow-hidden shrink-0">
-                {/* Replace with: <img src="/merchant-banner.jpg" className="w-full h-full object-cover" /> */}
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-blue-200 m-3 rounded-xl">
-                  <svg className="w-8 h-8 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-xs text-blue-300 font-medium">Merchant image slot</span>
-                </div>
+                <video src="/MerchantVideo.mp4" autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
               </div>
 
               <div className="p-8 flex flex-col flex-1">
@@ -165,13 +156,7 @@ export default function Partner() {
             {/* Rider */}
             <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden shadow-sm flex flex-col">
               <div className="relative h-56 bg-[#D1FAE5] overflow-hidden shrink-0">
-                {/* Replace with: <video src="/rider-promo.mp4" autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" /> */}
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-emerald-200 m-3 rounded-xl">
-                  <svg className="w-8 h-8 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-xs text-emerald-300 font-medium">Rider video slot</span>
-                </div>
+                <video src="/RiderVideo.mp4" autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
               </div>
 
               <div className="p-8 flex flex-col flex-1">
@@ -206,7 +191,6 @@ export default function Partner() {
         </div>
       </section>
 
-      {applyType && <ApplyModal type={applyType} onClose={() => setApplyType(null)} />}
     </>
   )
 }

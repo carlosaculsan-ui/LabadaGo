@@ -16,6 +16,7 @@ import NotFound from './pages/NotFound'
 import SeedPage from './pages/SeedPage'
 import MyOrders from './pages/MyOrders'
 import Partner from './pages/Partner'
+import Apply from './pages/Apply'
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [{ path: '/apply/:type', element: <Apply /> }],
   },
   {
     element: <ProtectedRoute allowedRoles={['rider']} />,
