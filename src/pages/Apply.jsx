@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
+import MapPicker from '../components/MapPicker'
 
 const SERVICES    = ['Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
 const VEHICLES    = ['Motorcycle', 'Bicycle', 'Car']
@@ -19,14 +21,14 @@ const RIDER_STEPS = [
   { label: 'Review & Submit',   desc: 'Confirm before sending'       },
 ]
 
-const inputCls = 'w-full px-3.5 py-2.5 rounded-xl border border-[#e5e7eb] text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-all placeholder:text-gray-300'
+const inputCls = 'w-full px-3.5 py-2.5 rounded-xl border border-[#e5e7eb] text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-all placeholder:text-gray-500'
 
 function Field({ label, children, hint }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-600 mb-1.5">{label}</label>
       {children}
-      {hint && <p className="text-[11px] text-gray-400 mt-1">{hint}</p>}
+      {hint && <p className="text-[11px] text-gray-600 mt-1">{hint}</p>}
     </div>
   )
 }
@@ -38,14 +40,14 @@ function FileInput({ label, hint, accept, value, onChange, isMerchant }) {
     <Field label={label} hint={hint}>
       <label className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${value ? filled : 'border-gray-200 hover:border-gray-300 bg-gray-50'}`}>
         <input type="file" accept={accept} className="hidden" onChange={e => onChange(e.target.files?.[0] ?? null)} />
-        <svg className={`w-5 h-5 shrink-0 ${value ? iconCls : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className={`w-5 h-5 shrink-0 ${value ? iconCls : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
         <div className="min-w-0 flex-1">
-          <p className={`text-sm font-medium truncate ${value ? 'text-gray-800' : 'text-gray-400'}`}>
+          <p className={`text-sm font-medium truncate ${value ? 'text-gray-800' : 'text-gray-700'}`}>
             {value ? value.name : 'Click to upload'}
           </p>
-          {!value && <p className="text-xs text-gray-400 mt-0.5">PDF, JPG or PNG · max 10 MB</p>}
+          {!value && <p className="text-xs text-gray-600 mt-0.5">PDF, JPG or PNG · max 10 MB</p>}
         </div>
         {value && (
           <svg className={`w-4 h-4 shrink-0 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -61,7 +63,7 @@ function ReviewRow({ label, value }) {
   if (!value) return null
   return (
     <div className="flex gap-4 text-sm py-1">
-      <span className="text-gray-400 w-36 shrink-0">{label}</span>
+      <span className="text-gray-600 w-36 shrink-0">{label}</span>
       <span className="text-gray-800 font-medium break-words">{value}</span>
     </div>
   )
@@ -90,10 +92,14 @@ export default function Apply() {
   const [sex,           setSex]           = useState('')
   const [mobile,        setMobile]        = useState('')
   const [address,       setAddress]       = useState('')
+  const [homeCoords,    setHomeCoords]    = useState(null)
 
   // Step 2 — Merchant
-  const [shopName,    setShopName]    = useState('')
-  const [shopAddress, setShopAddress] = useState('')
+  const [shopName,       setShopName]       = useState('')
+  const [shopAddress,    setShopAddress]    = useState('')
+  const [shopCoords,     setShopCoords]     = useState(null)
+  const [shopFrontPhoto, setShopFrontPhoto] = useState(null)
+  const [photoPreview,   setPhotoPreview]   = useState(null)
   const [services,    setServices]    = useState([])
   const [pricePerKg,  setPricePerKg]  = useState('')
   const [gcash,       setGcash]       = useState('')
@@ -148,9 +154,20 @@ export default function Apply() {
       if (isMerchant) {
         const shopRef  = doc(db, 'shops', user.uid)
         const colorIdx = Math.floor(Math.random() * CARD_COLORS.length)
+
+        let shopImageUrl = null
+        if (shopFrontPhoto) {
+          const ext      = shopFrontPhoto.name.split('.').pop()
+          const photoRef = ref(storage, `shops/${user.uid}/front.${ext}`)
+          await uploadBytes(photoRef, shopFrontPhoto)
+          shopImageUrl = await getDownloadURL(photoRef)
+        }
+
         await setDoc(shopRef, {
           name:        shopName.trim(),
           address:     shopAddress.trim(),
+          coords:      shopCoords ?? null,
+          image:       shopImageUrl,
           gcash:       gcash.trim(),
           pricePerKg:  pricePerKg ? parseInt(pricePerKg, 10) : 65,
           description: description.trim(),
@@ -212,7 +229,7 @@ export default function Apply() {
             </svg>
           </div>
           <h2 className="font-heading font-bold text-2xl text-gray-900 mb-2">Application Submitted!</h2>
-          <p className="text-sm text-gray-500 leading-relaxed mb-6">
+          <p className="text-sm text-gray-700 leading-relaxed mb-6">
             Thank you for applying as a <span className="font-semibold text-gray-700">{isMerchant ? 'Merchant' : 'Rider'}</span> on LabadaGo. Our team is reviewing your application and documents.
           </p>
           <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-8 text-left">
@@ -267,16 +284,16 @@ export default function Apply() {
                     ) : (i + 1)}
                   </div>
                   {i < steps.length - 1 && (
-                    <div className={`w-px flex-1 my-1 ${done ? (isMerchant ? 'bg-[#1B6CA8]' : 'bg-emerald-500') : 'bg-white/10'}`} style={{ minHeight: 40 }} />
+                    <div className={`w-px flex-1 my-1 ${done ? (isMerchant ? 'bg-[#1B6CA8]' : 'bg-emerald-500') : 'bg-white/10'}`} style={{ minHeight: 80 }} />
                   )}
                 </div>
 
                 {/* Labels */}
-                <div className="pb-10">
+                <div className="pb-16">
                   <p className={`text-sm font-semibold leading-none mb-1 ${current ? 'text-white' : done ? 'text-white/70' : 'text-white/30'}`}>
                     {s.label}
                   </p>
-                  <p className={`text-xs leading-relaxed ${current ? 'text-white/60' : 'text-white/20'}`}>
+                  <p className={`text-xs leading-relaxed ${current ? 'text-white/80' : 'text-white/40'}`}>
                     {s.desc}
                   </p>
                 </div>
@@ -300,7 +317,7 @@ export default function Apply() {
           <h2 className="font-heading font-bold text-2xl text-gray-900 mb-1">
             {steps[step].label}
           </h2>
-          <p className="text-sm text-gray-500 mb-8">{steps[step].desc}</p>
+          <p className="text-sm text-gray-700 mb-8">{steps[step].desc}</p>
 
           <div className="space-y-5">
 
@@ -340,15 +357,18 @@ export default function Apply() {
                   </Field>
                 </div>
                 <Field label="Email address">
-                  <input value={user?.email ?? ''} disabled className={`${inputCls} bg-gray-50 text-gray-400 cursor-not-allowed border-gray-100`} />
-                  <p className="text-[11px] text-gray-400 mt-1">Pre-filled from your account — cannot be changed here.</p>
+                  <input value={user?.email ?? ''} disabled className={`${inputCls} bg-gray-50 text-gray-600 cursor-not-allowed border-gray-100`} />
+                  <p className="text-[11px] text-gray-600 mt-1">Pre-filled from your account — cannot be changed here.</p>
                 </Field>
                 <Field label="Mobile number *">
                   <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="e.g. 09171234567" className={inputCls} />
                 </Field>
-                <Field label="Home address *">
-                  <input value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. 12 Rizal St, Brgy. Sta. Cruz, Manila" className={inputCls} />
-                </Field>
+                <MapPicker
+                  label="Home address *"
+                  address={address}
+                  onAddressChange={setAddress}
+                  onCoordsChange={setHomeCoords}
+                />
               </>
             )}
 
@@ -358,8 +378,42 @@ export default function Apply() {
                 <Field label="Shop name *">
                   <input value={shopName} onChange={e => setShopName(e.target.value)} placeholder="e.g. Sunshine Laundry" className={inputCls} />
                 </Field>
-                <Field label="Shop address *">
-                  <input value={shopAddress} onChange={e => setShopAddress(e.target.value)} placeholder="e.g. 12 Rizal St, Barangay Sta. Cruz" className={inputCls} />
+                <MapPicker
+                  label="Shop address *"
+                  address={shopAddress}
+                  onAddressChange={setShopAddress}
+                  onCoordsChange={setShopCoords}
+                />
+                <Field label="Shop front photo *" hint="This will be your shop's cover photo on LabadaGo">
+                  <label className={`flex items-center gap-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${shopFrontPhoto ? 'border-[#1B6CA8] bg-[#E8F4FD]' : 'border-gray-200 hover:border-gray-300 bg-gray-50'}`}>
+                    <input
+                      type="file" accept="image/*" className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0] ?? null
+                        setShopFrontPhoto(file)
+                        setPhotoPreview(file ? URL.createObjectURL(file) : null)
+                      }}
+                    />
+                    {photoPreview ? (
+                      <>
+                        <img src={photoPreview} alt="Shop front" className="w-24 h-20 object-cover shrink-0" />
+                        <div className="py-3 pr-4">
+                          <p className="text-sm font-medium text-gray-800 truncate max-w-[260px]">{shopFrontPhoto.name}</p>
+                          <p className="text-xs text-[#1B6CA8] mt-0.5">Click to change photo</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-3 px-4 py-3.5 w-full">
+                        <svg className="w-5 h-5 text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm text-gray-700 font-medium">Upload shop front photo</p>
+                          <p className="text-xs text-gray-600 mt-0.5">JPG or PNG · recommended 800×600px</p>
+                        </div>
+                      </div>
+                    )}
+                  </label>
                 </Field>
                 <Field label="Services offered *">
                   <div className="grid grid-cols-2 gap-2">
@@ -436,7 +490,7 @@ export default function Apply() {
             {step === 2 && (
               <div className="space-y-4">
                 <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Personal Information</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-4">Personal Information</p>
                   <ReviewRow label="First Name"      value={firstName} />
                   <ReviewRow label="Middle Initial"  value={middleInitial || '—'} />
                   <ReviewRow label="Last Name"       value={lastName} />
@@ -449,9 +503,13 @@ export default function Apply() {
 
                 {isMerchant ? (
                   <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Shop Details</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-4">Shop Details</p>
+                    {photoPreview && (
+                      <img src={photoPreview} alt="Shop front" className="w-full h-36 object-cover rounded-xl mb-2" />
+                    )}
                     <ReviewRow label="Shop Name"       value={shopName} />
                     <ReviewRow label="Shop Address"    value={shopAddress} />
+                    <ReviewRow label="Front Photo"     value={shopFrontPhoto ? `${shopFrontPhoto.name} ✓` : 'Not uploaded'} />
                     <ReviewRow label="Services"        value={services.join(', ')} />
                     <ReviewRow label="Price"           value={pricePerKg ? `₱${pricePerKg}/kg` : '₱65/kg (default)'} />
                     <ReviewRow label="GCash"           value={gcash || '—'} />
@@ -460,7 +518,7 @@ export default function Apply() {
                   </div>
                 ) : (
                   <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Vehicle Details</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-4">Vehicle Details</p>
                     <ReviewRow label="Vehicle"          value={vehicle} />
                     <ReviewRow label="Plate No."        value={plate} />
                     <ReviewRow label="Contact"          value={contact} />
@@ -469,7 +527,7 @@ export default function Apply() {
                   </div>
                 )}
 
-                <p className="text-xs text-gray-400 leading-relaxed">
+                <p className="text-xs text-gray-600 leading-relaxed">
                   By submitting, you confirm that all information provided is accurate and truthful.
                 </p>
               </div>

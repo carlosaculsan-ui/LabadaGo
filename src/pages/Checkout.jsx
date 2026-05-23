@@ -31,9 +31,9 @@ const CONDITIONERS = [
 ]
 
 const PAYMENT_METHODS = [
-  { id: 'gcash', label: 'GCash',            desc: 'Pay with GCash wallet'    },
-  { id: 'maya',  label: 'Maya',             desc: 'Pay with Maya wallet'     },
-  { id: 'cod',   label: 'Cash on Delivery', desc: 'Pay when laundry arrives' },
+  { id: 'gcash', label: 'GCash',            desc: 'Pay with GCash wallet',    image: '/GCash.png'              },
+  { id: 'maya',  label: 'Maya',             desc: 'Pay with Maya wallet',     image: '/Maya.png'               },
+  { id: 'cod',   label: 'Cash on Delivery', desc: 'Pay when laundry arrives', image: '/cash-on-delivery.png'   },
 ]
 
 const PRICE_PER_KG = 50
@@ -394,11 +394,7 @@ export default function Checkout() {
                         : 'border-[#e5e7eb] hover:border-gray-300',
                     ].join(' ')}
                   >
-                    {/* ↓ image placeholder — replace with real payment logo */}
-                    <ImgPlaceholder
-                      label={`${pm.label} logo`}
-                      className="w-10 h-10 mb-3 rounded-lg"
-                    />
+                    <img src={pm.image} alt={pm.label} className={`mb-3 rounded-xl object-contain ${pm.id === 'gcash' ? 'w-[77px] h-[77px]' : 'w-16 h-16'}`} />
                     <p className="text-sm font-semibold text-gray-900">{pm.label}</p>
                     <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">{pm.desc}</p>
                   </button>
@@ -475,11 +471,7 @@ export default function Checkout() {
                     key={pm.id}
                     className={`transition-opacity ${payment === pm.id ? 'opacity-100' : 'opacity-20'}`}
                   >
-                    {/* ↓ image placeholder — replace with payment logo icon */}
-                    <ImgPlaceholder
-                      label={`${pm.label.split(' ')[0]} logo`}
-                      className="w-8 h-8 rounded-lg"
-                    />
+                    <img src={pm.image} alt={pm.label} className="w-8 h-8 rounded-lg object-contain" />
                   </div>
                 ))}
               </div>

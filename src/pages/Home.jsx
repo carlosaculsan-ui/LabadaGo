@@ -161,7 +161,7 @@ export default function Home() {
   const [activeChip,      setActiveChip]      = useState('all')
   const [nearbyShops,     setNearbyShops]     = useState([])
   const [shopsLoading,    setShopsLoading]    = useState(true)
-  const [shopsCount,      setShopsCount]      = useState(14)
+  const [shopsCount,      setShopsCount]      = useState(null)
   const [userOrderCount,  setUserOrderCount]  = useState(0)
   const [activeOrderCount, setActiveOrderCount] = useState(0)
   const [userDataLoaded,  setUserDataLoaded]  = useState(false)
@@ -169,7 +169,7 @@ export default function Home() {
   // Fetch shops — count + first 4 for preview; pad with mocks if fewer than 4
   useEffect(() => {
     getDocs(collection(db, 'shops')).then(snap => {
-      setShopsCount(snap.size || 14)
+      setShopsCount(snap.size || MOCK_SHOPS.length)
       const real = snap.docs.slice(0, 4).map((d, i) => ({
         ...d.data(),
         id: d.id,
@@ -208,7 +208,7 @@ export default function Home() {
   }
 
   const coreStats = [
-    { value: String(shopsCount), label: 'partner shops'    },
+    { value: shopsCount != null ? String(shopsCount) : '—', label: 'partner shops'    },
     { value: '4.8★',             label: 'avg rating'       },
     { value: 'Same-day',         label: 'pickup available' },
   ]
@@ -315,7 +315,7 @@ export default function Home() {
                   <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
                 </svg>
               </div>
-              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">{shopsCount}+</p>
+              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">{shopsCount != null ? `${shopsCount}+` : '—'}</p>
               <p className="text-[11px] text-white/60 mt-2">partner shops</p>
             </div>
 

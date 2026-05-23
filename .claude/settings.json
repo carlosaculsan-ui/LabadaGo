@@ -11,7 +11,12 @@
       "PowerShell(firebase --version)",
       "Bash(npx vite *)",
       "Bash(git restore *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(dir \"c:\\\\Users\\\\Admin\\\\Downloads\\\\labadago\\\\public\")",
+      "Bash(findstr /i \"gcash\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Admin\\.claude\\projects\\c--Users-Admin-Downloads-labadago\\memory"
     ]
   }
 }
