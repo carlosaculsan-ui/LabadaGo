@@ -4,6 +4,8 @@ import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import FilterSidebar from '../components/FilterSidebar'
 import ShopCard from '../components/ShopCard'
+import ShopDrawer from '../components/ShopDrawer'
+import { MOCK_SHOPS, CARD_COLORS } from '../data/mockShops'
 
 const CHIPS = ['All', 'Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
 
@@ -22,50 +24,6 @@ const DEFAULT_FILTERS = {
   openNow: false,
   sameDay: false,
 }
-
-const CARD_COLORS = [
-  'bg-[#DBEAFE]', 'bg-[#D1FAE5]', 'bg-[#FEE2E2]',
-  'bg-[#EDE9FE]', 'bg-[#FEF3C7]', 'bg-[#CCFBF1]',
-]
-
-const MOCK_SHOPS = [
-  {
-    id: 'mock-1', name: 'Sunshine Laundry',      address: '12 Rizal St, Barangay Sta. Cruz',
-    rating: 4.9, distanceKm: 0.8, pricePerKg: 65,
-    services: ['Wash & Fold', 'Dry Cleaning'],    detergents: ['Any', 'Ariel', 'Tide'],
-    isOpen: true,  isSameDay: true,  isFeatured: true,  color: CARD_COLORS[0], image: '/SunshineLaundry.png',
-  },
-  {
-    id: 'mock-2', name: 'CleanWave Express',      address: '45 Mabini Ave, Poblacion',
-    rating: 4.7, distanceKm: 1.4, pricePerKg: 55,
-    services: ['Wash & Fold', 'Comforters'],       detergents: ['Any', 'Breeze'],
-    isOpen: true,  isSameDay: true,  isFeatured: false, color: CARD_COLORS[1], image: '/CleanwaveExpress.png',
-  },
-  {
-    id: 'mock-3', name: 'FreshFold Laundromat',   address: '8 Del Pilar Rd, San Antonio',
-    rating: 4.6, distanceKm: 2.1, pricePerKg: 50,
-    services: ['Wash & Fold', 'Towels & Linens'],  detergents: ['Any', 'Tide', 'Hypoallergenic'],
-    isOpen: false, isSameDay: false, isFeatured: false, color: CARD_COLORS[2], image: '/FreshFold.png',
-  },
-  {
-    id: 'mock-4', name: 'BubbleKing Laundry',     address: '33 Luna Blvd, Bagong Silang',
-    rating: 4.8, distanceKm: 2.7, pricePerKg: 60,
-    services: ['Dry Cleaning', 'Comforters'],      detergents: ['Any', 'Ariel'],
-    isOpen: true,  isSameDay: false, isFeatured: false, color: CARD_COLORS[3], image: '/BubbleKingLaundry.png',
-  },
-  {
-    id: 'mock-5', name: 'SpinCycle PH',           address: '21 Bonifacio St, Laging Handa',
-    rating: 4.5, distanceKm: 3.2, pricePerKg: 48,
-    services: ['Wash & Fold'],                     detergents: ['Any', 'Breeze', 'Tide'],
-    isOpen: true,  isSameDay: true,  isFeatured: false, color: CARD_COLORS[4], image: '/SpinCyclePH.jpg',
-  },
-  {
-    id: 'mock-6', name: 'PureFresh Laundry',      address: '9 Aguinaldo St, Pinyahan',
-    rating: 4.4, distanceKm: 4.1, pricePerKg: 52,
-    services: ['Wash & Fold', 'Dry Cleaning', 'Comforters'], detergents: ['Any', 'Hypoallergenic'],
-    isOpen: false, isSameDay: false, isFeatured: false, color: CARD_COLORS[5], image: '/PureFreshLaundry.png',
-  },
-]
 
 function ShopSkeleton() {
   return (
@@ -95,6 +53,7 @@ export default function Browse() {
   const [searchQuery, setSearchQuery] = useState(() =>
     new URLSearchParams(location.search).get('search') ?? ''
   )
+  const [selectedShop, setSelectedShop] = useState(null)
   const [sortBy, setSortBy] = useState('nearest')
   const [filters, setFilters] = useState(() => {
     const param = new URLSearchParams(location.search).get('service')
@@ -307,7 +266,7 @@ export default function Browse() {
           ) : displayed.length > 0 ? (
             <div className="grid grid-cols-3 gap-5">
               {displayed.map(shop => (
-                <ShopCard key={shop.id} {...shop} />
+                <ShopCard key={shop.id} {...shop} onSelect={() => setSelectedShop(shop)} />
               ))}
             </div>
           ) : (
@@ -318,6 +277,8 @@ export default function Browse() {
           )}
         </div>
       </div>
+
+      <ShopDrawer shop={selectedShop} onClose={() => setSelectedShop(null)} />
     </>
   )
 }

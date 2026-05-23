@@ -2,14 +2,15 @@ import { useNavigate } from 'react-router-dom'
 
 export default function ShopCard({
   id, name, address, rating, distanceKm, pricePerKg,
-  services, isOpen, isFeatured, color, image,
+  services, isOpen, isFeatured, color, image, onSelect,
 }) {
   const navigate = useNavigate()
 
   return (
     <div
+      onClick={() => onSelect ? onSelect() : navigate('/browse')}
       className={[
-        'bg-white rounded-xl overflow-hidden flex flex-col',
+        'bg-white rounded-xl overflow-hidden flex flex-col cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-150',
         isFeatured ? 'border border-[#1B6CA8]' : 'border border-[#e5e7eb]',
       ].join(' ')}
     >
@@ -61,7 +62,7 @@ export default function ShopCard({
             <span className="text-xs font-normal text-gray-600"> /kg</span>
           </p>
           <button
-            onClick={() => navigate(`/checkout?shopId=${id}&shop=${encodeURIComponent(name)}`)}
+            onClick={e => { e.stopPropagation(); navigate(`/checkout?shopId=${id}&shop=${encodeURIComponent(name)}`) }}
             className="bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-1.5 rounded-lg hover:bg-[#155a8a] transition-colors"
           >
             Book now
