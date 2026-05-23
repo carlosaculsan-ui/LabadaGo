@@ -113,7 +113,7 @@ export default function Navbar() {
                 if (e.key === 'Escape') setShowSuggestions(false)
               }}
               placeholder="Search shops or locations..."
-              className="w-full pl-9 pr-4 py-2 rounded-full text-sm outline-none bg-gray-100 text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B6CA8]/30"
+              className="w-full pl-9 pr-4 py-2 rounded-full text-sm outline-none bg-white border border-[#e5e7eb] text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8]"
             />
 
             {/* Autocomplete dropdown */}
@@ -170,22 +170,11 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Nav links — fills the middle */}
-          <nav className="flex items-center gap-8 flex-1 justify-center">
-            {(!user || role === 'customer' || !role) && (
-              <NavLink to="/browse" className={linkClass}>Browse shops</NavLink>
-            )}
-            {!user && (
-              <a href="/#how-it-works" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">
-                How it works
-              </a>
-            )}
-            {user && role === 'customer' && (
-              <>
-                <NavLink to="/my-orders"      className={linkClass}>My orders</NavLink>
-                <NavLink to="/order-tracking" className={linkClass}>Track</NavLink>
-              </>
-            )}
+          {/* Nav links — visible to everyone */}
+          <nav className="flex items-center gap-12 flex-1 justify-center">
+            <a href="/#nearby-shops" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">Nearby shops</a>
+            <a href="/#how-it-works" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">How it works</a>
+            <a href="/#testimonials"  className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">Reviews</a>
             {user && role === 'merchant' && (
               <NavLink to="/merchant" className={linkClass}>My Dashboard</NavLink>
             )}
@@ -236,6 +225,22 @@ export default function Navbar() {
                   >
                     My profile
                   </button>
+                  {(role === 'customer' || !role) && (
+                    <>
+                      <button
+                        onClick={() => { setDropdownOpen(false); navigate('/my-orders') }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        My orders
+                      </button>
+                      <button
+                        onClick={() => { setDropdownOpen(false); navigate('/order-tracking') }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Track order
+                      </button>
+                    </>
+                  )}
                   <div className="h-px bg-[#e5e7eb] mx-2" />
                   <button
                     onClick={() => { setDropdownOpen(false); handleSignOut() }}
