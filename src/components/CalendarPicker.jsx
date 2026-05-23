@@ -64,7 +64,8 @@ export default function CalendarPicker({ label, value, onChange }) {
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={prevMonth}
-          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 text-base leading-none"
+          disabled={yr === today.getFullYear() && mo === today.getMonth()}
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 text-base leading-none disabled:opacity-25 disabled:cursor-not-allowed"
         >
           ‹
         </button>

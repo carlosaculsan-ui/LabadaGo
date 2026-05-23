@@ -1,23 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
+import { MOCK_SHOPS } from '../data/mockShops'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import CalendarPicker from '../components/CalendarPicker'
+import MapPicker from '../components/MapPicker'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const TIME_SLOTS = ['8AM–10AM', '10AM–12PM', '12PM–2PM', '2PM–4PM', '4PM–6PM']
 
 const SERVICE_TYPES = [
-  { id: 'Wash & Fold'     },
-  { id: 'Dry Cleaning'    },
-  { id: 'Comforters'      },
-  { id: 'Towels & Linens' },
+  { id: 'Wash & Fold',     image: '/Wash&Fold.png'     },
+  { id: 'Dry Cleaning',    image: '/DryCleaning.png'   },
+  { id: 'Comforters',      image: '/Comforters.png'    },
+  { id: 'Towels & Linens', image: '/Towels&Linens.png' },
 ]
 
-const DETERGENTS   = ['Ariel', 'Tide', 'Breeze', 'Hypoallergenic']
-const CONDITIONERS = ['Downy', 'Comfort', 'None']
+const DETERGENTS = [
+  { id: 'Ariel',          price: 25 },
+  { id: 'Tide',           price: 25 },
+  { id: 'Breeze',         price: 20 },
+  { id: 'Hypoallergenic', price: 35 },
+]
+const CONDITIONERS = [
+  { id: 'Downy',   price: 20 },
+  { id: 'Comfort', price: 20 },
+  { id: 'None',    price: 0  },
+]
 
 const PAYMENT_METHODS = [
   { id: 'gcash', label: 'GCash',            desc: 'Pay with GCash wallet'    },
@@ -59,18 +70,21 @@ function SummaryRow({ label, value }) {
 function RadioPills({ options, value, onChange }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {options.map(opt => (
+      {options.map(({ id, price }) => (
         <button
-          key={opt}
-          onClick={() => onChange(opt)}
+          key={id}
+          onClick={() => onChange(id)}
           className={[
-            'text-sm px-3.5 py-1.5 rounded-full border transition-colors',
-            value === opt
+            'flex items-center gap-1.5 text-sm px-3.5 py-1.5 rounded-full border transition-colors',
+            value === id
               ? 'bg-[#1B6CA8] text-white border-[#1B6CA8] font-medium'
               : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
           ].join(' ')}
         >
-          {opt}
+          {id}
+          <span className={`text-[11px] ${value === id ? 'text-white/80' : 'text-gray-400'}`}>
+            {price === 0 ? 'Free' : `₱${price}`}
+          </span>
         </button>
       ))}
     </div>
@@ -105,17 +119,19 @@ export default function Checkout() {
   const shopId   = searchParams.get('shopId') || null
 
   // Address
-  const [street,   setStreet]   = useState('')
-  const [landmark, setLandmark] = useState('')
+  const [street,        setStreet]        = useState('')
+  const [landmark,      setLandmark]      = useState('')
+  const [pickupCoords,  setPickupCoords]  = useState(null)
 
   // Schedule
-  const [pickupDate,   setPickupDate]   = useState(null)
-  const [pickupTime,   setPickupTime]   = useState(null)
-  const [deliveryDate, setDeliveryDate] = useState(null)
-  const [deliveryTime, setDeliveryTime] = useState(null)
+  const [pickupDate, setPickupDate] = useState(null)
+  const [pickupTime, setPickupTime] = useState(null)
+
+  // Delivery is always pickup + 2 days
+  const deliveryDate = pickupDate ? new Date(pickupDate.getTime() + 2 * 24 * 60 * 60 * 1000) : null
 
   // Laundry details
-  const [serviceType, setServiceType] = useState(null)
+  const [serviceType, setServiceType] = useState('Wash & Fold')
   const [weight,      setWeight]      = useState(3)
   const [detergent,   setDetergent]   = useState('Ariel')
   const [conditioner, setConditioner] = useState('Downy')
@@ -126,20 +142,31 @@ export default function Checkout() {
   // UI state
   const [submitting, setSubmitting] = useState(false)
   const [error,      setError]      = useState('')
+  const [shopImage,  setShopImage]  = useState(null)
+
+  useEffect(() => {
+    // Try Firestore first, fall back to mock data
+    const mockMatch = MOCK_SHOPS.find(s => s.id === shopId || s.name === shopName)
+    if (mockMatch?.image) { setShopImage(mockMatch.image); return }
+    if (!shopId) return
+    getDoc(doc(db, 'shops', shopId)).then(snap => {
+      if (snap.exists()) setShopImage(snap.data().image ?? null)
+    })
+  }, [shopId, shopName])
 
   // Derived prices
-  const subtotal    = weight * PRICE_PER_KG
-  const total       = subtotal + PICKUP_FEE + DELIVERY_FEE
-  const totalPrice  = total
+  const detergentPrice   = DETERGENTS.find(d => d.id === detergent)?.price ?? 0
+  const conditionerPrice = CONDITIONERS.find(c => c.id === conditioner)?.price ?? 0
+  const subtotal         = weight * PRICE_PER_KG
+  const total            = subtotal + PICKUP_FEE + DELIVERY_FEE + detergentPrice + conditionerPrice
+  const totalPrice       = total
 
   async function handleConfirm() {
     setError('')
 
-    if (!street)       return setError('Please enter your street address.')
-    if (!pickupDate)   return setError('Please select a pickup date.')
-    if (!pickupTime)   return setError('Please select a pickup time.')
-    if (!deliveryDate) return setError('Please select a delivery date.')
-    if (!deliveryTime) return setError('Please select a delivery time.')
+    if (!street)     return setError('Please enter your pickup address.')
+    if (!pickupDate) return setError('Please select a pickup date.')
+    if (!pickupTime) return setError('Please select a pickup time.')
 
     setSubmitting(true)
     try {
@@ -153,12 +180,13 @@ export default function Checkout() {
         estimatedWeight: weight,
         actualWeight:    null,
         detergent,
+        detergentPrice,
         conditioner,
-        pickupAddress:   { street, landmark },
-        pickupDate:      pickupDate.toISOString(),
+        conditionerPrice,
+        pickupAddress:   { street, landmark, coords: pickupCoords },
+        pickupDate:   pickupDate.toISOString(),
         pickupTime,
-        deliveryDate:    deliveryDate.toISOString(),
-        deliveryTime,
+        deliveryDate: deliveryDate.toISOString(),
         paymentMethod:   payment,
         estimatedPrice:  totalPrice,
         finalPrice:      null,
@@ -199,28 +227,25 @@ export default function Checkout() {
             {/* Section 1 — Address */}
             <div className="p-6">
               <SectionTitle>Your pickup address</SectionTitle>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={street}
-                  onChange={e => setStreet(e.target.value)}
-                  placeholder="Street address"
-                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
-                />
-                <input
-                  type="text"
-                  value={landmark}
-                  onChange={e => setLandmark(e.target.value)}
-                  placeholder="Landmark / Unit / Floor (optional)"
-                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-600 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
-                />
-              </div>
+              <MapPicker
+                label="Pickup location"
+                address={street}
+                onAddressChange={setStreet}
+                onCoordsChange={setPickupCoords}
+              />
+              <input
+                type="text"
+                value={landmark}
+                onChange={e => setLandmark(e.target.value)}
+                placeholder="Landmark / Unit / Floor (optional)"
+                className="mt-3 w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
+              />
             </div>
 
             {/* Section 2 — Schedule */}
             <div className="p-6">
-              <SectionTitle>Select pickup &amp; delivery schedule</SectionTitle>
-              <div className="grid grid-cols-2 gap-5">
+              <SectionTitle>Pickup schedule</SectionTitle>
+              <div className="grid grid-cols-2 gap-5 items-start">
 
                 <div>
                   <CalendarPicker
@@ -249,31 +274,38 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                <div>
-                  <CalendarPicker
-                    label="Delivery date"
-                    value={deliveryDate}
-                    onChange={setDeliveryDate}
-                  />
-                  <div className="mt-3">
-                    <FieldLabel>Delivery time</FieldLabel>
-                    <div className="flex flex-wrap gap-1.5">
-                      {TIME_SLOTS.map(slot => (
-                        <button
-                          key={slot}
-                          onClick={() => setDeliveryTime(slot)}
-                          className={[
-                            'text-xs px-3 py-1.5 rounded-full border transition-colors',
-                            deliveryTime === slot
-                              ? 'bg-[#1B6CA8] text-white border-[#1B6CA8] font-medium'
-                              : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
-                          ].join(' ')}
-                        >
-                          {slot}
-                        </button>
-                      ))}
+                {/* Expected delivery info */}
+                <div className="border border-[#e5e7eb] rounded-xl p-4 bg-white">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-4">
+                    Expected delivery
+                  </p>
+                  {deliveryDate ? (
+                    <>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
+                          <svg className="w-5 h-5 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-heading font-bold text-gray-900 text-sm">
+                            {deliveryDate.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">2 days after pickup</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Your clean laundry will be delivered on this date. The rider will contact you before arrival.
+                      </p>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <svg className="w-8 h-8 text-gray-200 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-xs text-gray-400">Select a pickup date to see your estimated delivery date.</p>
                     </div>
-                  </div>
+                  )}
                 </div>
 
               </div>
@@ -298,9 +330,10 @@ export default function Checkout() {
                     ].join(' ')}
                   >
                     {/* ↓ image placeholder — replace with real service illustration */}
-                    <ImgPlaceholder
-                      label={`Service illustration — ${st.id}`}
-                      className="w-14 h-14 mx-auto mb-3 rounded-lg"
+                    <img
+                      src={st.image}
+                      alt={st.id}
+                      className="w-24 h-24 mx-auto mb-3 rounded-lg object-contain"
                     />
                     <span className={[
                       'text-[11px] font-semibold leading-tight block',
@@ -383,11 +416,10 @@ export default function Checkout() {
                 Order summary
               </h2>
 
-              {/* ↓ image placeholder — replace with shop photo fetched by shop ID */}
-              <ImgPlaceholder
-                label="Shop photo — 80×80px"
-                className="w-20 h-20 mb-4 rounded-xl"
-              />
+              {shopImage
+                ? <img src={shopImage} alt={shopName} className="w-20 h-20 mb-4 rounded-xl object-cover" />
+                : <div className="w-20 h-20 mb-4 rounded-xl bg-gray-100" />
+              }
 
               <div className="space-y-3 mb-1">
                 <SummaryRow label="Shop"        value={shopName}              />
@@ -396,6 +428,10 @@ export default function Checkout() {
                   label={`Est. ${weight} kg × ₱${PRICE_PER_KG}`}
                   value={`₱${subtotal.toLocaleString()}`}
                 />
+                <SummaryRow label="Detergent"    value={detergentPrice > 0   ? `₱${detergentPrice}`   : 'Free'} />
+                {conditioner !== 'None' && (
+                  <SummaryRow label="Conditioner" value={`₱${conditionerPrice}`} />
+                )}
                 <SummaryRow label="Pickup fee"   value={`₱${PICKUP_FEE}`}    />
                 <SummaryRow label="Delivery fee" value={`₱${DELIVERY_FEE}`}  />
               </div>
