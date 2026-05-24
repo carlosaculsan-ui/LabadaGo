@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo'
 import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { signOut } from 'firebase/auth'
+import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
 // ─── Static data ──────────────────────────────────────────────────────────────
@@ -90,8 +92,17 @@ const IN_PROGRESS_STATUSES = new Set([
   'ARRIVED_AT_SHOP', 'PROCESSING', 'READY_FOR_DELIVERY', 'DELIVERY_EN_ROUTE',
 ])
 
-
 const TABS = ['All', 'Pending', 'In Progress', 'Completed', 'Cancelled']
+
+const SERVICE_TYPES = ['Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
+const DETERGENTS    = ['Any', 'Ariel', 'Tide', 'Breeze', 'Hypoallergenic']
+
+const DATE_FILTERS = [
+  { id: 'today', label: 'Today'      },
+  { id: 'week',  label: 'This Week'  },
+  { id: 'month', label: 'This Month' },
+  { id: 'all',   label: 'All Time'   },
+]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -438,18 +449,501 @@ function EarningsChart({ orders }) {
   )
 }
 
+// ─── PillGroup ────────────────────────────────────────────────────────────────
+
+function PillGroup({ options, selected, onChange }) {
+  function toggle(opt) {
+    onChange(selected.includes(opt)
+      ? selected.filter(s => s !== opt)
+      : [...selected, opt])
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => toggle(opt)}
+          className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
+            selected.includes(opt)
+              ? 'bg-[#1B6CA8] text-white border-[#1B6CA8]'
+              : 'border-[#e5e7eb] text-gray-600 hover:border-gray-400'
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ─── ShopProfileTab ───────────────────────────────────────────────────────────
+
+function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUploading,
+                          onSave, onPhotoUpload, isOpen, shopRating, reviewCount }) {
+
+  if (!shopForm) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-[#1B6CA8] animate-spin" />
+      </div>
+    )
+  }
+
+  function field(key, value) {
+    setShopForm(f => ({ ...f, [key]: value }))
+  }
+
+  const stars = Math.round(shopRating ?? 0)
+
+  return (
+    <div className="space-y-6">
+      <h2 className="font-heading font-bold text-[17px] text-gray-900">My Shop Profile</h2>
+
+      <div className="flex gap-6 items-start">
+
+        {/* ── Left: Preview card ───────────────────────────────────────── */}
+        <div className="w-[260px] shrink-0 space-y-4">
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+
+            {/* Cover photo */}
+            <div className="relative h-32 bg-gradient-to-br from-[#DBEAFE] to-[#93C5FD] overflow-hidden">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                <svg className="w-7 h-7 text-[#1B6CA8]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3.75 3h16.5M3.75 3a.75.75 0 00-.75.75v15.5c0 .414.336.75.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75z"/>
+                </svg>
+                <p className="text-[10px] text-[#1B6CA8]/40 font-medium">No photo yet</p>
+              </div>
+              {shopForm.image && shopForm.image !== 'null' && shopForm.image.startsWith('http') && (
+                <img src={shopForm.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              )}
+              <span className={`absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                isOpen ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+              }`}>
+                {isOpen ? 'Open' : 'Closed'}
+              </span>
+            </div>
+
+            {/* Info */}
+            <div className="p-4">
+              <p className="font-heading font-bold text-[15px] text-gray-900 truncate">
+                {shopForm.name || 'Your Shop Name'}
+              </p>
+              <p className="text-[11px] text-gray-500 mt-0.5 truncate">{shopForm.address || 'No address set'}</p>
+
+              {/* Rating */}
+              <div className="flex items-center gap-1.5 mt-2">
+                <div className="flex">
+                  {[1,2,3,4,5].map(n => (
+                    <svg key={n} className={`w-3 h-3 ${n <= stars ? 'text-[#F5A623]' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                  ))}
+                </div>
+                <span className="text-[11px] text-gray-500">{shopRating?.toFixed(1) ?? '—'} ({reviewCount ?? 0} reviews)</span>
+              </div>
+
+              {/* Service pills */}
+              {shopForm.services?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2.5">
+                  {shopForm.services.slice(0, 3).map(s => (
+                    <span key={s} className="text-[9px] font-semibold bg-[#E8F4FD] text-[#0C447C] px-2 py-0.5 rounded-full">{s}</span>
+                  ))}
+                  {shopForm.services.length > 3 && (
+                    <span className="text-[9px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">+{shopForm.services.length - 3}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Price */}
+              <p className="text-[11px] font-bold text-[#1B6CA8] mt-2.5">₱{shopForm.pricePerKg ?? 50}/kg</p>
+            </div>
+          </div>
+
+          {/* Account meta */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] p-4 space-y-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">Account</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500">Same-day service</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${shopForm.isSameDay ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                {shopForm.isSameDay ? 'Yes' : 'No'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500">GCash</span>
+              <span className="text-xs font-medium text-gray-700">{shopForm.gcash || '—'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Right: Edit form ─────────────────────────────────────────── */}
+        <div className="flex-1 space-y-5">
+
+          {/* Shop Identity */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Shop Identity</h3>
+            </div>
+            <div className="p-6 space-y-4">
+
+              {/* Name */}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Shop Name</p>
+                <input
+                  type="text"
+                  value={shopForm.name}
+                  onChange={e => field('name', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                  placeholder="e.g. Maria's Laundry Shop"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
+                  Tagline / Description
+                  <span className="ml-2 normal-case font-normal text-gray-400">{(shopForm.description ?? '').length}/200</span>
+                </p>
+                <textarea
+                  value={shopForm.description}
+                  onChange={e => field('description', e.target.value.slice(0, 200))}
+                  rows={3}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15 resize-none"
+                  placeholder="A short description customers will see on your shop card…"
+                />
+              </div>
+
+              {/* Cover photo */}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Cover Photo</p>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-20 h-16 rounded-xl bg-[#DBEAFE] border border-[#e5e7eb] overflow-hidden flex items-center justify-center shrink-0">
+                    <svg className="w-6 h-6 text-[#1B6CA8]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3.75 3h16.5M3.75 3a.75.75 0 00-.75.75v15.5c0 .414.336.75.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75z"/>
+                    </svg>
+                    {shopForm.image && shopForm.image !== 'null' && shopForm.image.startsWith('http') && (
+                      <img src={shopForm.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg border border-[#e5e7eb] text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors ${photoUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {photoUploading
+                      ? <><div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 border-t-[#1B6CA8] animate-spin" /> Uploading…</>
+                      : <><svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg> Upload photo</>
+                    }
+                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && onPhotoUpload(e.target.files[0])} />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Location & Contact */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Location & Contact</h3>
+            </div>
+            <div className="p-6 grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Shop Address</p>
+                <input
+                  type="text"
+                  value={shopForm.address}
+                  onChange={e => field('address', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                  placeholder="Full address of your laundry shop"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">GCash Number</p>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                  <input
+                    type="text"
+                    value={shopForm.gcash}
+                    onChange={e => field('gcash', e.target.value)}
+                    className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                    placeholder="09XX XXX XXXX"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Services & Pricing */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Services & Pricing</h3>
+            </div>
+            <div className="p-6 space-y-5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">Services Offered</p>
+                <PillGroup
+                  options={SERVICE_TYPES}
+                  selected={shopForm.services ?? []}
+                  onChange={v => field('services', v)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Price per kg</p>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={shopForm.pricePerKg}
+                      onChange={e => field('pricePerKg', +e.target.value)}
+                      className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">Accepted Detergents</p>
+                <PillGroup
+                  options={DETERGENTS}
+                  selected={shopForm.detergents ?? []}
+                  onChange={v => field('detergents', v)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Preferences */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Preferences</h3>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Same-day service</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Accept orders that need to be returned the same day</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => field('isSameDay', !shopForm.isSameDay)}
+                  className={`relative w-10 h-[22px] rounded-full transition-colors duration-200 shrink-0 ${shopForm.isSameDay ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                >
+                  <div className={`absolute top-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${shopForm.isSameDay ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Save */}
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving}
+              className="bg-[#1B6CA8] text-white font-semibold text-sm py-2.5 px-7 rounded-xl hover:bg-[#155a8a] transition-colors disabled:opacity-60"
+            >
+              {isSaving ? 'Saving…' : 'Save changes'}
+            </button>
+            {saveSuccess && (
+              <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                </svg>
+                Saved!
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── OrdersTab ────────────────────────────────────────────────────────────────
+
+function OrdersTab({ orders }) {
+  const [tab,        setTab]        = useState('All')
+  const [search,     setSearch]     = useState('')
+  const [dateFilter, setDateFilter] = useState('all')
+
+  const now = new Date()
+
+  function startOfWeek(d) {
+    const s = new Date(d)
+    s.setDate(d.getDate() - d.getDay())
+    s.setHours(0, 0, 0, 0)
+    return s
+  }
+
+  function matchesDate(o) {
+    const d = o.createdAt?.toDate?.()
+    if (!d) return true
+    if (dateFilter === 'today') {
+      return d.getFullYear() === now.getFullYear() &&
+             d.getMonth()    === now.getMonth()    &&
+             d.getDate()     === now.getDate()
+    }
+    if (dateFilter === 'week')  return d >= startOfWeek(now)
+    if (dateFilter === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+    return true
+  }
+
+  function matchesSearch(o) {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      o.customerName?.toLowerCase().includes(q) ||
+      `lbg-${o.id.substring(0, 8).toLowerCase()}`.includes(q)
+    )
+  }
+
+  function matchesTab(o) {
+    if (tab === 'All')         return true
+    if (tab === 'Pending')     return o.status === 'PENDING'
+    if (tab === 'In Progress') return IN_PROGRESS_STATUSES.has(o.status)
+    if (tab === 'Completed')   return o.status === 'COMPLETED'
+    if (tab === 'Cancelled')   return o.status === 'CANCELLED'
+    return true
+  }
+
+  const filtered = orders.filter(o => matchesDate(o) && matchesSearch(o) && matchesTab(o))
+
+  const counts = {
+    all:        orders.filter(o => matchesDate(o) && matchesSearch(o)).length,
+    pending:    orders.filter(o => matchesDate(o) && matchesSearch(o) && o.status === 'PENDING').length,
+    inProgress: orders.filter(o => matchesDate(o) && matchesSearch(o) && IN_PROGRESS_STATUSES.has(o.status)).length,
+    completed:  orders.filter(o => matchesDate(o) && matchesSearch(o) && o.status === 'COMPLETED').length,
+    cancelled:  orders.filter(o => matchesDate(o) && matchesSearch(o) && o.status === 'CANCELLED').length,
+  }
+
+  const TAB_COUNTS = [
+    { id: 'All',         count: counts.all        },
+    { id: 'Pending',     count: counts.pending    },
+    { id: 'In Progress', count: counts.inProgress },
+    { id: 'Completed',   count: counts.completed  },
+    { id: 'Cancelled',   count: counts.cancelled  },
+  ]
+
+  return (
+    <div className="space-y-5">
+      <h2 className="font-heading font-bold text-[17px] text-gray-900">Orders</h2>
+
+      {/* Status tabs with counts — same layout as Dashboard filter tabs */}
+      <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm">
+        {TAB_COUNTS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              tab === t.id
+                ? 'bg-[#0A2540] text-white shadow-sm'
+                : 'text-gray-400 hover:text-gray-700'
+            }`}
+          >
+            {t.id}
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+              tab === t.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {t.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Search + date filter */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[220px]">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Search by customer or order ID…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 border border-[#e5e7eb] rounded-xl text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Date filter pills */}
+        <div className="flex gap-1">
+          {DATE_FILTERS.map(f => (
+            <button
+              key={f.id}
+              onClick={() => setDateFilter(f.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                dateFilter === f.id
+                  ? 'bg-[#0A2540] text-white'
+                  : 'bg-white border border-[#e5e7eb] text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Orders list */}
+      <div className="space-y-3">
+        {filtered.map(order => <OrderCard key={order.id} order={order} />)}
+        {filtered.length === 0 && (
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] px-5 py-4 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-500">No orders found</p>
+              <p className="text-xs text-gray-400">Try adjusting your search or filters</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MerchantDashboard() {
   const { user, userProfile } = useAuth()
+  const navigate = useNavigate()
   const shopId = user?.uid
 
-  const [orders,       setOrders]       = useState([])
-  const [ordersLoaded, setOrdersLoaded] = useState(false)
-  const [isOpen,       setIsOpen]       = useState(true)
-  const [shopName,     setShopName]     = useState('')
-  const [activeNav,    setActiveNav]    = useState('dashboard')
-  const [activeTab,    setActiveTab]    = useState('All')
+  const [orders,        setOrders]        = useState([])
+  const [ordersLoaded,  setOrdersLoaded]  = useState(false)
+  const [isOpen,        setIsOpen]        = useState(true)
+  const [shopName,      setShopName]      = useState('')
+  const [shopMeta,      setShopMeta]      = useState({})
+  const [activeNav,     setActiveNav]     = useState('dashboard')
+  const [activeTab,     setActiveTab]     = useState('All')
+  const [menuOpen,      setMenuOpen]      = useState(false)
+  const [shopForm,      setShopForm]      = useState(null)
+  const [isSaving,      setIsSaving]      = useState(false)
+  const [saveSuccess,   setSaveSuccess]   = useState(false)
+  const [photoUploading,setPhotoUploading]= useState(false)
+  const menuRef         = useRef(null)
+  const shopFormLoaded  = useRef(false)
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  async function handleLogout() {
+    await signOut(auth)
+    navigate('/')
+  }
 
   // ── Listen to orders for this shop ────────────────────────────────────────
   useEffect(() => {
@@ -478,6 +972,21 @@ export default function MerchantDashboard() {
           const data = snap.data()
           setIsOpen(data.isOpen ?? true)
           setShopName(data.name ?? '')
+          setShopMeta({ rating: data.rating, reviewCount: data.reviewCount })
+          if (!shopFormLoaded.current) {
+            shopFormLoaded.current = true
+            setShopForm({
+              name:        data.name        ?? '',
+              description: data.description ?? '',
+              address:     data.address     ?? '',
+              gcash:       data.gcash       ?? '',
+              pricePerKg:  data.pricePerKg  ?? 50,
+              services:    data.services    ?? [],
+              detergents:  data.detergents  ?? ['Any'],
+              isSameDay:   data.isSameDay   ?? false,
+              image:       data.image       ?? null,
+            })
+          }
         }
       }
     )
@@ -494,6 +1003,34 @@ export default function MerchantDashboard() {
       })
     } catch {
       setIsOpen(!newStatus)
+    }
+  }
+
+  async function handleSaveShop() {
+    setIsSaving(true)
+    try {
+      await updateDoc(doc(db, 'shops', String(shopId)), { ...shopForm, updatedAt: serverTimestamp() })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2500)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handlePhotoUpload(file) {
+    setPhotoUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: fd }
+      )
+      const { secure_url } = await res.json()
+      setShopForm(f => ({ ...f, image: secure_url }))
+    } finally {
+      setPhotoUploading(false)
     }
   }
 
@@ -573,23 +1110,18 @@ export default function MerchantDashboard() {
 
         {/* Shop card */}
         <div className="mx-4 mb-5 bg-white/8 border border-white/10 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">Shop</p>
-            <span className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: isOpen ? '#34d399' : '#f87171' }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: isOpen ? '#34d399' : '#f87171' }} />
-              {isOpen ? 'Open' : 'Closed'}
-            </span>
-          </div>
+          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/35 mb-1.5">Shop</p>
           <p className="text-[13px] font-bold text-white truncate mb-3">{shopName || 'Your Shop'}</p>
           <button
             onClick={handleToggleOpen}
-            className="w-full py-1.5 rounded-lg text-[11px] font-bold transition-all border"
-            style={isOpen
-              ? { background: 'rgba(248,113,113,0.12)', color: '#f87171', borderColor: 'rgba(248,113,113,0.2)' }
-              : { background: 'rgba(52,211,153,0.12)', color: '#34d399', borderColor: 'rgba(52,211,153,0.2)' }
-            }
+            className="flex items-center gap-2.5 w-full group"
           >
-            {isOpen ? 'Close shop' : 'Open shop'}
+            <div className={`relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 ${isOpen ? 'bg-emerald-500/70' : 'bg-white/15'}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${isOpen ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </div>
+            <span className={`text-[11px] font-medium transition-colors ${isOpen ? 'text-emerald-400' : 'text-white/35'}`}>
+              {isOpen ? 'Open for orders' : 'Closed'}
+            </span>
           </button>
         </div>
 
@@ -611,11 +1143,6 @@ export default function MerchantDashboard() {
           ))}
         </nav>
 
-        {/* Profile */}
-        <div className="px-5 py-4 border-t border-white/10">
-          <p className="text-sm font-semibold text-white truncate">{userProfile?.fullName ?? 'Merchant'}</p>
-          <p className="text-[10px] text-white/35 mt-0.5">Shop owner</p>
-        </div>
 
       </aside>
 
@@ -634,7 +1161,8 @@ export default function MerchantDashboard() {
                 <span className="text-[#F5A623]">{userProfile?.fullName?.split(' ')[0] ?? 'Merchant'}</span>
               </h1>
             </div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
+              {/* Bell */}
               <div className="relative">
                 <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
                   <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -647,8 +1175,55 @@ export default function MerchantDashboard() {
                   </span>
                 )}
               </div>
-              <div className="w-9 h-9 rounded-full bg-[#F5A623] flex items-center justify-center shrink-0">
-                <span className="text-[#0A2540] text-xs font-bold">{initials}</span>
+
+              {/* Name + avatar with dropdown */}
+              <div className="relative flex items-center gap-2.5" ref={menuRef}>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-white leading-tight">{userProfile?.fullName ?? 'Merchant'}</p>
+                  <p className="text-[10px] text-white/40">Shop owner</p>
+                </div>
+                <button
+                  onClick={() => setMenuOpen(o => !o)}
+                  className="w-9 h-9 rounded-full overflow-hidden bg-[#F5A623] flex items-center justify-center shrink-0 hover:ring-2 hover:ring-white/30 transition-all focus:outline-none"
+                >
+                  {user?.photoURL
+                    ? <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                    : <span className="text-[#0A2540] text-xs font-bold">{initials}</span>
+                  }
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-[#e5e7eb] overflow-hidden z-50">
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/') }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+                      </svg>
+                      Home
+                    </button>
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/profile') }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                      My Profile
+                    </button>
+                    <div className="border-t border-[#e5e7eb]" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -656,7 +1231,10 @@ export default function MerchantDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
             {STATS.map((stat, i) => (
-              <div key={stat.label} className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4">
+              <div
+                key={stat.label}
+                className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4 transition-all duration-200 hover:bg-white/[0.16] hover:border-white/30 hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
+              >
                 <div className={`w-2 h-2 rounded-full ${STAT_STYLES[i].accent} mb-3`} />
                 <p className="font-heading font-bold text-[2.2rem] text-white leading-none">
                   {stat.value}
@@ -669,86 +1247,114 @@ export default function MerchantDashboard() {
 
         <main className="flex-1 p-8 space-y-6">
 
-          {/* Orders */}
-          <div>
-            <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-4">Orders</h2>
-            <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm mb-4">
-              {TABS.map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    activeTab === tab
-                      ? 'bg-[#0A2540] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-gray-700'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+          {/* ── Dashboard tab ─────────────────────────────────────────── */}
+          {activeNav === 'dashboard' && <>
+
+            {/* Orders */}
+            <div>
+              <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-4">Orders</h2>
+              <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm mb-4">
+                {TABS.map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      activeTab === tab
+                        ? 'bg-[#0A2540] text-white shadow-sm'
+                        : 'text-gray-400 hover:text-gray-700'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                {filteredOrders.map(order => <OrderCard key={order.id} order={order} />)}
+                {filteredOrders.length === 0 && (
+                  <div className="bg-white rounded-2xl border border-[#e5e7eb] px-5 py-4 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-500">No orders here</p>
+                      <p className="text-xs text-gray-400">Orders in this category will appear here</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {filteredOrders.map(order => <OrderCard key={order.id} order={order} />)}
-              {filteredOrders.length === 0 && (
-                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-12 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            {/* Bottom 2-col */}
+            <div className="grid grid-cols-2 gap-6">
+
+              {/* Weight confirms */}
+              <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+                <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
                     </svg>
                   </div>
-                  <p className="text-sm font-semibold text-gray-600">No orders here</p>
-                  <p className="text-xs text-gray-400 mt-1">Orders in this category will appear here</p>
+                  <h2 className="font-heading font-bold text-[15px] text-gray-900">Weight Confirmations</h2>
+                  {weightPending.length > 0 && (
+                    <span className="ml-auto bg-amber-100 text-amber-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                      {weightPending.length} pending
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom 2-col */}
-          <div className="grid grid-cols-2 gap-6">
-
-            {/* Weight confirms */}
-            <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-              <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
-                  </svg>
+                <div className="p-6">
+                  {weightPending.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-6">All clear — no confirmations needed.</p>
+                  ) : (
+                    <div className="space-y-8">
+                      {weightPending.map(order => <WeightConfirmCard key={order.id} order={order} />)}
+                    </div>
+                  )}
                 </div>
-                <h2 className="font-heading font-bold text-[15px] text-gray-900">Weight Confirmations</h2>
-                {weightPending.length > 0 && (
-                  <span className="ml-auto bg-amber-100 text-amber-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
-                    {weightPending.length} pending
-                  </span>
-                )}
               </div>
-              <div className="p-6">
-                {weightPending.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-6">All clear — no confirmations needed.</p>
-                ) : (
-                  <div className="space-y-8">
-                    {weightPending.map(order => <WeightConfirmCard key={order.id} order={order} />)}
+
+              {/* Earnings */}
+              <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+                <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Earnings */}
-            <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-              <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
+                  <h2 className="font-heading font-bold text-[15px] text-gray-900">Earnings</h2>
                 </div>
-                <h2 className="font-heading font-bold text-[15px] text-gray-900">Earnings</h2>
+                <div className="p-6">
+                  <EarningsChart orders={orders} />
+                </div>
               </div>
-              <div className="p-6">
-                <EarningsChart orders={orders} />
-              </div>
+
             </div>
 
-          </div>
+          </>}
+
+          {/* ── Orders tab ────────────────────────────────────────────── */}
+          {activeNav === 'orders' && (
+            <OrdersTab orders={orders} />
+          )}
+
+          {/* ── My Shop Profile tab ───────────────────────────────────── */}
+          {activeNav === 'shop' && (
+            <ShopProfileTab
+              shopForm={shopForm}
+              setShopForm={setShopForm}
+              isSaving={isSaving}
+              saveSuccess={saveSuccess}
+              photoUploading={photoUploading}
+              onSave={handleSaveShop}
+              onPhotoUpload={handlePhotoUpload}
+              isOpen={isOpen}
+              shopRating={shopMeta.rating}
+              reviewCount={shopMeta.reviewCount}
+            />
+          )}
 
         </main>
       </div>

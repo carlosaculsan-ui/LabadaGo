@@ -16,10 +16,12 @@
       "Bash(findstr /i \"gcash\")",
       "Bash(gsutil version *)",
       "Bash(gcloud version *)",
-      "Bash(npx firebase-tools *)"
+      "Bash(npx firebase-tools *)",
+      "Bash(cmd /c dir /b *.config.* *.config.js tailwind.config.* 2>nul)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\Admin\\.claude\\projects\\c--Users-Admin-Downloads-labadago\\memory"
+      "c:\\Users\\Admin\\.claude\\projects\\c--Users-Admin-Downloads-labadago\\memory",
+      "c:\\Users\\Admin\\Downloads\\labadago"
     ]
   }
 }

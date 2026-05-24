@@ -7,7 +7,7 @@ async function uploadToCloudinary(file) {
   const form = new FormData()
   form.append('file', file)
   form.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
-  const res  = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: form })
+  const res  = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/auto/upload`, { method: 'POST', body: form })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error?.message ?? 'Upload failed')
   return data.secure_url
@@ -138,9 +138,10 @@ export default function Apply() {
     }
     if (step === 1) {
       if (isMerchant) {
-        if (!shopName.trim())    { setError('Shop name is required.');         return false }
-        if (!shopAddress.trim()) { setError('Shop address is required.');      return false }
-        if (!services.length)    { setError('Select at least one service.');   return false }
+        if (!shopName.trim())    { setError('Shop name is required.');              return false }
+        if (!shopAddress.trim()) { setError('Shop address is required.');           return false }
+        if (!shopFrontPhoto)     { setError('Please upload a shop front photo.');   return false }
+        if (!services.length)    { setError('Select at least one service.');        return false }
       } else {
         if (!plate.trim())   { setError('Plate number is required.');   return false }
         if (!contact.trim()) { setError('Contact number is required.'); return false }
@@ -164,10 +165,8 @@ export default function Apply() {
         const shopRef  = doc(db, 'shops', user.uid)
         const colorIdx = Math.floor(Math.random() * CARD_COLORS.length)
 
-        let shopImageUrl = null
-        if (shopFrontPhoto) {
-          shopImageUrl = await uploadToCloudinary(shopFrontPhoto)
-        }
+        const shopImageUrl  = await uploadToCloudinary(shopFrontPhoto)
+        const bizPermitUrl  = bizPermit ? await uploadToCloudinary(bizPermit) : null
 
         await setDoc(shopRef, {
           name:        shopName.trim(),
@@ -196,11 +195,13 @@ export default function Apply() {
           fullName, age: parseInt(age, 10), sex,
           mobile: mobile.trim(), address: address.trim(),
           shopName: shopName.trim(), shopAddress: shopAddress.trim(),
-          gcash: gcash.trim(), services, bizPermit: bizPermit?.name ?? null,
+          gcash: gcash.trim(), services, bizPermit: bizPermitUrl,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
         await updateDoc(userRef, { role: 'merchant', shopId: user.uid, fullName, mobile: mobile.trim() })
       } else {
+        const licenseUrl = license ? await uploadToCloudinary(license) : null
+        const validIdUrl = validId ? await uploadToCloudinary(validId) : null
         const fullName = [firstName, middleInitial, lastName].filter(Boolean).join(' ').trim()
         await setDoc(appRef, {
           type: 'rider', status: 'approved',
@@ -208,7 +209,7 @@ export default function Apply() {
           fullName, age: parseInt(age, 10), sex,
           mobile: mobile.trim(), address: address.trim(),
           vehicle, plate: plate.trim(), contact: contact.trim(),
-          license: license?.name ?? null, validId: validId?.name ?? null,
+          license: licenseUrl, validId: validIdUrl,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
         await updateDoc(userRef, { role: 'rider', fullName, mobile: mobile.trim() })
@@ -572,7 +573,7 @@ export default function Apply() {
               </button>
             ) : (
               <button onClick={handleSubmit} disabled={submitting} className={`flex-1 ${accentBg} text-white text-sm font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50`}>
-                {submitting ? 'Submitting…' : 'Submit Application'}
+                {submitting ? 'Uploading & submitting…' : 'Submit Application'}
               </button>
             )}
           </div>
