@@ -67,7 +67,7 @@ export default function Browse() {
 
   useEffect(() => {
     getDocs(collection(db, 'shops')).then(snap => {
-      const data = snap.docs.map((doc, i) => {
+      const real = snap.docs.map((doc, i) => {
         const d = doc.data()
         return {
           ...d,
@@ -76,7 +76,7 @@ export default function Browse() {
           distanceKm: d.distanceKm ?? +(Math.random() * 4 + 0.5).toFixed(1),
         }
       })
-      setShops(data.length > 0 ? data : MOCK_SHOPS)
+      setShops([...real, ...MOCK_SHOPS])
       setLoading(false)
     }).catch(() => {
       setShops(MOCK_SHOPS)

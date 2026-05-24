@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 function Stars({ rating }) {
@@ -18,7 +18,9 @@ function Stars({ rating }) {
 }
 
 export default function ShopDrawer({ shop, onClose }) {
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
+  const [showDemo, setShowDemo] = useState(false)
+  const isMock = shop?.id?.startsWith('mock-')
 
   useEffect(() => {
     document.body.style.overflow = shop ? 'hidden' : ''
@@ -249,12 +251,34 @@ export default function ShopDrawer({ shop, onClose }) {
                 </p>
               </div>
               <button
-                onClick={() => navigate(`/checkout?shopId=${shop.id}&shop=${encodeURIComponent(shop.name)}`)}
-                className="flex-1 bg-[#1B6CA8] hover:bg-[#155a8a] text-white font-bold py-3 rounded-xl transition-colors text-sm"
+                onClick={() => isMock ? setShowDemo(true) : navigate(`/checkout?shopId=${shop.id}&shop=${encodeURIComponent(shop.name)}`)}
+                className={['flex-1 font-bold py-3 rounded-xl transition-colors text-sm', isMock ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-[#1B6CA8] hover:bg-[#155a8a] text-white'].join(' ')}
               >
-                Book now
+                {isMock ? 'Demo shop' : 'Book now'}
               </button>
             </div>
+
+            {/* Demo modal */}
+            {showDemo && (
+              <div className="fixed right-0 top-0 h-full w-[500px] z-[60] flex items-center justify-center bg-black/40 px-6" onClick={() => setShowDemo(false)}>
+                <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                  </div>
+                  <h3 className="font-heading font-bold text-gray-900 text-center mb-2">Demo Shop</h3>
+                  <p className="text-sm text-gray-600 text-center leading-relaxed mb-5">
+                    <strong>{shop.name}</strong> is a demo listing used to showcase how LabadaGo works. Bookings are not available here.
+                    <br /><br />
+                    Browse our real partner shops to place an actual order!
+                  </p>
+                  <button onClick={() => setShowDemo(false)} className="w-full py-2.5 rounded-xl bg-[#1B6CA8] text-white text-sm font-semibold hover:bg-[#155a8a] transition-colors">
+                    Got it
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
