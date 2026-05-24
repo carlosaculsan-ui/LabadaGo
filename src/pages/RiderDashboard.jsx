@@ -1,14 +1,39 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Logo from '../components/Logo'
 import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { signOut } from 'firebase/auth'
+import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
+const NAV_ICONS = {
+  dashboard: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+    </svg>
+  ),
+  deliveries: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+    </svg>
+  ),
+  earnings: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  profile: (
+    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+  ),
+}
+
 const NAV_ITEMS = [
-  { id: 'dashboard',  label: 'Dashboard'     },
-  { id: 'deliveries', label: 'My deliveries' },
+  { id: 'dashboard',  label: 'Dashboard'    },
+  { id: 'deliveries', label: 'My Deliveries' },
   { id: 'earnings',   label: 'Earnings'      },
   { id: 'profile',    label: 'Profile'       },
 ]
@@ -28,11 +53,10 @@ const ACTIVE_DAY  = 'Fri'
 
 const ACTIVE_STATUSES = new Set(['PICKUP_EN_ROUTE', 'PICKED_UP', 'DELIVERY_EN_ROUTE'])
 
-// Button label + next status for each active task state
 const ACTIVE_ACTION = {
-  PICKUP_EN_ROUTE:   { label: 'Mark as picked up',  next: 'PICKED_UP'  },
-  PICKED_UP:         { label: 'Arrived at shop',     next: 'ARRIVED_AT_SHOP' },
-  DELIVERY_EN_ROUTE: { label: 'Mark as delivered',   next: 'COMPLETED'  },
+  PICKUP_EN_ROUTE:   { label: 'Mark as picked up', next: 'PICKED_UP'       },
+  PICKED_UP:         { label: 'Arrived at shop',   next: 'ARRIVED_AT_SHOP' },
+  DELIVERY_EN_ROUTE: { label: 'Mark as delivered', next: 'COMPLETED'       },
 }
 
 const STATUS_LABEL = {
@@ -66,9 +90,9 @@ function isToday(ts) {
 
 function isThisWeek(ts) {
   if (!ts?.toDate) return false
-  const d    = ts.toDate()
-  const now  = new Date()
-  const mon  = new Date(now)
+  const d   = ts.toDate()
+  const now = new Date()
+  const mon = new Date(now)
   mon.setDate(now.getDate() - now.getDay() + 1)
   mon.setHours(0, 0, 0, 0)
   return d >= mon
@@ -91,18 +115,6 @@ function avatarColor(id = '') {
   return AVATAR_COLORS[n % AVATAR_COLORS.length]
 }
 
-function ImgPlaceholder({ label, className }) {
-  return (
-    <div className={['border border-dashed flex items-center justify-center', className].join(' ')}>
-      {label && (
-        <span className="text-[7px] font-medium text-gray-600 text-center leading-snug px-1.5">
-          {label}
-        </span>
-      )}
-    </div>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RiderDashboard() {
@@ -115,8 +127,22 @@ export default function RiderDashboard() {
   const [refreshKey,      setRefreshKey]      = useState(0)
   const [isAvailable,     setIsAvailable]     = useState(true)
   const [activeNav,       setActiveNav]       = useState('dashboard')
+  const [menuOpen,        setMenuOpen]        = useState(false)
+  const menuRef = useRef(null)
 
-  // Sync availability from userProfile
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  async function handleLogout() {
+    await signOut(auth)
+    navigate('/')
+  }
+
   useEffect(() => {
     if (userProfile?.isAvailable !== undefined) {
       setIsAvailable(userProfile.isAvailable)
@@ -151,7 +177,7 @@ export default function RiderDashboard() {
     }
   }
 
-  // ── Live unclaimed orders (ACCEPTED + no rider) ──────────────────────────
+  // ── Live unclaimed orders ─────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid) return
 
@@ -192,117 +218,182 @@ export default function RiderDashboard() {
   const earningsToday  = completedToday.reduce((sum, o) => sum + (o.finalPrice ?? o.estimatedPrice ?? 0), 0)
 
   const STATS = [
-    { label: "Today's deliveries", value: completedToday.length              },
-    { label: 'This week',          value: completedWeek.length               },
+    { label: "Today's deliveries", value: completedToday.length                },
+    { label: 'This week',          value: completedWeek.length                 },
     { label: "Today's earnings",   value: `₱${earningsToday.toLocaleString()}` },
-    { label: 'Rating',             value: '4.9 ★'                            },
+    { label: 'Rating',             value: '4.9 ★'                              },
+  ]
+
+  const STAT_STYLES = [
+    { accent: 'bg-[#F5A623]'   },
+    { accent: 'bg-amber-400'   },
+    { accent: 'bg-violet-400'  },
+    { accent: 'bg-emerald-400' },
   ]
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA] flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen bg-[#EDF1F7] flex flex-col items-center justify-center gap-3">
         <div className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-[#1B6CA8] animate-spin" />
         <p className="text-sm text-gray-600">Loading deliveries...</p>
       </div>
     )
   }
 
+  const riderInitials = userProfile?.fullName?.split(' ').map(n => n[0]).slice(0, 2).join('') ?? 'R'
+  const hour     = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
   return (
-    <div className="flex h-screen bg-[#F4F7FA] overflow-hidden">
+    <div className="flex h-screen bg-[#EDF1F7] overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="fixed top-0 left-0 h-screen w-[220px] bg-[#0D3F6B] flex flex-col z-20">
+      <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20">
 
-        <div className="px-5 pt-6 pb-5 border-b border-white/10">
-          <div>
-            <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-8 w-auto" />
-          </div>
-          <p className="text-[10px] text-white/40 mt-0.5 font-medium tracking-wide">Rider portal</p>
+        {/* Logo */}
+        <div className="px-5 pt-6 pb-5">
+          <button onClick={() => navigate('/')} className="cursor-pointer hover:opacity-85 transition-opacity focus:outline-none">
+            <Logo />
+          </button>
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mt-2 pl-1">Rider Portal</p>
         </div>
 
-        <div className="px-5 py-4 border-b border-white/10">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40 mb-2">
-            Status
-          </p>
-          <button
-            onClick={handleToggleAvailable}
-            className={[
-              'w-full py-2 px-4 rounded-full text-sm font-semibold transition-colors',
-              isAvailable ? 'bg-green-500 text-white' : 'bg-gray-500 text-white',
-            ].join(' ')}
-          >
-            {isAvailable ? 'Available' : 'Off duty'}
+        {/* Rider card */}
+        <div className="mx-4 mb-5 bg-white/8 border border-white/10 rounded-2xl p-4">
+          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/35 mb-1.5">Rider</p>
+          <p className="text-[13px] font-bold text-white truncate mb-3">{userProfile?.fullName ?? 'Rider'}</p>
+          <button onClick={handleToggleAvailable} className="flex items-center gap-2.5 w-full group">
+            <div className={`relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 ${isAvailable ? 'bg-emerald-500/70' : 'bg-white/15'}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${isAvailable ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </div>
+            <span className={`text-[11px] font-medium transition-colors ${isAvailable ? 'text-emerald-400' : 'text-white/35'}`}>
+              {isAvailable ? 'Available' : 'Off duty'}
+            </span>
           </button>
         </div>
 
-        <nav className="flex-1 py-3 overflow-y-auto">
+        {/* Nav */}
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               onClick={() => setActiveNav(item.id)}
-              className={[
-                'w-full flex items-center gap-3 py-3 text-sm font-medium text-white transition-colors text-left',
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                 activeNav === item.id
-                  ? 'border-l-4 border-[#F5A623] bg-white/10 pl-[17px] pr-5'
-                  : 'border-l-4 border-transparent pl-[17px] pr-5 hover:bg-white/5',
-              ].join(' ')}
+                  ? 'bg-white text-[#0A2540] font-semibold shadow-sm'
+                  : 'text-white/50 hover:text-white hover:bg-white/8'
+              }`}
             >
-              <ImgPlaceholder label="" className="w-5 h-5 rounded bg-white/10 border-white/20 shrink-0" />
+              {NAV_ICONS[item.id]}
               {item.label}
             </button>
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t border-white/10 flex items-center gap-3">
-          <ImgPlaceholder label="Rider photo" className="w-10 h-10 rounded-full bg-white/10 border-white/25 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">
-              {userProfile?.fullName ?? 'Rider'}
-            </p>
-            <p className="text-[11px] text-white/40">Rider</p>
-          </div>
-        </div>
-
       </aside>
 
       {/* ── Main area ───────────────────────────────────────────────────── */}
-      <div className="ml-[220px] flex-1 flex flex-col overflow-y-auto">
+      <div className="ml-[240px] flex-1 flex flex-col overflow-y-auto">
 
-        <header className="bg-white border-b border-[#e5e7eb] h-16 flex items-center justify-between px-8 sticky top-0 z-10 shrink-0">
-          <h1 className="font-heading font-bold text-[18px] text-gray-900">
-            Rider Dashboard
-          </h1>
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-gray-600">
-              {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </p>
-            <div className="relative">
-              <div className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                </svg>
+        {/* Top banner — greeting + stats */}
+        <div className="bg-[#0A2540] px-8 pt-7 pb-7 shrink-0">
+          <div className="flex items-start justify-between mb-7">
+            <div>
+              <p className="text-white/40 text-xs font-medium mb-1 tracking-wide">
+                {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
+              <h1 className="font-heading font-bold text-[1.6rem] text-white leading-tight">
+                {greeting},{' '}
+                <span className="text-[#F5A623]">{userProfile?.fullName?.split(' ')[0] ?? 'Rider'}</span>
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Bell */}
+              <div className="relative">
+                <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+                  <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                  </svg>
+                </button>
+                {(upcomingTasks.length > 0 || (isAvailable && availableOrders.length > 0)) && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F5A623] rounded-full text-[9px] font-bold text-[#0A2540] flex items-center justify-center">
+                    {upcomingTasks.length + (isAvailable ? availableOrders.length : 0)}
+                  </span>
+                )}
               </div>
-              {(upcomingTasks.length > 0 || (isAvailable && availableOrders.length > 0)) && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-              )}
+
+              {/* Name + avatar with dropdown */}
+              <div className="relative flex items-center gap-2.5" ref={menuRef}>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-white leading-tight">{userProfile?.fullName ?? 'Rider'}</p>
+                  <p className="text-[10px] text-white/40">Rider</p>
+                </div>
+                <button
+                  onClick={() => setMenuOpen(o => !o)}
+                  className="w-9 h-9 rounded-full overflow-hidden bg-[#F5A623] flex items-center justify-center shrink-0 hover:ring-2 hover:ring-white/30 transition-all focus:outline-none"
+                >
+                  {user?.photoURL
+                    ? <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                    : <span className="text-[#0A2540] text-xs font-bold">{riderInitials}</span>
+                  }
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-[#e5e7eb] overflow-hidden z-50">
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/') }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
+                      </svg>
+                      Home
+                    </button>
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/profile') }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                      </svg>
+                      My Profile
+                    </button>
+                    <div className="border-t border-[#e5e7eb]" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </header>
 
-        <main className="flex-1 p-8 space-y-6">
-
-          {/* Stats row */}
-          <div className="grid grid-cols-4 gap-4">
-            {STATS.map(stat => (
-              <div key={stat.label} className="bg-white rounded-xl border border-[#e5e7eb] p-5">
-                <p className="font-heading font-bold text-[1.6rem] text-[#1B6CA8] leading-none">
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-3">
+            {STATS.map((stat, i) => (
+              <div
+                key={stat.label}
+                className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4 transition-all duration-200 hover:bg-white/[0.16] hover:border-white/30 hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
+              >
+                <div className={`w-2 h-2 rounded-full ${STAT_STYLES[i].accent} mb-3`} />
+                <p className="font-heading font-bold text-[2.2rem] text-white leading-none">
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-600 mt-2">{stat.label}</p>
+                <p className="text-[11px] text-white/65 mt-2">{stat.label}</p>
               </div>
             ))}
           </div>
+        </div>
+
+        <main className="flex-1 p-8 space-y-6">
 
           {/* Active task card */}
           <div className="bg-white rounded-xl border border-[#e5e7eb] flex overflow-hidden">
@@ -346,10 +437,9 @@ export default function RiderDashboard() {
                           Customer
                         </p>
                         <div className="flex items-center gap-2.5">
-                          <ImgPlaceholder
-                            label="Customer photo"
-                            className="w-8 h-8 rounded-full bg-[#DBEAFE] border-blue-300 shrink-0"
-                          />
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColor(activeTask.customerId ?? activeTask.id)}`}>
+                            {initials(activeTask.customerName)}
+                          </div>
                           <span className="text-sm font-medium text-gray-800">{activeTask.customerName}</span>
                         </div>
                       </div>
@@ -359,10 +449,10 @@ export default function RiderDashboard() {
                           Pickup address
                         </p>
                         <div className="flex items-start gap-2">
-                          <ImgPlaceholder
-                            label="pin icon"
-                            className="w-5 h-5 rounded bg-[#FEE2E2] border-red-300 shrink-0 mt-0.5"
-                          />
+                          <svg className="w-4 h-4 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                          </svg>
                           <p className="text-sm text-gray-700">
                             {activeTask.pickupAddress?.street ?? '—'}
                             {activeTask.pickupAddress?.landmark
@@ -383,13 +473,12 @@ export default function RiderDashboard() {
                       </div>
                     </div>
 
-                    <div className="min-h-48 rounded-xl border-2 border-dashed border-blue-200 bg-[#E8F4FD] flex flex-col items-center justify-center p-4">
-                      <ImgPlaceholder
-                        label="Rider pin"
-                        className="w-10 h-10 rounded-lg bg-[#FEF3C7] border-amber-300 mb-3"
-                      />
-                      <p className="text-xs text-[#1B6CA8] opacity-60 text-center leading-relaxed max-w-[160px]">
-                        Live map — customer location. Integrate Google Maps here.
+                    <div className="min-h-48 rounded-xl border-2 border-dashed border-blue-200 bg-[#E8F4FD] flex flex-col items-center justify-center p-4 gap-3">
+                      <svg className="w-8 h-8 text-[#1B6CA8]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                      </svg>
+                      <p className="text-xs text-[#1B6CA8]/50 text-center leading-relaxed max-w-[160px]">
+                        Live map coming soon
                       </p>
                     </div>
 
@@ -568,7 +657,7 @@ export default function RiderDashboard() {
             )}
           </div>
 
-          {/* Earnings snapshot — hardcoded, wired separately later */}
+          {/* Earnings snapshot */}
           <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
             <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-6">
               This week's earnings

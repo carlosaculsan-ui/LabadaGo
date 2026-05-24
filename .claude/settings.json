@@ -18,7 +18,8 @@
       "Bash(gcloud version *)",
       "Bash(npx firebase-tools *)",
       "Bash(cmd /c dir /b *.config.* *.config.js tailwind.config.* 2>nul)",
-      "Bash(npx --yes vite build --mode development)"
+      "Bash(npx --yes vite build --mode development)",
+      "Bash(curl -s -u \"661131333144797:vre8yfCT1wPfjD1bk7Hyy2Xf4Js\" \"https://api.cloudinary.com/v1_1/dzo5budal/resources/image?max_results=50\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\Admin\\.claude\\projects\\c--Users-Admin-Downloads-labadago\\memory",

@@ -740,7 +740,7 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
 
 // ─── ShopProfileTab ───────────────────────────────────────────────────────────
 
-function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUploading,
+function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUploading, photoError,
                           onSave, onPhotoUpload, isOpen, shopRating, reviewCount }) {
 
   if (!shopForm) {
@@ -769,15 +769,25 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
 
             {/* Cover photo */}
             <div className="relative h-32 bg-gradient-to-br from-[#DBEAFE] to-[#93C5FD] overflow-hidden">
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                <svg className="w-7 h-7 text-[#1B6CA8]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3.75 3h16.5M3.75 3a.75.75 0 00-.75.75v15.5c0 .414.336.75.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75z"/>
-                </svg>
-                <p className="text-[10px] text-[#1B6CA8]/40 font-medium">No photo yet</p>
-              </div>
-              {shopForm.image && shopForm.image !== 'null' && shopForm.image.startsWith('http') && (
-                <img src={shopForm.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
-              )}
+              {shopForm.image && shopForm.image.startsWith('http')
+                ? <img src={shopForm.image} alt="Shop cover" className="w-full h-full object-cover" />
+                : <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                    <svg className="w-7 h-7 text-[#1B6CA8]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3.75 3h16.5M3.75 3a.75.75 0 00-.75.75v15.5c0 .414.336.75.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75z"/>
+                    </svg>
+                    <p className="text-[10px] text-[#1B6CA8]/40 font-medium">No photo yet</p>
+                  </div>
+              }
+              <label className={`absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow flex items-center justify-center cursor-pointer hover:bg-white transition-colors ${photoUploading ? 'opacity-60 pointer-events-none' : ''}`}>
+                {photoUploading
+                  ? <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 border-t-[#1B6CA8] animate-spin" />
+                  : <svg className="w-3.5 h-3.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                    </svg>
+                }
+                <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && onPhotoUpload(e.target.files[0])} />
+              </label>
               <span className={`absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 isOpen ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
               }`}>
@@ -874,27 +884,7 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
                 />
               </div>
 
-              {/* Cover photo */}
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Cover Photo</p>
-                <div className="flex items-center gap-4">
-                  <div className="relative w-20 h-16 rounded-xl bg-[#DBEAFE] border border-[#e5e7eb] overflow-hidden flex items-center justify-center shrink-0">
-                    <svg className="w-6 h-6 text-[#1B6CA8]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M3.75 3h16.5M3.75 3a.75.75 0 00-.75.75v15.5c0 .414.336.75.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75z"/>
-                    </svg>
-                    {shopForm.image && shopForm.image !== 'null' && shopForm.image.startsWith('http') && (
-                      <img src={shopForm.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                    )}
-                  </div>
-                  <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg border border-[#e5e7eb] text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors ${photoUploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                    {photoUploading
-                      ? <><div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 border-t-[#1B6CA8] animate-spin" /> Uploading…</>
-                      : <><svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg> Upload photo</>
-                    }
-                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && onPhotoUpload(e.target.files[0])} />
-                  </label>
-                </div>
-              </div>
+              {photoError && <p className="text-xs text-red-500">{photoError}</p>}
             </div>
           </div>
 
@@ -1664,6 +1654,7 @@ export default function MerchantDashboard() {
   const [isSaving,      setIsSaving]      = useState(false)
   const [saveSuccess,   setSaveSuccess]   = useState(false)
   const [photoUploading,setPhotoUploading]= useState(false)
+  const [photoError,    setPhotoError]    = useState('')
   const menuRef         = useRef(null)
   const shopFormLoaded  = useRef(false)
 
@@ -1760,6 +1751,7 @@ export default function MerchantDashboard() {
 
   async function handlePhotoUpload(file) {
     setPhotoUploading(true)
+    setPhotoError('')
     try {
       const fd = new FormData()
       fd.append('file', file)
@@ -1768,8 +1760,13 @@ export default function MerchantDashboard() {
         `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
         { method: 'POST', body: fd }
       )
-      const { secure_url } = await res.json()
-      setShopForm(f => ({ ...f, image: secure_url }))
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error?.message ?? 'Upload failed')
+      const url = data.secure_url
+      setShopForm(f => ({ ...f, image: url }))
+      await updateDoc(doc(db, 'shops', String(shopId)), { image: url, updatedAt: serverTimestamp() })
+    } catch (err) {
+      setPhotoError(err.message || 'Photo upload failed. Please try again.')
     } finally {
       setPhotoUploading(false)
     }
@@ -2115,6 +2112,7 @@ export default function MerchantDashboard() {
               isSaving={isSaving}
               saveSuccess={saveSuccess}
               photoUploading={photoUploading}
+              photoError={photoError}
               onSave={handleSaveShop}
               onPhotoUpload={handlePhotoUpload}
               isOpen={isOpen}

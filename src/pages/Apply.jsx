@@ -150,7 +150,7 @@ export default function Apply() {
     return true
   }
 
-  function next()  { setError(''); setStep(s => s + 1) }
+  function next()  { if (validate()) setStep(s => s + 1) }
   function back()  { setError(''); setStep(s => s - 1) }
 
   async function handleSubmit() {
@@ -162,6 +162,7 @@ export default function Apply() {
       const appRef  = doc(db, 'applications', user.uid)
 
       if (isMerchant) {
+        if (!shopFrontPhoto) throw new Error('Please upload a shop front photo.')
         const shopRef  = doc(db, 'shops', user.uid)
         const colorIdx = Math.floor(Math.random() * CARD_COLORS.length)
 
@@ -218,42 +219,11 @@ export default function Apply() {
       await refreshProfile()
       setSuccess(true)
     } catch (err) {
-      setError('Something went wrong. Please try again.')
+      setError(err.message || 'Something went wrong. Please try again.')
       console.error(err)
     } finally {
       setSubmitting(false)
     }
-  }
-
-  // ── Success page ────────────────────────────────────────────────────────────
-  if (success) {
-    return (
-      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center px-4 py-16">
-        <div className="bg-white rounded-3xl shadow-sm border border-[#e5e7eb] w-full max-w-[480px] px-10 py-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="font-heading font-bold text-2xl text-gray-900 mb-2">Application Submitted!</h2>
-          <p className="text-sm text-gray-700 leading-relaxed mb-6">
-            Thank you for applying as a <span className="font-semibold text-gray-700">{isMerchant ? 'Merchant' : 'Rider'}</span> on LabadaGo. Our team is reviewing your application and documents.
-          </p>
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-8 text-left">
-            <p className="text-xs font-bold text-amber-700 mb-1">Under review</p>
-            <p className="text-xs text-amber-600 leading-relaxed">
-              You will receive a response within <span className="font-semibold">3–5 business days</span>. We'll notify you via email once a decision has been made.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/')}
-            className="w-full border border-[#e5e7eb] text-gray-600 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
-          >
-            Back to Home
-          </button>
-        </div>
-      </div>
-    )
   }
 
   // ── Main application page ───────────────────────────────────────────────────
@@ -580,6 +550,36 @@ export default function Apply() {
 
         </div>
       </main>
+
+      {/* ── Success modal ───────────────────────────────────────────────── */}
+      {success && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-md" />
+          <div className="relative bg-white rounded-3xl shadow-xl border border-[#e5e7eb] w-full max-w-[440px] px-10 py-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="font-heading font-bold text-2xl text-gray-900 mb-2">Application Submitted!</h2>
+            <p className="text-sm text-gray-700 leading-relaxed mb-6">
+              Thank you for applying as a <span className="font-semibold text-gray-700">{isMerchant ? 'Merchant' : 'Rider'}</span> on LabadaGo. Our team is reviewing your application and documents.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-8 text-left">
+              <p className="text-xs font-bold text-amber-700 mb-1">Under review</p>
+              <p className="text-xs text-amber-600 leading-relaxed">
+                You will receive a response within <span className="font-semibold">3–5 business days</span>. We'll notify you via email once a decision has been made.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full border border-[#e5e7eb] text-gray-600 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
