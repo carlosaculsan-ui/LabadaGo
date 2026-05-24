@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Admin/.claude/projects/c--Users-Admin-Downloads-labadago/**)",
+      "Bash(powershell -command \"Get-Item '654b639d-7f90-4867-81ed-f11c52aa93f5.jsonl' | Select-Object Length\")"
+    ]
+  }
+}

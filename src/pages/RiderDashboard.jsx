@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo'
-import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { signOut } from 'firebase/auth'
+import {
+  collection, query, where, onSnapshot,
+  updateDoc, doc, serverTimestamp,
+} from 'firebase/firestore'
+import {
+  signOut, updatePassword,
+  reauthenticateWithCredential, EmailAuthProvider,
+} from 'firebase/auth'
 import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -38,18 +44,8 @@ const NAV_ITEMS = [
   { id: 'profile',    label: 'Profile'       },
 ]
 
-const EARNINGS_DATA = [
-  { day: 'Mon', amount: 180 },
-  { day: 'Tue', amount: 240 },
-  { day: 'Wed', amount: 90  },
-  { day: 'Thu', amount: 310 },
-  { day: 'Fri', amount: 420 },
-  { day: 'Sat', amount: 380 },
-  { day: 'Sun', amount: 0   },
-]
-
-const MAX_EARNING = 420
-const ACTIVE_DAY  = 'Fri'
+const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 const ACTIVE_STATUSES = new Set(['PICKUP_EN_ROUTE', 'PICKED_UP', 'DELIVERY_EN_ROUTE'])
 
@@ -68,15 +64,37 @@ const STATUS_LABEL = {
   READY_FOR_DELIVERY: 'Ready for delivery',
   DELIVERY_EN_ROUTE:  'Delivery en route',
   COMPLETED:          'Completed',
+  CANCELLED:          'Cancelled',
 }
 
 const STATUS_PILL = {
   ACCEPTED:           'bg-[#DBEAFE] text-[#1B6CA8]',
   PICKUP_EN_ROUTE:    'bg-amber-100 text-amber-700',
   PICKED_UP:          'bg-purple-100 text-purple-700',
+  ARRIVED_AT_SHOP:    'bg-purple-100 text-purple-700',
+  PROCESSING:         'bg-blue-100 text-blue-700',
   READY_FOR_DELIVERY: 'bg-green-100 text-green-700',
   DELIVERY_EN_ROUTE:  'bg-sky-100 text-sky-700',
+  COMPLETED:          'bg-gray-100 text-gray-600',
+  CANCELLED:          'bg-red-100 text-red-500',
 }
+
+const TIMELINE_STEPS = [
+  { key: 'PICKUP_EN_ROUTE',   label: 'Pickup\nen route'  },
+  { key: 'PICKED_UP',         label: 'Picked\nup'        },
+  { key: 'ARRIVED_AT_SHOP',   label: 'At\nshop'          },
+  { key: 'DELIVERY_EN_ROUTE', label: 'En\nroute'         },
+  { key: 'COMPLETED',         label: 'Delivered'          },
+]
+
+const VEHICLE_TYPES = ['Motorcycle', 'Bicycle', 'E-bike', 'Scooter', 'Car']
+
+const DATE_FILTERS = [
+  { id: 'today', label: 'Today'      },
+  { id: 'week',  label: 'This Week'  },
+  { id: 'month', label: 'This Month' },
+  { id: 'all',   label: 'All Time'   },
+]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -98,8 +116,32 @@ function isThisWeek(ts) {
   return d >= mon
 }
 
+function isThisMonth(ts) {
+  if (!ts?.toDate) return false
+  const d = ts.toDate(), t = new Date()
+  return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth()
+}
+
+function matchesDateFilter(filter, ts) {
+  if (filter === 'all')   return true
+  if (filter === 'today') return isToday(ts)
+  if (filter === 'week')  return isThisWeek(ts)
+  if (filter === 'month') return isThisMonth(ts)
+  return true
+}
+
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+}
+
+function fmtDate(ts) {
+  if (!ts?.toDate) return '—'
+  return ts.toDate().toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function fmtTime(ts) {
+  if (!ts?.toDate) return '—'
+  return ts.toDate().toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
 }
 
 const AVATAR_COLORS = [
@@ -115,11 +157,1054 @@ function avatarColor(id = '') {
   return AVATAR_COLORS[n % AVATAR_COLORS.length]
 }
 
+// ─── StatusTimeline ───────────────────────────────────────────────────────────
+
+function StatusTimeline({ status }) {
+  const currentIdx = TIMELINE_STEPS.findIndex(s => s.key === status)
+  return (
+    <div className="flex items-start gap-0 w-full">
+      {TIMELINE_STEPS.map((step, i) => {
+        const done    = i < currentIdx
+        const active  = i === currentIdx
+        const pending = i > currentIdx
+        return (
+          <div key={step.key} className="flex-1 flex flex-col items-center">
+            <div className="flex items-center w-full">
+              {i > 0 && (
+                <div className={`flex-1 h-0.5 ${done || active ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`} />
+              )}
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors ${
+                active  ? 'bg-[#1B6CA8] border-[#1B6CA8]' :
+                done    ? 'bg-[#1B6CA8] border-[#1B6CA8]' :
+                          'bg-white border-gray-200'
+              }`}>
+                {done ? (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                  </svg>
+                ) : active ? (
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                ) : null}
+              </div>
+              {i < TIMELINE_STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 ${done ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`} />
+              )}
+            </div>
+            <p className={`text-center mt-1.5 whitespace-pre-line leading-tight ${
+              active  ? 'text-[10px] font-bold text-[#1B6CA8]' :
+              done    ? 'text-[10px] font-semibold text-gray-500' :
+                        'text-[10px] text-gray-300'
+            }`}>
+              {step.label}
+            </p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── EarningsChart ────────────────────────────────────────────────────────────
+
+function EarningsChart({ orders, chartHeight = 140 }) {
+  const [tooltipIdx,   setTooltipIdx]   = useState(null)
+  const [windowOffset, setWindowOffset] = useState(0)
+
+  const now = new Date()
+
+  const months = Array.from({ length: 6 }, (_, i) =>
+    new Date(now.getFullYear(), now.getMonth() - 5 + i + windowOffset * 6, 1)
+  )
+
+  const data = months.map(md => {
+    const y = md.getFullYear(), m = md.getMonth()
+    const isCurrentMonth = y === now.getFullYear() && m === now.getMonth()
+    const isFuture = md > new Date(now.getFullYear(), now.getMonth(), 1)
+    const earnings = orders
+      .filter(o => {
+        if (o.status !== 'COMPLETED') return false
+        const d = o.updatedAt?.toDate?.() ?? o.createdAt?.toDate?.()
+        return d && d.getFullYear() === y && d.getMonth() === m
+      })
+      .reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+    return { short: MONTH_SHORT[m], full: MONTH_FULL[m], earnings, isCurrentMonth, isFuture }
+  })
+
+  const rawMax  = Math.max(...data.map(d => d.earnings))
+  const yMax    = Math.max(Math.ceil(rawMax / 4000) * 4000, 16000)
+  const yLabels = [yMax, yMax * 0.75, yMax * 0.5, yMax * 0.25, 0]
+  const windowLabel = `${MONTH_FULL[months[0].getMonth()]} – ${MONTH_FULL[months[5].getMonth()]} ${months[5].getFullYear()}`
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <span className="font-heading font-semibold text-[13px] text-gray-800">
+          Monthly Earnings ({windowLabel})
+        </span>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setWindowOffset(o => o - 1)}
+            className="w-7 h-7 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors font-bold text-sm leading-none"
+          >
+            ‹
+          </button>
+          <button
+            onClick={() => setWindowOffset(o => o + 1)}
+            className="w-7 h-7 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors font-bold text-sm leading-none"
+          >
+            ›
+          </button>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <div className="flex flex-col justify-between py-px shrink-0 w-9" style={{ height: chartHeight }}>
+          {yLabels.map(v => (
+            <span key={v} className="text-[9px] text-gray-400 leading-none text-right block">
+              {v === 0 ? '₱0' : `₱${v / 1000}k`}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex-1 relative" style={{ height: chartHeight }}>
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            {yLabels.map((v, i) => (
+              <div key={v} className={`w-full border-dashed border-gray-200 ${i === yLabels.length - 1 ? 'border-b' : 'border-t'}`} />
+            ))}
+          </div>
+
+          {tooltipIdx !== null && (
+            <div
+              className="absolute top-2 z-20 bg-white border border-[#e5e7eb] rounded-xl shadow-md px-4 py-2.5 whitespace-nowrap pointer-events-none"
+              style={{ left: `${(tooltipIdx + 0.5) * (100 / 6)}%`, transform: 'translateX(-50%)' }}
+            >
+              <p className="text-sm font-semibold text-gray-900">{data[tooltipIdx]?.full}</p>
+              <p className="text-xs font-bold text-[#F5A623] mt-0.5">
+                Earnings : ₱{data[tooltipIdx]?.earnings.toFixed(2)}
+              </p>
+            </div>
+          )}
+
+          <div className="absolute inset-0 flex gap-1.5 px-0.5">
+            {data.map((d, i) => {
+              const barH = !d.isFuture && d.earnings > 0
+                ? Math.max((d.earnings / yMax) * (chartHeight - 6), 4)
+                : 0
+              return (
+                <div
+                  key={d.short}
+                  className={`flex-1 flex flex-col justify-end relative cursor-pointer rounded-sm transition-colors ${
+                    tooltipIdx === i ? 'bg-[#DBEAFE]' : 'hover:bg-gray-100'
+                  }`}
+                  onMouseEnter={() => setTooltipIdx(i)}
+                  onMouseLeave={() => setTooltipIdx(null)}
+                >
+                  {!d.isFuture && barH > 0 && (
+                    <div
+                      className={`w-full rounded-t-sm ${d.isCurrentMonth ? 'bg-[#F5A623]' : 'bg-gray-300'}`}
+                      style={{ height: `${barH}px` }}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex pl-11 mt-2">
+        {data.map(d => (
+          <div key={d.short} className="flex-1 text-center">
+            <span className="text-[10px] text-gray-400">{d.short}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── DeliveriesTab ────────────────────────────────────────────────────────────
+
+function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, onClaimOrder, refreshKey, setRefreshKey }) {
+  const [tab,        setTab]        = useState('All')
+  const [search,     setSearch]     = useState('')
+  const [dateFilter, setDateFilter] = useState('all')
+
+  const myOrders = orders.filter(o => o.riderId)
+
+  function matchesTab(o) {
+    if (tab === 'All')       return true
+    if (tab === 'Active')    return ACTIVE_STATUSES.has(o.status) || o.status === 'ACCEPTED'
+    if (tab === 'Completed') return o.status === 'COMPLETED'
+    if (tab === 'Cancelled') return o.status === 'CANCELLED'
+    return true
+  }
+
+  function matchesSearch(o) {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      o.customerName?.toLowerCase().includes(q) ||
+      `lbg-${o.id.substring(0, 8).toLowerCase()}`.includes(q) ||
+      o.shopName?.toLowerCase().includes(q)
+    )
+  }
+
+  const filtered = myOrders
+    .filter(o => matchesTab(o) && matchesSearch(o) && matchesDateFilter(dateFilter, o.createdAt))
+    .sort((a, b) => {
+      const ta = (a.createdAt?.toDate?.() ?? new Date(0)).getTime()
+      const tb = (b.createdAt?.toDate?.() ?? new Date(0)).getTime()
+      return tb - ta
+    })
+
+  const counts = {
+    all:       myOrders.length,
+    active:    myOrders.filter(o => ACTIVE_STATUSES.has(o.status) || o.status === 'ACCEPTED').length,
+    completed: myOrders.filter(o => o.status === 'COMPLETED').length,
+    cancelled: myOrders.filter(o => o.status === 'CANCELLED').length,
+  }
+
+  const TAB_COUNTS = [
+    { id: 'All',       count: counts.all       },
+    { id: 'Active',    count: counts.active    },
+    { id: 'Completed', count: counts.completed },
+    { id: 'Cancelled', count: counts.cancelled },
+  ]
+
+  return (
+    <div className="space-y-5">
+      <h2 className="font-heading font-bold text-[17px] text-gray-900">My Deliveries</h2>
+
+      {/* Available to claim */}
+      {isAvailable && availableOrders.length > 0 && (
+        <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                </svg>
+              </div>
+              <h3 className="font-heading font-bold text-[15px] text-gray-900">Available to Claim</h3>
+            </div>
+            <span className="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full">
+              {availableOrders.length} open
+            </span>
+          </div>
+          <div className="divide-y divide-[#e5e7eb]">
+            {availableOrders.map(order => (
+              <div key={order.id} className="flex items-center gap-5 px-6 py-4">
+                <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 items-center">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Order</p>
+                    <p className="font-heading font-bold text-[13px] text-gray-900">LBG-{order.id.substring(0, 8).toUpperCase()}</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Shop</p>
+                    <p className="text-sm text-gray-700 truncate">{order.shopName ?? '—'}</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Pickup</p>
+                    <p className="text-sm text-gray-600 truncate">{order.pickupAddress?.street ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Est. earn</p>
+                    <p className="text-sm font-semibold text-[#1B6CA8]">
+                      ₱{((order.estimatedWeight ?? 5) * (order.pricePerKg ?? 50) + (order.deliveryFee ?? 49)).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => onClaimOrder(order.id)}
+                  className="shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap"
+                >
+                  Claim
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filter bar */}
+      <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm">
+        {TAB_COUNTS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              tab === t.id ? 'bg-[#0A2540] text-white shadow-sm' : 'text-gray-400 hover:text-gray-700'
+            }`}
+          >
+            {t.id}
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+              tab === t.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {t.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Search + date */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[220px]">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Search by customer, order ID, or shop…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 border border-[#e5e7eb] rounded-xl text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+          />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          )}
+        </div>
+        <div className="flex gap-1">
+          {DATE_FILTERS.map(f => (
+            <button
+              key={f.id}
+              onClick={() => setDateFilter(f.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                dateFilter === f.id
+                  ? 'bg-[#0A2540] text-white'
+                  : 'bg-white border border-[#e5e7eb] text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Orders list */}
+      <div className="space-y-3">
+        {filtered.length === 0 && (
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] px-5 py-10 text-center">
+            <p className="text-sm font-semibold text-gray-500">No deliveries found</p>
+            <p className="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+          </div>
+        )}
+
+        {filtered.map(order => {
+          const isActive    = ACTIVE_STATUSES.has(order.status) || order.status === 'ACCEPTED'
+          const isDone      = order.status === 'COMPLETED'
+          const isCancelled = order.status === 'CANCELLED'
+          const earned      = order.finalPrice ?? order.estimatedPrice ?? 0
+          const ref         = `LBG-${order.id.substring(0, 8).toUpperCase()}`
+          const action      = ACTIVE_ACTION[order.status]
+
+          if (isActive) {
+            return (
+              <div key={order.id} className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb]">
+                  <div className="flex items-center gap-3">
+                    <p className="font-heading font-bold text-[15px] text-gray-900">{ref}</p>
+                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {STATUS_LABEL[order.status] ?? order.status}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-400">{fmtDate(order.createdAt)} · {fmtTime(order.createdAt)}</p>
+                </div>
+
+                <div className="px-6 py-5 space-y-5">
+                  {/* Timeline */}
+                  <StatusTimeline status={order.status} />
+
+                  {/* Details grid */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-1">Customer</p>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${avatarColor(order.customerId ?? order.id)}`}>
+                          {initials(order.customerName ?? '')}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800">{order.customerName ?? '—'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-1">Shop</p>
+                      <p className="text-sm text-gray-700">{order.shopName ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-1">Service</p>
+                      <p className="text-sm text-gray-700">{order.serviceType ?? '—'} · {order.estimatedWeight ?? '—'} kg</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-1">Pickup address</p>
+                      <p className="text-sm text-gray-700">
+                        {order.pickupAddress?.street ?? '—'}
+                        {order.pickupAddress?.landmark ? `, ${order.pickupAddress.landmark}` : ''}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-1">Est. earnings</p>
+                      <p className="text-sm font-bold text-[#1B6CA8]">₱{earned.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {action && (
+                    <button
+                      onClick={() => onAdvanceStatus(order)}
+                      className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-2.5 rounded-xl hover:bg-[#155a8a] transition-colors text-sm"
+                    >
+                      {action.label}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          }
+
+          return (
+            <div key={order.id} className="bg-white rounded-2xl border border-[#e5e7eb] flex items-center gap-5 px-6 py-4">
+              <div className="flex-1 min-w-0 grid grid-cols-5 gap-4 items-center">
+                <div>
+                  <p className="font-heading font-bold text-[13px] text-gray-900">{ref}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{fmtDate(order.createdAt)}</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Customer</p>
+                  <p className="text-sm text-gray-700 truncate">{order.customerName ?? '—'}</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Shop</p>
+                  <p className="text-sm text-gray-600 truncate">{order.shopName ?? '—'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Service</p>
+                  <p className="text-sm text-gray-600">{order.serviceType ?? '—'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">
+                    {isDone ? 'Earned' : 'Amount'}
+                  </p>
+                  <p className={`text-sm font-bold ${isDone ? 'text-emerald-600' : 'text-gray-400'}`}>
+                    {isDone ? `₱${earned.toLocaleString()}` : '—'}
+                  </p>
+                </div>
+              </div>
+              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                {STATUS_LABEL[order.status] ?? order.status}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── EarningsTab ──────────────────────────────────────────────────────────────
+
+function EarningsTab({ orders }) {
+  const [dateFilter, setDateFilter] = useState('month')
+
+  const completed = orders.filter(o => o.status === 'COMPLETED')
+
+  const totalAll   = completed.reduce((s, o) => s + (o.finalPrice ?? 0), 0)
+  const totalMonth = completed.filter(o => isThisMonth(o.updatedAt ?? o.createdAt)).reduce((s, o) => s + (o.finalPrice ?? 0), 0)
+  const totalWeek  = completed.filter(o => isThisWeek(o.updatedAt ?? o.createdAt)).reduce((s, o) => s + (o.finalPrice ?? 0), 0)
+  const totalToday = completed.filter(o => isToday(o.updatedAt ?? o.createdAt)).reduce((s, o) => s + (o.finalPrice ?? 0), 0)
+
+  const SUMMARY = [
+    { label: 'All time',   value: totalAll,   accent: 'bg-[#F5A623]'  },
+    { label: 'This month', value: totalMonth, accent: 'bg-violet-400' },
+    { label: 'This week',  value: totalWeek,  accent: 'bg-sky-400'    },
+    { label: 'Today',      value: totalToday, accent: 'bg-emerald-400' },
+  ]
+
+  const filteredDeliveries = completed
+    .filter(o => matchesDateFilter(dateFilter, o.updatedAt ?? o.createdAt))
+    .sort((a, b) => {
+      const ta = (a.updatedAt ?? a.createdAt)?.toDate?.()?.getTime() ?? 0
+      const tb = (b.updatedAt ?? b.createdAt)?.toDate?.()?.getTime() ?? 0
+      return tb - ta
+    })
+
+  const periodTotal = filteredDeliveries.reduce((s, o) => s + (o.finalPrice ?? 0), 0)
+
+  return (
+    <div className="space-y-6">
+      <h2 className="font-heading font-bold text-[17px] text-gray-900">Earnings</h2>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-4 gap-4">
+        {SUMMARY.map(s => (
+          <div key={s.label} className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
+            <div className={`w-2 h-2 rounded-full ${s.accent} mb-3`} />
+            <p className="font-heading font-bold text-[1.7rem] text-gray-900 leading-none">
+              ₱{s.value.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+            <p className="text-xs text-gray-500 mt-2">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Large chart */}
+      <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
+        <EarningsChart orders={orders} chartHeight={220} />
+      </div>
+
+      {/* Per-delivery breakdown */}
+      <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between">
+          <div>
+            <h3 className="font-heading font-bold text-[15px] text-gray-900">Delivery Breakdown</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {filteredDeliveries.length} deliveries · ₱{periodTotal.toLocaleString()} total
+            </p>
+          </div>
+          <div className="flex gap-1">
+            {DATE_FILTERS.map(f => (
+              <button
+                key={f.id}
+                onClick={() => setDateFilter(f.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  dateFilter === f.id
+                    ? 'bg-[#0A2540] text-white'
+                    : 'bg-gray-50 border border-[#e5e7eb] text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filteredDeliveries.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-10">No completed deliveries in this period.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#e5e7eb] bg-gray-50/60">
+                {['Date', 'Order ID', 'Customer', 'Shop', 'Service', 'Weight', 'Earned'].map(col => (
+                  <th key={col} className="text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 px-6 py-3 first:pl-6">
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#e5e7eb]">
+              {filteredDeliveries.map(order => {
+                const ts = order.updatedAt ?? order.createdAt
+                return (
+                  <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-3.5 text-gray-500 whitespace-nowrap text-xs">{fmtDate(ts)}</td>
+                    <td className="px-6 py-3.5 font-heading font-semibold text-gray-800 text-[13px] whitespace-nowrap">
+                      LBG-{order.id.substring(0, 8).toUpperCase()}
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${avatarColor(order.id)}`}>
+                          {initials(order.customerName ?? '')}
+                        </div>
+                        <span className="text-gray-700 whitespace-nowrap">{order.customerName ?? '—'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3.5 text-gray-600 whitespace-nowrap">{order.shopName ?? '—'}</td>
+                    <td className="px-6 py-3.5">
+                      <span className="text-[11px] font-medium bg-[#E8F4FD] text-[#1B6CA8] px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {order.serviceType ?? '—'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3.5 text-gray-600">{order.actualWeight ?? order.estimatedWeight ?? '—'} kg</td>
+                    <td className="px-6 py-3.5 font-heading font-bold text-emerald-600 whitespace-nowrap">
+                      ₱{(order.finalPrice ?? 0).toLocaleString()}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-[#e5e7eb] bg-gray-50/60">
+                <td colSpan={6} className="px-6 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wide">Period total</td>
+                <td className="px-6 py-3.5 font-heading font-bold text-[#1B6CA8]">₱{periodTotal.toLocaleString()}</td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── ProfileTab ───────────────────────────────────────────────────────────────
+
+function ProfileTab({ user, userProfile, refreshProfile }) {
+  const formLoaded = useRef(false)
+
+  const [form, setForm] = useState({
+    fullName:       '',
+    phone:          '',
+    emergencyName:  '',
+    emergencyPhone: '',
+    vehicleType:    '',
+    plateNumber:    '',
+    vehicleModel:   '',
+  })
+  const [saving,         setSaving]         = useState(false)
+  const [saveSuccess,    setSaveSuccess]    = useState(false)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoError,     setPhotoError]     = useState('')
+  const [photoURL,       setPhotoURL]       = useState('')
+
+  const [govIdURL,     setGovIdURL]     = useState('')
+  const [licenseURL,   setLicenseURL]   = useState('')
+  const [docUploading, setDocUploading] = useState({ govId: false, license: false })
+  const [docError,     setDocError]     = useState('')
+
+  const [pwForm,    setPwForm]    = useState({ current: '', next: '', confirm: '' })
+  const [pwSaving,  setPwSaving]  = useState(false)
+  const [pwError,   setPwError]   = useState('')
+  const [pwSuccess, setPwSuccess] = useState(false)
+
+  useEffect(() => {
+    if (userProfile && !formLoaded.current) {
+      formLoaded.current = true
+      setForm({
+        fullName:       userProfile.fullName       ?? '',
+        phone:          userProfile.phone          ?? '',
+        emergencyName:  userProfile.emergencyName  ?? '',
+        emergencyPhone: userProfile.emergencyPhone ?? '',
+        vehicleType:    userProfile.vehicleType    ?? '',
+        plateNumber:    userProfile.plateNumber    ?? '',
+        vehicleModel:   userProfile.vehicleModel   ?? '',
+      })
+      setPhotoURL(userProfile.riderPhotoURL ?? '')
+      setGovIdURL(userProfile.govIdURL     ?? '')
+      setLicenseURL(userProfile.licenseURL ?? '')
+    }
+  }, [userProfile])
+
+  function field(key, value) { setForm(f => ({ ...f, [key]: value })) }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { ...form, updatedAt: serverTimestamp() })
+      await refreshProfile()
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2500)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handlePhotoUpload(file) {
+    setPhotoUploading(true)
+    setPhotoError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
+      const res  = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: fd }
+      )
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error?.message ?? 'Upload failed')
+      const url = data.secure_url
+      setPhotoURL(url)
+      await updateDoc(doc(db, 'users', user.uid), { riderPhotoURL: url, updatedAt: serverTimestamp() })
+      await refreshProfile()
+    } catch (err) {
+      setPhotoError(err.message || 'Photo upload failed. Please try again.')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  async function handleDocUpload(file, docType) {
+    setDocUploading(s => ({ ...s, [docType]: true }))
+    setDocError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
+      const res  = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: fd }
+      )
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error?.message ?? 'Upload failed')
+      const url   = data.secure_url
+      const field = docType === 'govId' ? 'govIdURL' : 'licenseURL'
+      if (docType === 'govId') setGovIdURL(url)
+      else                     setLicenseURL(url)
+      await updateDoc(doc(db, 'users', user.uid), { [field]: url, updatedAt: serverTimestamp() })
+      await refreshProfile()
+    } catch (err) {
+      setDocError(err.message || 'Document upload failed. Please try again.')
+    } finally {
+      setDocUploading(s => ({ ...s, [docType]: false }))
+    }
+  }
+
+  const isEmailUser = user?.providerData?.some(p => p.providerId === 'password') ?? false
+
+  async function handleChangePassword() {
+    setPwError('')
+    if (pwForm.next !== pwForm.confirm) { setPwError('New passwords do not match.'); return }
+    if (pwForm.next.length < 6)         { setPwError('Password must be at least 6 characters.'); return }
+    setPwSaving(true)
+    try {
+      const cred = EmailAuthProvider.credential(user.email, pwForm.current)
+      await reauthenticateWithCredential(user, cred)
+      await updatePassword(user, pwForm.next)
+      setPwSuccess(true)
+      setPwForm({ current: '', next: '', confirm: '' })
+      setTimeout(() => setPwSuccess(false), 3000)
+    } catch (err) {
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setPwError('Current password is incorrect.')
+      } else if (err.code === 'auth/requires-recent-login') {
+        setPwError('Session expired — please sign out and sign back in.')
+      } else {
+        setPwError('Failed to change password. Please try again.')
+      }
+    } finally {
+      setPwSaving(false)
+    }
+  }
+
+  const riderInitials = (form.fullName || userProfile?.fullName || 'R')
+    .split(' ').map(n => n[0]).slice(0, 2).join('')
+  const rating      = userProfile?.rating ?? null
+  const ratingStars = Math.round(rating ?? 0)
+  const totalDone   = userProfile?.totalDeliveries ?? 0
+
+  return (
+    <div className="space-y-6">
+      <h2 className="font-heading font-bold text-[17px] text-gray-900">Profile</h2>
+
+      <div className="flex gap-6 items-start">
+
+        {/* ── Left: Preview card ───────────────────────────────────────── */}
+        <div className="w-[240px] shrink-0 space-y-4">
+
+          {/* Profile card */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            {/* Photo banner */}
+            <div className="relative h-24 bg-gradient-to-br from-[#0A2540] to-[#1B6CA8] flex items-end justify-center pb-0">
+              <div className="absolute bottom-0 translate-y-1/2 left-1/2 -translate-x-1/2">
+                <div className="relative w-16 h-16 rounded-full border-4 border-white shadow overflow-hidden bg-[#F5A623] flex items-center justify-center">
+                  {photoURL
+                    ? <img src={photoURL} alt="Profile" className="w-full h-full object-cover" />
+                    : <span className="text-[#0A2540] font-bold text-lg">{riderInitials}</span>
+                  }
+                  <label className={`absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity cursor-pointer rounded-full ${photoUploading ? 'opacity-100' : ''}`}>
+                    {photoUploading
+                      ? <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                      : <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    }
+                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handlePhotoUpload(e.target.files[0])} />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-10 pb-5 px-4 text-center">
+              <p className="font-heading font-bold text-[15px] text-gray-900">{form.fullName || 'Your Name'}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{user?.email}</p>
+
+              {rating !== null && (
+                <div className="flex items-center justify-center gap-1.5 mt-2">
+                  <div className="flex">
+                    {[1,2,3,4,5].map(n => (
+                      <svg key={n} className={`w-3 h-3 ${n <= ratingStars ? 'text-[#F5A623]' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-[11px] text-gray-500">{rating.toFixed(1)}</span>
+                </div>
+              )}
+
+              <div className="mt-3 flex items-center justify-center gap-4 text-center">
+                <div>
+                  <p className="font-heading font-bold text-[18px] text-[#1B6CA8]">{totalDone}</p>
+                  <p className="text-[10px] text-gray-400">Deliveries</p>
+                </div>
+              </div>
+
+              {form.vehicleType && (
+                <div className="mt-3 flex items-center justify-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/>
+                  </svg>
+                  <span className="text-[11px] text-gray-500">{form.vehicleType}{form.plateNumber ? ` · ${form.plateNumber}` : ''}</span>
+                </div>
+              )}
+            </div>
+
+            {photoError && <p className="text-xs text-red-500 text-center px-4 pb-3">{photoError}</p>}
+          </div>
+
+          {/* Account meta */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] p-4 space-y-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">Account</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500">Email</span>
+              <span className="text-xs font-medium text-gray-700 truncate max-w-[130px]">{user?.email ?? '—'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500">Role</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#DBEAFE] text-[#1B6CA8]">Rider</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Right: Edit form ─────────────────────────────────────────── */}
+        <div className="flex-1 space-y-5">
+
+          {/* Personal info */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Personal Information</h3>
+            </div>
+            <div className="p-6 grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Full Name</p>
+                <input
+                  type="text"
+                  value={form.fullName}
+                  onChange={e => field('fullName', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                  placeholder="Your full name"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Phone Number</p>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => field('phone', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                  placeholder="09XX XXX XXXX"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Email</p>
+                <input
+                  type="email"
+                  value={user?.email ?? ''}
+                  readOnly
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm bg-gray-50 text-gray-400 cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Emergency contact */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Emergency Contact</h3>
+            </div>
+            <div className="p-6 grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Contact Name</p>
+                <input
+                  type="text"
+                  value={form.emergencyName}
+                  onChange={e => field('emergencyName', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                  placeholder="e.g. Maria Santos"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Contact Number</p>
+                <input
+                  type="tel"
+                  value={form.emergencyPhone}
+                  onChange={e => field('emergencyPhone', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                  placeholder="09XX XXX XXXX"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Vehicle info */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Vehicle Information</h3>
+            </div>
+            <div className="p-6 grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Vehicle Type</p>
+                <select
+                  value={form.vehicleType}
+                  onChange={e => field('vehicleType', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15 bg-white"
+                >
+                  <option value="">Select type…</option>
+                  {VEHICLE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Plate Number</p>
+                <input
+                  type="text"
+                  value={form.plateNumber}
+                  onChange={e => field('plateNumber', e.target.value.toUpperCase())}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15 uppercase"
+                  placeholder="ABC 1234"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Model / Color</p>
+                <input
+                  type="text"
+                  value={form.vehicleModel}
+                  onChange={e => field('vehicleModel', e.target.value)}
+                  className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                  placeholder="e.g. Honda Click · Red"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Documents */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Documents</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Used for verification — visible to Labada admins only</p>
+            </div>
+            <div className="p-6 grid grid-cols-2 gap-5">
+              {[
+                { key: 'govId',   label: 'Government ID',   url: govIdURL   },
+                { key: 'license', label: "Driver's License", url: licenseURL },
+              ].map(({ key, label, url }) => (
+                <div key={key}>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">{label}</p>
+                  {url ? (
+                    <div className="relative rounded-xl overflow-hidden border border-[#e5e7eb] aspect-video">
+                      <img src={url} alt={label} className="w-full h-full object-cover" />
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                        <span className="text-white text-xs font-semibold bg-black/50 px-3 py-1.5 rounded-lg">
+                          {docUploading[key] ? 'Uploading…' : 'Replace'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={docUploading[key]}
+                          onChange={e => e.target.files[0] && handleDocUpload(e.target.files[0], key)}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl p-8 cursor-pointer transition-colors ${
+                      docUploading[key] ? 'border-[#1B6CA8]/40 bg-[#F0F7FF]' : 'border-gray-200 hover:border-[#1B6CA8]/50 hover:bg-gray-50/50'
+                    }`}>
+                      {docUploading[key] ? (
+                        <div className="w-5 h-5 rounded-full border-2 border-[#1B6CA8]/30 border-t-[#1B6CA8] animate-spin" />
+                      ) : (
+                        <>
+                          <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                          </svg>
+                          <span className="text-xs text-gray-400">Upload {label}</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={docUploading[key]}
+                        onChange={e => e.target.files[0] && handleDocUpload(e.target.files[0], key)}
+                      />
+                    </label>
+                  )}
+                </div>
+              ))}
+            </div>
+            {docError && <p className="text-xs text-red-500 px-6 pb-4">{docError}</p>}
+          </div>
+
+          {/* Save */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-[#1B6CA8] text-white font-semibold text-sm py-2.5 px-7 rounded-xl hover:bg-[#155a8a] transition-colors disabled:opacity-60"
+            >
+              {saving ? 'Saving…' : 'Save changes'}
+            </button>
+            {saveSuccess && (
+              <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                </svg>
+                Saved!
+              </div>
+            )}
+          </div>
+
+          {/* Change password */}
+          {isEmailUser && (
+            <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#e5e7eb]">
+                <h3 className="font-heading font-semibold text-[15px] text-gray-900">Change Password</h3>
+              </div>
+              <div className="p-6 space-y-4">
+                {['current', 'next', 'confirm'].map((key, i) => (
+                  <div key={key}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
+                      {i === 0 ? 'Current password' : i === 1 ? 'New password' : 'Confirm new password'}
+                    </p>
+                    <input
+                      type="password"
+                      value={pwForm[key]}
+                      onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                ))}
+                {pwError   && <p className="text-xs text-red-500">{pwError}</p>}
+                {pwSuccess && (
+                  <p className="text-xs text-emerald-600 font-medium flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                    </svg>
+                    Password updated!
+                  </p>
+                )}
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwSaving}
+                  className="bg-gray-800 text-white font-semibold text-sm py-2.5 px-6 rounded-xl hover:bg-gray-700 transition-colors disabled:opacity-60"
+                >
+                  {pwSaving ? 'Updating…' : 'Update password'}
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RiderDashboard() {
   const navigate = useNavigate()
-  const { user, userProfile } = useAuth()
+  const { user, userProfile, refreshProfile } = useAuth()
 
   const [orders,          setOrders]          = useState([])
   const [loaded,          setLoaded]          = useState(false)
@@ -144,24 +1229,16 @@ export default function RiderDashboard() {
   }
 
   useEffect(() => {
-    if (userProfile?.isAvailable !== undefined) {
-      setIsAvailable(userProfile.isAvailable)
-    }
+    if (userProfile?.isAvailable !== undefined) setIsAvailable(userProfile.isAvailable)
   }, [userProfile])
 
-  // ── Live orders for this rider ────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid) return
-
-    const q = query(
-      collection(db, 'orders'),
-      where('riderId', '==', user.uid)
-    )
+    const q = query(collection(db, 'orders'), where('riderId', '==', user.uid))
     const unsubscribe = onSnapshot(q, snap => {
       setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoaded(true)
     })
-
     return unsubscribe
   }, [user?.uid])
 
@@ -169,18 +1246,14 @@ export default function RiderDashboard() {
     const newStatus = !isAvailable
     setIsAvailable(newStatus)
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
-        isAvailable: newStatus, updatedAt: serverTimestamp(),
-      })
+      await updateDoc(doc(db, 'users', user.uid), { isAvailable: newStatus, updatedAt: serverTimestamp() })
     } catch {
       setIsAvailable(!newStatus)
     }
   }
 
-  // ── Live unclaimed orders ─────────────────────────────────────────────────
   useEffect(() => {
     if (!user?.uid) return
-
     const q = query(
       collection(db, 'orders'),
       where('status', '==', 'ACCEPTED'),
@@ -189,7 +1262,6 @@ export default function RiderDashboard() {
     const unsubscribe = onSnapshot(q, snap => {
       setAvailableOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
-
     return unsubscribe
   }, [user?.uid, refreshKey])
 
@@ -210,7 +1282,7 @@ export default function RiderDashboard() {
     })
   }
 
-  // ── Derived data ──────────────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
   const activeTask     = orders.find(o => ACTIVE_STATUSES.has(o.status)) ?? null
   const upcomingTasks  = orders.filter(o => o.status === 'ACCEPTED')
   const completedToday = orders.filter(o => o.status === 'COMPLETED' && isToday(o.createdAt))
@@ -221,7 +1293,7 @@ export default function RiderDashboard() {
     { label: "Today's deliveries", value: completedToday.length                },
     { label: 'This week',          value: completedWeek.length                 },
     { label: "Today's earnings",   value: `₱${earningsToday.toLocaleString()}` },
-    { label: 'Rating',             value: '4.9 ★'                              },
+    { label: 'Rating',             value: userProfile?.rating ? `${userProfile.rating.toFixed(1)} ★` : '—' },
   ]
 
   const STAT_STYLES = [
@@ -231,7 +1303,6 @@ export default function RiderDashboard() {
     { accent: 'bg-emerald-400' },
   ]
 
-  // ── Loading ───────────────────────────────────────────────────────────────
   if (!loaded) {
     return (
       <div className="min-h-screen bg-[#EDF1F7] flex flex-col items-center justify-center gap-3">
@@ -251,7 +1322,6 @@ export default function RiderDashboard() {
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20">
 
-        {/* Logo */}
         <div className="px-5 pt-6 pb-5">
           <button onClick={() => navigate('/')} className="cursor-pointer hover:opacity-85 transition-opacity focus:outline-none">
             <Logo />
@@ -259,7 +1329,6 @@ export default function RiderDashboard() {
           <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mt-2 pl-1">Rider Portal</p>
         </div>
 
-        {/* Rider card */}
         <div className="mx-4 mb-5 bg-white/8 border border-white/10 rounded-2xl p-4">
           <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/35 mb-1.5">Rider</p>
           <p className="text-[13px] font-bold text-white truncate mb-3">{userProfile?.fullName ?? 'Rider'}</p>
@@ -273,7 +1342,6 @@ export default function RiderDashboard() {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map(item => (
             <button
@@ -296,7 +1364,7 @@ export default function RiderDashboard() {
       {/* ── Main area ───────────────────────────────────────────────────── */}
       <div className="ml-[240px] flex-1 flex flex-col overflow-y-auto">
 
-        {/* Top banner — greeting + stats */}
+        {/* Top banner */}
         <div className="bg-[#0A2540] px-8 pt-7 pb-7 shrink-0">
           <div className="flex items-start justify-between mb-7">
             <div>
@@ -310,7 +1378,6 @@ export default function RiderDashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Bell */}
               <div className="relative">
                 <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
                   <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -324,7 +1391,6 @@ export default function RiderDashboard() {
                 )}
               </div>
 
-              {/* Name + avatar with dropdown */}
               <div className="relative flex items-center gap-2.5" ref={menuRef}>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-white leading-tight">{userProfile?.fullName ?? 'Rider'}</p>
@@ -334,37 +1400,31 @@ export default function RiderDashboard() {
                   onClick={() => setMenuOpen(o => !o)}
                   className="w-9 h-9 rounded-full overflow-hidden bg-[#F5A623] flex items-center justify-center shrink-0 hover:ring-2 hover:ring-white/30 transition-all focus:outline-none"
                 >
-                  {user?.photoURL
-                    ? <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                  {userProfile?.riderPhotoURL
+                    ? <img src={userProfile.riderPhotoURL} alt="" className="w-full h-full object-cover" />
                     : <span className="text-[#0A2540] text-xs font-bold">{riderInitials}</span>
                   }
                 </button>
 
                 {menuOpen && (
                   <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-[#e5e7eb] overflow-hidden z-50">
-                    <button
-                      onClick={() => { setMenuOpen(false); navigate('/') }}
-                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
-                    >
+                    <button onClick={() => { setMenuOpen(false); navigate('/') }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left">
                       <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/>
                       </svg>
                       Home
                     </button>
-                    <button
-                      onClick={() => { setMenuOpen(false); navigate('/profile') }}
-                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
-                    >
+                    <button onClick={() => { setMenuOpen(false); setActiveNav('profile'); setMenuOpen(false) }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left">
                       <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                       </svg>
                       My Profile
                     </button>
                     <div className="border-t border-[#e5e7eb]" />
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
-                    >
+                    <button onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left">
                       <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                       </svg>
@@ -376,7 +1436,6 @@ export default function RiderDashboard() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
             {STATS.map((stat, i) => (
               <div
@@ -384,9 +1443,7 @@ export default function RiderDashboard() {
                 className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4 transition-all duration-200 hover:bg-white/[0.16] hover:border-white/30 hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
               >
                 <div className={`w-2 h-2 rounded-full ${STAT_STYLES[i].accent} mb-3`} />
-                <p className="font-heading font-bold text-[2.2rem] text-white leading-none">
-                  {stat.value}
-                </p>
+                <p className="font-heading font-bold text-[2.2rem] text-white leading-none">{stat.value}</p>
                 <p className="text-[11px] text-white/65 mt-2">{stat.label}</p>
               </div>
             ))}
@@ -395,297 +1452,236 @@ export default function RiderDashboard() {
 
         <main className="flex-1 p-8 space-y-6">
 
-          {/* Active task card */}
-          <div className="bg-white rounded-xl border border-[#e5e7eb] flex overflow-hidden">
-            <div className="w-1 bg-[#1B6CA8] shrink-0" />
-            <div className="flex-1 p-6">
+          {/* ── Dashboard tab ─────────────────────────────────────────── */}
+          {activeNav === 'dashboard' && <>
 
+            {/* Active task */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] flex overflow-hidden">
+              <div className="w-1 bg-[#1B6CA8] shrink-0" />
+              <div className="flex-1 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="font-heading font-bold text-[17px] text-gray-900">Current task</h2>
+                  {activeTask && (
+                    <span className="bg-[#FEF3C7] text-amber-700 text-xs font-semibold px-3 py-1 rounded-full">
+                      {STATUS_LABEL[activeTask.status] ?? activeTask.status}
+                    </span>
+                  )}
+                </div>
+
+                {!activeTask ? (
+                  <div className="py-10 text-center">
+                    <p className="font-heading font-semibold text-gray-700 mb-1">No active deliveries</p>
+                    <p className="text-sm text-gray-600">
+                      {upcomingTasks.length > 0
+                        ? 'You have upcoming tasks assigned below.'
+                        : 'New tasks will appear here when a merchant assigns you.'}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-6">
+                      <StatusTimeline status={activeTask.status} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-6 mb-5">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-1">Order ID</p>
+                          <p className="font-heading font-bold text-[18px] text-gray-900">
+                            LBG-{activeTask.id.substring(0, 8).toUpperCase()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Customer</p>
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColor(activeTask.customerId ?? activeTask.id)}`}>
+                              {initials(activeTask.customerName ?? '')}
+                            </div>
+                            <span className="text-sm font-medium text-gray-800">{activeTask.customerName}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Pickup address</p>
+                          <div className="flex items-start gap-2">
+                            <svg className="w-4 h-4 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                            </svg>
+                            <p className="text-sm text-gray-700">
+                              {activeTask.pickupAddress?.street ?? '—'}
+                              {activeTask.pickupAddress?.landmark ? `, ${activeTask.pickupAddress.landmark}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                          <p className="text-xs text-amber-700 leading-relaxed">
+                            {activeTask.status === 'PICKUP_EN_ROUTE'
+                              ? 'Collect laundry bag, take a photo as proof'
+                              : activeTask.status === 'PICKED_UP'
+                              ? 'Drop laundry off at the shop'
+                              : 'Deliver clean laundry to the customer'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="min-h-48 rounded-xl border-2 border-dashed border-blue-200 bg-[#E8F4FD] flex flex-col items-center justify-center p-4 gap-3">
+                        <svg className="w-8 h-8 text-[#1B6CA8]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                        </svg>
+                        <p className="text-xs text-[#1B6CA8]/50 text-center leading-relaxed max-w-[160px]">Live map coming soon</p>
+                      </div>
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => handleAdvanceStatus(activeTask)}
+                        className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm"
+                      >
+                        {ACTIVE_ACTION[activeTask.status]?.label ?? 'Update status'}
+                      </button>
+                      <p className="text-[11px] text-gray-600 text-center mt-2">
+                        This will notify the customer and update order status
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Available orders */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="font-heading font-bold text-[17px] text-gray-900">Current task</h2>
-                {activeTask && (
-                  <span className="bg-[#FEF3C7] text-amber-700 text-xs font-semibold px-3 py-1 rounded-full">
-                    {STATUS_LABEL[activeTask.status] ?? activeTask.status}
+                <div>
+                  <h2 className="font-heading font-bold text-[17px] text-gray-900">Available orders</h2>
+                  <p className="text-xs text-gray-600 mt-0.5">Unclaimed orders you can pick up</p>
+                </div>
+                {isAvailable && (
+                  <span className="text-[11px] font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+                    {availableOrders.length} available
                   </span>
                 )}
               </div>
 
-              {!activeTask ? (
-                <div className="py-10 text-center">
-                  <p className="font-heading font-semibold text-gray-700 mb-1">No active deliveries</p>
-                  <p className="text-sm text-gray-600">
-                    {upcomingTasks.length > 0
-                      ? 'You have upcoming tasks assigned below.'
-                      : 'New tasks will appear here when a merchant assigns you.'}
-                  </p>
+              {!isAvailable ? (
+                <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
+                  <p className="text-sm font-medium text-gray-600">You are currently off duty.</p>
+                  <p className="text-xs text-gray-600 mt-1">Toggle availability to see orders.</p>
+                </div>
+              ) : availableOrders.length === 0 ? (
+                <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
+                  <p className="text-sm font-medium text-gray-600 mb-3">No orders available right now. Check back soon.</p>
+                  <button onClick={() => setRefreshKey(k => k + 1)}
+                    className="text-xs font-medium text-[#1B6CA8] border border-[#1B6CA8] px-4 py-1.5 rounded-lg hover:bg-[#F0F7FF] transition-colors">
+                    Refresh
+                  </button>
                 </div>
               ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-6 mb-5">
-
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-1">
-                          Order ID
-                        </p>
-                        <p className="font-heading font-bold text-[18px] text-gray-900">
-                          LBG-{activeTask.id.substring(0, 8).toUpperCase()}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
-                          Customer
-                        </p>
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColor(activeTask.customerId ?? activeTask.id)}`}>
-                            {initials(activeTask.customerName)}
-                          </div>
-                          <span className="text-sm font-medium text-gray-800">{activeTask.customerName}</span>
+                <div className="space-y-3">
+                  {availableOrders.map(order => (
+                    <div key={order.id} className="flex items-center gap-5 border border-[#e5e7eb] rounded-xl p-4 hover:border-[#1B6CA8]/40 transition-colors">
+                      <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 items-center">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Order</p>
+                          <p className="font-heading font-bold text-[14px] text-gray-900">LBG-{order.id.substring(0, 8).toUpperCase()}</p>
                         </div>
-                      </div>
-
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
-                          Pickup address
-                        </p>
-                        <div className="flex items-start gap-2">
-                          <svg className="w-4 h-4 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                          </svg>
-                          <p className="text-sm text-gray-700">
-                            {activeTask.pickupAddress?.street ?? '—'}
-                            {activeTask.pickupAddress?.landmark
-                              ? `, ${activeTask.pickupAddress.landmark}`
-                              : ''}
-                          </p>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Shop</p>
+                          <p className="text-sm text-gray-700 truncate">{order.shopName ?? '—'}</p>
                         </div>
-                      </div>
-
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                        <p className="text-xs text-amber-700 leading-relaxed">
-                          {activeTask.status === 'PICKUP_EN_ROUTE'
-                            ? 'Collect laundry bag, take a photo as proof'
-                            : activeTask.status === 'PICKED_UP'
-                            ? 'Drop laundry off at the shop'
-                            : 'Deliver clean laundry to the customer'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="min-h-48 rounded-xl border-2 border-dashed border-blue-200 bg-[#E8F4FD] flex flex-col items-center justify-center p-4 gap-3">
-                      <svg className="w-8 h-8 text-[#1B6CA8]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                      </svg>
-                      <p className="text-xs text-[#1B6CA8]/50 text-center leading-relaxed max-w-[160px]">
-                        Live map coming soon
-                      </p>
-                    </div>
-
-                  </div>
-
-                  <div>
-                    <button
-                      onClick={() => handleAdvanceStatus(activeTask)}
-                      className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm"
-                    >
-                      {ACTIVE_ACTION[activeTask.status]?.label ?? 'Update status'}
-                    </button>
-                    <p className="text-[11px] text-gray-600 text-center mt-2">
-                      This will notify the customer and update order status
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Available orders */}
-          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="font-heading font-bold text-[17px] text-gray-900">
-                  Available orders
-                </h2>
-                <p className="text-xs text-gray-600 mt-0.5">
-                  Unclaimed orders you can pick up
-                </p>
-              </div>
-              {isAvailable && (
-                <span className="text-[11px] font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
-                  {availableOrders.length} available
-                </span>
-              )}
-            </div>
-
-            {!isAvailable ? (
-              <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
-                <p className="text-sm font-medium text-gray-600">
-                  You are currently off duty.
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  Toggle availability to see orders.
-                </p>
-              </div>
-            ) : availableOrders.length === 0 ? (
-              <div className="py-8 text-center border border-dashed border-gray-200 rounded-xl">
-                <p className="text-sm font-medium text-gray-600 mb-3">
-                  No orders available right now. Check back soon.
-                </p>
-                <button
-                  onClick={() => setRefreshKey(k => k + 1)}
-                  className="text-xs font-medium text-[#1B6CA8] border border-[#1B6CA8] px-4 py-1.5 rounded-lg hover:bg-[#F0F7FF] transition-colors"
-                >
-                  Refresh
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {availableOrders.map(order => (
-                  <div
-                    key={order.id}
-                    className="flex items-center gap-5 border border-[#e5e7eb] rounded-xl p-4 hover:border-[#1B6CA8]/40 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 items-center">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
-                          Order
-                        </p>
-                        <p className="font-heading font-bold text-[14px] text-gray-900">
-                          LBG-{order.id.substring(0, 8).toUpperCase()}
-                        </p>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
-                          Shop
-                        </p>
-                        <p className="text-sm text-gray-700 truncate">{order.shopName ?? '—'}</p>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
-                          Pickup
-                        </p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {order.pickupAddress?.street ?? '—'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">
-                          Service
-                        </p>
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Pickup</p>
+                          <p className="text-sm text-gray-600 truncate">{order.pickupAddress?.street ?? '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Service</p>
                           <span className="text-[11px] font-medium bg-[#E8F4FD] text-[#1B6CA8] px-2 py-0.5 rounded-full whitespace-nowrap">
                             {order.serviceType ?? '—'}
                           </span>
-                          <span className="text-[11px] text-gray-600 whitespace-nowrap">
-                            {order.estimatedWeight} kg
-                          </span>
                         </div>
                       </div>
+                      <button onClick={() => handleClaimOrder(order.id)}
+                        className="shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap">
+                        Claim order
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleClaimOrder(order.id)}
-                      className="shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap"
-                    >
-                      Claim order
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Upcoming tasks table */}
-          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
-            <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">
-              Upcoming tasks
-            </h2>
-
-            {upcomingTasks.length === 0 ? (
-              <p className="text-sm text-gray-600 py-4">No upcoming tasks assigned yet.</p>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#e5e7eb]">
-                    {['Order ID', 'Customer', 'Pickup address', 'Shop', 'Status', 'Action'].map(col => (
-                      <th
-                        key={col}
-                        className="text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 pb-3 pr-4 last:pr-0"
-                      >
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e5e7eb]">
-                  {upcomingTasks.map(order => (
-                    <tr key={order.id}>
-                      <td className="py-3.5 pr-4 font-heading font-semibold text-gray-800 text-[13px] whitespace-nowrap">
-                        LBG-{order.id.substring(0, 8).toUpperCase()}
-                      </td>
-                      <td className="py-3.5 pr-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${avatarColor(order.id)}`}>
-                            {initials(order.customerName)}
-                          </div>
-                          <span className="text-gray-700 whitespace-nowrap">{order.customerName}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 pr-4 text-gray-600">
-                        {order.pickupAddress?.street ?? '—'}
-                      </td>
-                      <td className="py-3.5 pr-4 text-gray-600">
-                        {order.shopName ?? '—'}
-                      </td>
-                      <td className="py-3.5 pr-4">
-                        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                          {STATUS_LABEL[order.status] ?? order.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5">
-                        <button
-                          onClick={() => navigate(`/order-tracking?id=${order.id}`)}
-                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[#1B6CA8] text-[#1B6CA8] hover:bg-[#F0F7FF] transition-colors"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
                   ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Earnings snapshot */}
-          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
-            <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-6">
-              This week's earnings
-            </h2>
-
-            <div className="flex items-end gap-2 h-[120px]">
-              {EARNINGS_DATA.map(entry => (
-                <div
-                  key={entry.day}
-                  className={`flex-1 rounded-t-sm transition-all ${entry.day === ACTIVE_DAY ? 'bg-[#1B6CA8]' : 'bg-[#BFDBFE]'}`}
-                  style={{ height: entry.amount === 0 ? '3px' : `${(entry.amount / MAX_EARNING) * 120}px` }}
-                />
-              ))}
-            </div>
-
-            <div className="flex gap-2 mt-3">
-              {EARNINGS_DATA.map(entry => (
-                <div key={entry.day} className="flex-1 text-center">
-                  <p className={`text-[10px] font-medium ${entry.day === ACTIVE_DAY ? 'text-[#1B6CA8]' : 'text-gray-600'}`}>
-                    {entry.amount > 0 ? `₱${entry.amount}` : '—'}
-                  </p>
-                  <p className={`text-[11px] mt-0.5 ${entry.day === ACTIVE_DAY ? 'text-gray-700 font-semibold' : 'text-gray-600'}`}>
-                    {entry.day}
-                  </p>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+
+            {/* Upcoming tasks */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
+              <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">Upcoming tasks</h2>
+              {upcomingTasks.length === 0 ? (
+                <p className="text-sm text-gray-600 py-4">No upcoming tasks assigned yet.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e5e7eb]">
+                      {['Order ID', 'Customer', 'Pickup address', 'Shop', 'Status', 'Action'].map(col => (
+                        <th key={col} className="text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 pb-3 pr-4 last:pr-0">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e5e7eb]">
+                    {upcomingTasks.map(order => (
+                      <tr key={order.id}>
+                        <td className="py-3.5 pr-4 font-heading font-semibold text-gray-800 text-[13px] whitespace-nowrap">
+                          LBG-{order.id.substring(0, 8).toUpperCase()}
+                        </td>
+                        <td className="py-3.5 pr-4">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${avatarColor(order.id)}`}>
+                              {initials(order.customerName ?? '')}
+                            </div>
+                            <span className="text-gray-700 whitespace-nowrap">{order.customerName}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 pr-4 text-gray-600">{order.pickupAddress?.street ?? '—'}</td>
+                        <td className="py-3.5 pr-4 text-gray-600">{order.shopName ?? '—'}</td>
+                        <td className="py-3.5 pr-4">
+                          <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                            {STATUS_LABEL[order.status] ?? order.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5">
+                          <button onClick={() => handleAdvanceStatus(order)}
+                            className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#1B6CA8] text-white hover:bg-[#155a8a] transition-colors">
+                            Start pickup
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+          </>}
+
+          {/* ── My Deliveries tab ─────────────────────────────────────── */}
+          {activeNav === 'deliveries' && (
+            <DeliveriesTab
+              orders={orders}
+              availableOrders={availableOrders}
+              isAvailable={isAvailable}
+              onAdvanceStatus={handleAdvanceStatus}
+              onClaimOrder={handleClaimOrder}
+              refreshKey={refreshKey}
+              setRefreshKey={setRefreshKey}
+            />
+          )}
+
+          {/* ── Earnings tab ──────────────────────────────────────────── */}
+          {activeNav === 'earnings' && (
+            <EarningsTab orders={orders} />
+          )}
+
+          {/* ── Profile tab ───────────────────────────────────────────── */}
+          {activeNav === 'profile' && (
+            <ProfileTab
+              user={user}
+              userProfile={userProfile}
+              refreshProfile={refreshProfile}
+            />
+          )}
 
         </main>
       </div>
