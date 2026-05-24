@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Logo from '../components/Logo'
 import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -89,19 +90,6 @@ const IN_PROGRESS_STATUSES = new Set([
   'ARRIVED_AT_SHOP', 'PROCESSING', 'READY_FOR_DELIVERY', 'DELIVERY_EN_ROUTE',
 ])
 
-const EARNINGS_DATA = [
-  { day: 'Mon', amount: 1200 },
-  { day: 'Tue', amount: 890  },
-  { day: 'Wed', amount: 1450 },
-  { day: 'Thu', amount: 2100 },
-  { day: 'Fri', amount: 1800 },
-  { day: 'Sat', amount: 2400 },
-  { day: 'Sun', amount: 600  },
-]
-
-const MAX_EARNING  = 2400
-const ACTIVE_DAY   = 'Wed'
-const TOTAL_WEEKLY = EARNINGS_DATA.reduce((sum, d) => sum + d.amount, 0)
 
 const TABS = ['All', 'Pending', 'In Progress', 'Completed', 'Cancelled']
 
@@ -313,11 +301,148 @@ function WeightConfirmCard({ order }) {
   )
 }
 
+// ─── EarningsChart ────────────────────────────────────────────────────────────
+
+const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const CHART_H     = 140
+
+function EarningsChart({ orders }) {
+  const [tooltipIdx,    setTooltipIdx]    = useState(null)
+  const [windowOffset,  setWindowOffset]  = useState(0)
+
+  const now = new Date()
+
+  const months = Array.from({ length: 6 }, (_, i) =>
+    new Date(now.getFullYear(), now.getMonth() - 5 + i + windowOffset * 6, 1)
+  )
+
+  const data = months.map(md => {
+    const y = md.getFullYear(), m = md.getMonth()
+    const isCurrentMonth = y === now.getFullYear() && m === now.getMonth()
+    const isFuture = md > new Date(now.getFullYear(), now.getMonth(), 1)
+    const earnings = orders
+      .filter(o => {
+        if (o.status !== 'COMPLETED') return false
+        const d = o.updatedAt?.toDate?.() ?? o.createdAt?.toDate?.()
+        return d && d.getFullYear() === y && d.getMonth() === m
+      })
+      .reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+    return { short: MONTH_SHORT[m], full: MONTH_FULL[m], earnings, isCurrentMonth, isFuture }
+  })
+
+  const rawMax  = Math.max(...data.map(d => d.earnings))
+  const yMax    = Math.max(Math.ceil(rawMax / 4000) * 4000, 16000)
+  const yLabels = [yMax, yMax * 0.75, yMax * 0.5, yMax * 0.25, 0]
+  const windowLabel = `${MONTH_FULL[months[0].getMonth()]} – ${MONTH_FULL[months[5].getMonth()]} ${months[5].getFullYear()}`
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <span className="font-heading font-semibold text-[13px] text-gray-800">
+          Monthly Earnings ({windowLabel})
+        </span>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setWindowOffset(o => o - 1)}
+            className="w-7 h-7 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors font-bold text-sm leading-none"
+          >
+            ‹
+          </button>
+          <button
+            onClick={() => setWindowOffset(o => o + 1)}
+            className="w-7 h-7 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors font-bold text-sm leading-none"
+          >
+            ›
+          </button>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        {/* Y-axis labels */}
+        <div className="flex flex-col justify-between py-px shrink-0 w-9" style={{ height: CHART_H }}>
+          {yLabels.map(v => (
+            <span key={v} className="text-[9px] text-gray-400 leading-none text-right block">
+              {v === 0 ? '₱0' : `₱${v / 1000}k`}
+            </span>
+          ))}
+        </div>
+
+        {/* Chart area */}
+        <div className="flex-1 relative" style={{ height: CHART_H }}>
+          {/* Horizontal grid lines */}
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            {yLabels.map((v, i) => (
+              <div
+                key={v}
+                className={`w-full border-dashed border-gray-200 ${i === yLabels.length - 1 ? 'border-b' : 'border-t'}`}
+              />
+            ))}
+          </div>
+
+          {/* Shared tooltip — rendered at chart level so it never leaks outside */}
+          {tooltipIdx !== null && (
+            <div
+              className="absolute top-2 z-20 bg-white border border-[#e5e7eb] rounded-xl shadow-md px-4 py-2.5 whitespace-nowrap pointer-events-none"
+              style={{
+                left: `${(tooltipIdx + 0.5) * (100 / 6)}%`,
+                transform: 'translateX(-50%)',
+              }}
+            >
+              <p className="text-sm font-semibold text-gray-900">{data[tooltipIdx]?.full}</p>
+              <p className="text-xs font-bold text-[#F5A623] mt-0.5">
+                Earnings : ₱{data[tooltipIdx]?.earnings.toFixed(2)}
+              </p>
+            </div>
+          )}
+
+          {/* Bars */}
+          <div className="absolute inset-0 flex gap-1.5 px-0.5">
+            {data.map((d, i) => {
+              const barH = !d.isFuture && d.earnings > 0
+                ? Math.max((d.earnings / yMax) * (CHART_H - 6), 4)
+                : 0
+              return (
+                <div
+                  key={d.short}
+                  className={`flex-1 flex flex-col justify-end relative cursor-pointer rounded-sm transition-colors ${
+                    tooltipIdx === i ? 'bg-[#DBEAFE]' : 'hover:bg-gray-100'
+                  }`}
+                  onMouseEnter={() => setTooltipIdx(i)}
+                  onMouseLeave={() => setTooltipIdx(null)}
+                >
+                  {!d.isFuture && barH > 0 && (
+                    <div
+                      className={`w-full rounded-t-sm ${
+                        d.isCurrentMonth ? 'bg-[#F5A623]' : 'bg-gray-300'
+                      }`}
+                      style={{ height: `${barH}px` }}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* X-axis labels — offset matches y-axis width (36px) + gap (8px) = 44px = pl-11 */}
+      <div className="flex pl-11 mt-2">
+        {data.map(d => (
+          <div key={d.short} className="flex-1 text-center">
+            <span className="text-[10px] text-gray-400">{d.short}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MerchantDashboard() {
-  const { userProfile } = useAuth()
-  const shopId = userProfile?.shopId
+  const { user, userProfile } = useAuth()
+  const shopId = user?.uid
 
   const [orders,       setOrders]       = useState([])
   const [ordersLoaded, setOrdersLoaded] = useState(false)
@@ -428,10 +553,10 @@ export default function MerchantDashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   const STAT_STYLES = [
-    { num: 'text-[#F5A623]' },
-    { num: 'text-amber-300' },
-    { num: 'text-violet-400' },
-    { num: 'text-emerald-400' },
+    { num: 'text-white',        accent: 'bg-[#F5A623]' },
+    { num: 'text-white',        accent: 'bg-amber-400'  },
+    { num: 'text-white',        accent: 'bg-violet-400' },
+    { num: 'text-white',        accent: 'bg-emerald-400' },
   ]
 
   return (
@@ -441,15 +566,15 @@ export default function MerchantDashboard() {
       <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20">
 
         {/* Logo */}
-        <div className="px-6 pt-7 pb-5">
-          <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-7 w-auto brightness-0 invert" />
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mt-2">Merchant Portal</p>
+        <div className="px-5 pt-6 pb-5">
+          <Logo />
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mt-2 pl-1">Merchant Portal</p>
         </div>
 
         {/* Shop card */}
         <div className="mx-4 mb-5 bg-white/8 border border-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2.5">
-            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">Your Shop</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">Shop</p>
             <span className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: isOpen ? '#34d399' : '#f87171' }}>
               <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: isOpen ? '#34d399' : '#f87171' }} />
               {isOpen ? 'Open' : 'Closed'}
@@ -487,14 +612,9 @@ export default function MerchantDashboard() {
         </nav>
 
         {/* Profile */}
-        <div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#F5A623] flex items-center justify-center shrink-0">
-            <span className="text-[#0A2540] text-xs font-bold">{initials}</span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{userProfile?.fullName ?? 'Merchant'}</p>
-            <p className="text-[10px] text-white/35">Shop owner</p>
-          </div>
+        <div className="px-5 py-4 border-t border-white/10">
+          <p className="text-sm font-semibold text-white truncate">{userProfile?.fullName ?? 'Merchant'}</p>
+          <p className="text-[10px] text-white/35 mt-0.5">Shop owner</p>
         </div>
 
       </aside>
@@ -536,11 +656,12 @@ export default function MerchantDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
             {STATS.map((stat, i) => (
-              <div key={stat.label} className="bg-white/8 border border-white/10 rounded-2xl px-5 py-4">
-                <p className={`font-heading font-bold text-[2rem] leading-none ${STAT_STYLES[i].num}`}>
+              <div key={stat.label} className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4">
+                <div className={`w-2 h-2 rounded-full ${STAT_STYLES[i].accent} mb-3`} />
+                <p className="font-heading font-bold text-[2.2rem] text-white leading-none">
                   {stat.value}
                 </p>
-                <p className="text-[11px] text-white/45 mt-1.5">{stat.label}</p>
+                <p className="text-[11px] text-white/65 mt-2">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -550,23 +671,21 @@ export default function MerchantDashboard() {
 
           {/* Orders */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-heading font-bold text-[17px] text-gray-900">Orders</h2>
-              <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm">
-                {TABS.map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      activeTab === tab
-                        ? 'bg-[#0A2540] text-white shadow-sm'
-                        : 'text-gray-400 hover:text-gray-700'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+            <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-4">Orders</h2>
+            <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm mb-4">
+              {TABS.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    activeTab === tab
+                      ? 'bg-[#0A2540] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-gray-700'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
             <div className="space-y-3">
@@ -622,29 +741,10 @@ export default function MerchantDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                 </div>
-                <h2 className="font-heading font-bold text-[15px] text-gray-900">This Week</h2>
-                <p className="ml-auto font-heading font-bold text-[#1B6CA8] text-[17px]">₱{TOTAL_WEEKLY.toLocaleString()}</p>
+                <h2 className="font-heading font-bold text-[15px] text-gray-900">Earnings</h2>
               </div>
               <div className="p-6">
-                <div className="flex items-end gap-2 h-[96px] mb-2">
-                  {EARNINGS_DATA.map(entry => (
-                    <div key={entry.day} className="flex-1 flex flex-col items-center gap-1">
-                      <div
-                        className={`w-full rounded-t-md transition-all ${entry.day === ACTIVE_DAY ? 'bg-[#0A2540]' : 'bg-[#DBEAFE]'}`}
-                        style={{ height: `${(entry.amount / MAX_EARNING) * 90}px` }}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  {EARNINGS_DATA.map(entry => (
-                    <div key={entry.day} className="flex-1 text-center">
-                      <p className={`text-[10px] font-semibold ${entry.day === ACTIVE_DAY ? 'text-[#0A2540]' : 'text-gray-300'}`}>
-                        {entry.day}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <EarningsChart orders={orders} />
               </div>
             </div>
 
