@@ -8,6 +8,8 @@ import Checkout from './pages/Checkout'
 import OrderTracking from './pages/OrderTracking'
 import RiderDashboard from './pages/RiderDashboard'
 import MerchantDashboard from './pages/MerchantDashboard'
+import AdminDashboard from './pages/AdminDashboard'
+import MakeAdmin from './pages/MakeAdmin'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import ForgotPassword from './pages/ForgotPassword'
@@ -49,6 +51,11 @@ const router = createBrowserRouter([
     element: <ProtectedRoute allowedRoles={['merchant']} />,
     children: [{ path: '/merchant', element: <MerchantDashboard /> }],
   },
+  {
+    element: <ProtectedRoute allowedRoles={['admin']} />,
+    children: [{ path: '/admin', element: <AdminDashboard /> }],
+  },
+  { path: '/make-admin', element: <MakeAdmin /> },
   { path: '/signin', element: <SignIn /> },
   { path: '/signup', element: <SignUp /> },
   { path: '/forgot-password', element: <ForgotPassword /> },

@@ -241,6 +241,14 @@ export default function Navbar() {
                       My Deliveries
                     </button>
                   )}
+                  {role === 'admin' && (
+                    <button
+                      onClick={() => { setDropdownOpen(false); navigate('/admin') }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      Admin Panel
+                    </button>
+                  )}
                   {(role === 'customer' || !role) && (
                     <>
                       <button
