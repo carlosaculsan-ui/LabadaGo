@@ -384,10 +384,165 @@ function OrdersTab({ orders }) {
 
 // ─── Shops Tab ────────────────────────────────────────────────────────────────
 
+function ShopDetailModal({ shop, owner, orderCount, onClose }) {
+  if (!shop) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+        {/* Hero */}
+        <div className="relative h-44 bg-gradient-to-br from-[#DBEAFE] to-[#93C5FD] shrink-0 overflow-hidden rounded-t-2xl">
+          {shop.image && <img src={shop.image} alt={shop.name} className="w-full h-full object-cover" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
+            <h2 className="font-heading font-extrabold text-xl text-white leading-tight">{shop.name}</h2>
+            <p className="text-white/70 text-xs mt-0.5">{shop.address}</p>
+          </div>
+          <div className="absolute top-3 left-3 flex gap-2">
+            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${shop.approved ? 'bg-green-500 text-white' : 'bg-amber-400 text-amber-900'}`}>
+              {shop.approved ? 'Approved' : 'Pending'}
+            </span>
+            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${shop.isOpen ? 'bg-emerald-400/90 text-white' : 'bg-red-400/90 text-white'}`}>
+              {shop.isOpen ? 'Open' : 'Closed'}
+            </span>
+            {shop.status === 'suspended' && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-600 text-white">Suspended</span>
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+
+          {/* Quick stats row */}
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: 'Rating',    value: shop.rating ? `${shop.rating}★` : '—' },
+              { label: 'Price',     value: shop.pricePerKg ? `₱${shop.pricePerKg}/kg` : '—' },
+              { label: 'Orders',    value: orderCount ?? 0 },
+              { label: 'Distance',  value: shop.distanceKm ? `${shop.distanceKm} km` : '—' },
+            ].map(stat => (
+              <div key={stat.label} className="bg-[#F4F7FB] rounded-xl px-3 py-3 text-center">
+                <p className="text-lg font-bold text-gray-900">{stat.value}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Services */}
+          {shop.services?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Services</p>
+              <div className="flex flex-wrap gap-1.5">
+                {shop.services.map(svc => (
+                  <span key={svc} className="text-xs font-medium bg-[#E8F4FD] text-[#0C447C] px-2.5 py-1 rounded-full">{svc}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* About */}
+          {shop.about && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">About</p>
+              <p className="text-sm text-gray-600 leading-relaxed">{shop.about}</p>
+            </div>
+          )}
+
+          {/* Two-column: Contact + Owner */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-[#F4F7FB] rounded-xl p-4 space-y-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Shop Contact</p>
+              <Row label="Phone"  value={shop.phone || '—'} />
+              <Row label="Email"  value={shop.email || '—'} />
+              <Row label="GCash"  value={shop.gcash || '—'} />
+              <Row label="Same-day" value={shop.isSameDay ? 'Yes' : 'No'} />
+              <Row label="Featured" value={shop.featured ? 'Yes' : 'No'} />
+            </div>
+            <div className="bg-[#F4F7FB] rounded-xl p-4 space-y-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Owner</p>
+              <Row label="Name"   value={owner?.fullName || '—'} />
+              <Row label="Email"  value={owner?.email || '—'} />
+              <Row label="Mobile" value={owner?.mobile || '—'} />
+              <Row label="Role"   value={owner?.role || '—'} />
+              <Row label="Joined" value={owner?.createdAt?.toDate ? owner.createdAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'} />
+            </div>
+          </div>
+
+          {/* Service Pricing */}
+          {shop.servicePricing?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Services & Pricing</p>
+              <div className="space-y-2">
+                {shop.servicePricing.map((svc, i) => (
+                  <div key={i} className="flex items-center justify-between py-2.5 px-3.5 rounded-lg border border-[#e5e7eb] bg-[#FAFAFA]">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{svc.name}</p>
+                      {svc.desc && <p className="text-xs text-gray-500 mt-0.5">{svc.desc}</p>}
+                    </div>
+                    <span className="text-sm font-bold text-[#1B6CA8] ml-3 whitespace-nowrap">{svc.price}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Amenities */}
+          {shop.amenities?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">What's Included</p>
+              <div className="grid grid-cols-2 gap-2">
+                {shop.amenities.map((a, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-[#F4F9FF] border border-[#D6EAF8] text-sm text-gray-700">
+                    <svg className="w-3.5 h-3.5 text-[#1B6CA8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {a}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Operating Hours */}
+          {shop.hours?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Operating Hours</p>
+              <div className="space-y-1.5">
+                {shop.hours.map((h, i) => (
+                  <div key={i} className="flex justify-between text-sm">
+                    <span className="text-gray-500">{h.day}</span>
+                    <span className={h.time === 'Closed' ? 'text-red-500 font-medium' : 'font-semibold text-gray-800'}>{h.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex justify-between text-xs gap-2">
+      <span className="text-gray-500 shrink-0">{label}</span>
+      <span className="text-gray-800 font-medium text-right break-all">{value}</span>
+    </div>
+  )
+}
+
 function ShopsTab({ shops, users, orders }) {
-  const [confirm, setConfirm] = useState(null)
-  const [busy,    setBusy]    = useState(null)
-  const [search,  setSearch]  = useState('')
+  const [confirm,      setConfirm]      = useState(null)
+  const [busy,         setBusy]         = useState(null)
+  const [search,       setSearch]       = useState('')
+  const [detailShop,   setDetailShop]   = useState(null)
 
   const shopOrderCount = useMemo(() => {
     const counts = {}
@@ -410,6 +565,7 @@ function ShopsTab({ shops, users, orders }) {
     <div>
       <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">Shops</h2>
       {confirm && <ConfirmModal message={confirm.message} confirmLabel={confirm.label} danger={confirm.danger} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
+      {detailShop && <ShopDetailModal shop={detailShop} owner={users.find(u => u.id === detailShop.id)} orderCount={shopOrderCount[detailShop.id] ?? 0} onClose={() => setDetailShop(null)} />}
 
       <FilterBar count={displayed.length} noun="shop">
         <SearchInput value={search} onChange={setSearch} placeholder="Search shops…" />
@@ -443,12 +599,20 @@ function ShopsTab({ shops, users, orders }) {
                 }
               </TD>
               <TD align="right">
-                <button disabled={!!busy}
-                  onClick={() => setConfirm({ message: isSuspended ? `Restore shop "${s.name}"?` : `Suspend "${s.name}"? It will be hidden from Browse.`, label: isSuspended ? 'Restore' : 'Suspend', danger: !isSuspended, onConfirm: () => setField(s.id, 'status', isSuspended ? 'active' : 'suspended') })}
-                  className={['text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors', isSuspended ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
-                >
-                  {isSuspended ? 'Restore' : 'Suspend'}
-                </button>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => setDetailShop(s)}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[#1B6CA8]/40 text-[#1B6CA8] hover:bg-[#E8F4FD] transition-colors"
+                  >
+                    Details
+                  </button>
+                  <button disabled={!!busy}
+                    onClick={() => setConfirm({ message: isSuspended ? `Restore shop "${s.name}"?` : `Suspend "${s.name}"? It will be hidden from Browse.`, label: isSuspended ? 'Restore' : 'Suspend', danger: !isSuspended, onConfirm: () => setField(s.id, 'status', isSuspended ? 'active' : 'suspended') })}
+                    className={['text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors', isSuspended ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
+                  >
+                    {isSuspended ? 'Restore' : 'Suspend'}
+                  </button>
+                </div>
               </TD>
             </TR>
           )
