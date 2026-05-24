@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   collection, onSnapshot, doc, updateDoc, setDoc, getDoc,
 } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { signOut } from 'firebase/auth'
+import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import Logo from '../components/Logo'
 
@@ -731,12 +732,14 @@ function SettingsTab() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-  const navigate      = useNavigate()
-  const { userProfile } = useAuth()
-  const [activeTab, setActiveTab] = useState('Overview')
-  const [orders,    setOrders]    = useState([])
-  const [users,     setUsers]     = useState([])
-  const [shops,     setShops]     = useState([])
+  const navigate        = useNavigate()
+  const { user, userProfile } = useAuth()
+  const menuRef         = useRef(null)
+  const [activeTab,  setActiveTab]  = useState('Overview')
+  const [menuOpen,   setMenuOpen]   = useState(false)
+  const [orders,     setOrders]     = useState([])
+  const [users,      setUsers]      = useState([])
+  const [shops,      setShops]      = useState([])
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'orders'), snap => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
@@ -745,8 +748,23 @@ export default function AdminDashboard() {
     return () => { u1(); u2(); u3() }
   }, [])
 
-  const activeOrders = orders.filter(o => ACTIVE_STATUSES.has(o.status))
-  const riders       = users.filter(u => u.role === 'rider')
+  useEffect(() => {
+    if (!menuOpen) return
+    function onClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [menuOpen])
+
+  async function handleLogout() {
+    await signOut(auth)
+    navigate('/')
+  }
+
+  const activeOrders   = orders.filter(o => ACTIVE_STATUSES.has(o.status))
+  const pendingShops   = shops.filter(s => !s.approved && s.status !== 'suspended')
+  const riders         = users.filter(u => u.role === 'rider')
 
   const STATS = [
     { label: 'Total users',    value: users.length         },
@@ -806,9 +824,62 @@ export default function AdminDashboard() {
                 <span className="text-[#F5A623]">{firstName}</span>
               </h1>
             </div>
-            <span className="text-xs bg-red-500/20 text-red-300 font-semibold px-3 py-1.5 rounded-full border border-red-500/30 mt-1">
-              Admin
-            </span>
+            <div className="flex items-center gap-3">
+              {/* Bell */}
+              <div className="relative">
+                <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+                  <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                  </svg>
+                </button>
+                {pendingShops.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F5A623] rounded-full text-[9px] font-bold text-[#0A2540] flex items-center justify-center">
+                    {pendingShops.length}
+                  </span>
+                )}
+              </div>
+
+              {/* Avatar + dropdown */}
+              <div className="relative flex items-center gap-2.5" ref={menuRef}>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-white leading-tight">{userProfile?.fullName ?? 'Admin'}</p>
+                  <p className="text-[10px] text-white/40">Administrator</p>
+                </div>
+                <button
+                  onClick={() => setMenuOpen(o => !o)}
+                  className="w-9 h-9 rounded-full overflow-hidden bg-red-500 flex items-center justify-center shrink-0 hover:ring-2 hover:ring-white/30 transition-all focus:outline-none"
+                >
+                  {user?.photoURL
+                    ? <img src={user.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    : <span className="text-white text-xs font-bold">{initials(userProfile?.fullName)}</span>
+                  }
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-[#e5e7eb] overflow-hidden z-50">
+                    <button onClick={() => { setMenuOpen(false); navigate('/') }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+                      Home
+                    </button>
+                    <button onClick={() => { setMenuOpen(false); navigate('/profile') }}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                      My Profile
+                    </button>
+                    <div className="border-t border-[#e5e7eb]" />
+                    <button onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Stat cards */}
