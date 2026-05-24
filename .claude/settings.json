@@ -17,7 +17,8 @@
       "Bash(gsutil version *)",
       "Bash(gcloud version *)",
       "Bash(npx firebase-tools *)",
-      "Bash(cmd /c dir /b *.config.* *.config.js tailwind.config.* 2>nul)"
+      "Bash(cmd /c dir /b *.config.* *.config.js tailwind.config.* 2>nul)",
+      "Bash(npx --yes vite build --mode development)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Admin\\.claude\\projects\\c--Users-Admin-Downloads-labadago\\memory",

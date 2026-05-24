@@ -115,6 +115,23 @@ function isToday(ts) {
          d.getDate()     === t.getDate()
 }
 
+function isThisMonth(ts) {
+  if (!ts?.toDate) return false
+  const d = ts.toDate()
+  const t = new Date()
+  return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth()
+}
+
+function isThisWeek(ts) {
+  if (!ts?.toDate) return false
+  const d = ts.toDate()
+  const now = new Date()
+  const sow = new Date(now)
+  sow.setDate(now.getDate() - now.getDay())
+  sow.setHours(0, 0, 0, 0)
+  return d >= sow
+}
+
 
 // ─── OrderCard ─────────────────────────────────────────────────────────────────
 
@@ -318,7 +335,7 @@ const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const CHART_H     = 140
 
-function EarningsChart({ orders }) {
+function EarningsChart({ orders, chartHeight = 140 }) {
   const [tooltipIdx,    setTooltipIdx]    = useState(null)
   const [windowOffset,  setWindowOffset]  = useState(0)
 
@@ -371,7 +388,7 @@ function EarningsChart({ orders }) {
 
       <div className="flex gap-2">
         {/* Y-axis labels */}
-        <div className="flex flex-col justify-between py-px shrink-0 w-9" style={{ height: CHART_H }}>
+        <div className="flex flex-col justify-between py-px shrink-0 w-9" style={{ height: chartHeight }}>
           {yLabels.map(v => (
             <span key={v} className="text-[9px] text-gray-400 leading-none text-right block">
               {v === 0 ? '₱0' : `₱${v / 1000}k`}
@@ -380,7 +397,7 @@ function EarningsChart({ orders }) {
         </div>
 
         {/* Chart area */}
-        <div className="flex-1 relative" style={{ height: CHART_H }}>
+        <div className="flex-1 relative" style={{ height: chartHeight }}>
           {/* Horizontal grid lines */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
             {yLabels.map((v, i) => (
@@ -411,7 +428,7 @@ function EarningsChart({ orders }) {
           <div className="absolute inset-0 flex gap-1.5 px-0.5">
             {data.map((d, i) => {
               const barH = !d.isFuture && d.earnings > 0
-                ? Math.max((d.earnings / yMax) * (CHART_H - 6), 4)
+                ? Math.max((d.earnings / yMax) * (chartHeight - 6), 4)
                 : 0
               return (
                 <div
@@ -473,6 +490,230 @@ function PillGroup({ options, selected, onChange }) {
           {opt}
         </button>
       ))}
+    </div>
+  )
+}
+
+// ─── ServicesTab ─────────────────────────────────────────────────────────────
+
+function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
+  if (!shopForm) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 rounded-full border-4 border-gray-200 border-t-[#1B6CA8] animate-spin" />
+      </div>
+    )
+  }
+
+  function field(key, value) {
+    setShopForm(f => ({ ...f, [key]: value }))
+  }
+
+  const condAdd       = shopForm.conditioner ? (shopForm.conditionerPrice ?? 0) : 0
+  const estimatedTotal = (5 * (shopForm.pricePerKg ?? 50)) + (shopForm.pickupFee ?? 49) + (shopForm.deliveryFee ?? 49) + condAdd
+
+  return (
+    <div className="space-y-6">
+      <h2 className="font-heading font-bold text-[17px] text-gray-900">Services & Pricing</h2>
+
+      <div className="flex gap-6 items-start">
+
+        {/* ── Left: Preview ───────────────────────────────────────────── */}
+        <div className="w-[240px] shrink-0 space-y-4">
+
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-4">Price Preview</p>
+            <p className="text-[11px] text-gray-400 mb-3">Estimated for a 5 kg order:</p>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-600">Laundry service</span>
+                <span className="text-xs font-semibold text-gray-800">₱{5 * (shopForm.pricePerKg ?? 50)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-600">Pickup fee</span>
+                <span className="text-xs font-semibold text-gray-800">₱{shopForm.pickupFee ?? 49}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-600">Delivery fee</span>
+                <span className="text-xs font-semibold text-gray-800">₱{shopForm.deliveryFee ?? 49}</span>
+              </div>
+              {shopForm.conditioner && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-600">Conditioner</span>
+                  <span className="text-xs font-semibold text-gray-800">+₱{shopForm.conditionerPrice ?? 0}</span>
+                </div>
+              )}
+              <div className="border-t border-[#e5e7eb] pt-2.5 mt-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-800">Est. total</span>
+                  <span className="text-sm font-bold text-[#1B6CA8]">₱{estimatedTotal.toFixed(0)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-3">Summary</p>
+            <div className="space-y-2.5">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">Services offered</span>
+                <span className="text-xs font-semibold text-gray-700">{(shopForm.services ?? []).length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">Detergent options</span>
+                <span className="text-xs font-semibold text-gray-700">{(shopForm.detergents ?? []).length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">Same-day</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${shopForm.isSameDay ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {shopForm.isSameDay ? 'Available' : 'Not offered'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">Conditioner</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${shopForm.conditioner ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {shopForm.conditioner ? 'Available' : 'Not offered'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── Right: Edit form ─────────────────────────────────────────── */}
+        <div className="flex-1 space-y-5">
+
+          {/* Services */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Services Offered</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">Select all that apply</p>
+              <PillGroup
+                options={SERVICE_TYPES}
+                selected={shopForm.services ?? []}
+                onChange={v => field('services', v)}
+              />
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Pricing</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Price per kg</p>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                    <input type="number" min={1} value={shopForm.pricePerKg ?? 50}
+                      onChange={e => field('pricePerKg', +e.target.value)}
+                      className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Pickup fee</p>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                    <input type="number" min={0} value={shopForm.pickupFee ?? 49}
+                      onChange={e => field('pickupFee', +e.target.value)}
+                      className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Delivery fee</p>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                    <input type="number" min={0} value={shopForm.deliveryFee ?? 49}
+                      onChange={e => field('deliveryFee', +e.target.value)}
+                      className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Detergents & Add-ons */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Detergents & Add-ons</h3>
+            </div>
+            <div className="p-6 space-y-5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">Accepted Detergents</p>
+                <PillGroup
+                  options={DETERGENTS}
+                  selected={shopForm.detergents ?? []}
+                  onChange={v => field('detergents', v)}
+                />
+              </div>
+              <div className="border-t border-[#e5e7eb] pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Fabric Conditioner</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Offer as an optional add-on for customers</p>
+                  </div>
+                  <button type="button" onClick={() => field('conditioner', !shopForm.conditioner)}
+                    className={`relative w-10 h-[22px] rounded-full transition-colors duration-200 shrink-0 ${shopForm.conditioner ? 'bg-emerald-500' : 'bg-gray-200'}`}>
+                    <div className={`absolute top-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${shopForm.conditioner ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+                {shopForm.conditioner && (
+                  <div className="flex items-center gap-3 mt-2">
+                    <p className="text-xs font-semibold text-gray-700 whitespace-nowrap">Add-on price:</p>
+                    <div className="relative w-32">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                      <input type="number" min={0} value={shopForm.conditionerPrice ?? 0}
+                        onChange={e => field('conditionerPrice', +e.target.value)}
+                        className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                    </div>
+                    <p className="text-[11px] text-gray-400">(₱0 = free add-on)</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Availability */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Availability</h3>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Same-day service</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Accept orders that need to be returned the same day</p>
+                </div>
+                <button type="button" onClick={() => field('isSameDay', !shopForm.isSameDay)}
+                  className={`relative w-10 h-[22px] rounded-full transition-colors duration-200 shrink-0 ${shopForm.isSameDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
+                  <div className={`absolute top-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${shopForm.isSameDay ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Save */}
+          <div className="flex items-center gap-4">
+            <button type="button" onClick={onSave} disabled={isSaving}
+              className="bg-[#1B6CA8] text-white font-semibold text-sm py-2.5 px-7 rounded-xl hover:bg-[#155a8a] transition-colors disabled:opacity-60">
+              {isSaving ? 'Saving…' : 'Save changes'}
+            </button>
+            {saveSuccess && (
+              <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                </svg>
+                Saved!
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
     </div>
   )
 }
@@ -910,6 +1151,131 @@ function OrdersTab({ orders }) {
   )
 }
 
+// ─── EarningsTab ─────────────────────────────────────────────────────────────
+
+function EarningsTab({ orders }) {
+  const completed   = orders.filter(o => o.status === 'COMPLETED')
+  const totalEarned = completed.reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+  const monthEarned = completed.filter(o => isThisMonth(o.updatedAt ?? o.createdAt)).reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+  const weekEarned  = completed.filter(o => isThisWeek(o.updatedAt ?? o.createdAt)).reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+  const avgPerOrder = completed.length ? totalEarned / completed.length : 0
+
+  const byService = SERVICE_TYPES.map(s => {
+    const sOrders = completed.filter(o => o.serviceType === s)
+    return { service: s, count: sOrders.length, total: sOrders.reduce((sum, o) => sum + (o.finalPrice ?? 0), 0) }
+  })
+  const maxServiceTotal = Math.max(...byService.map(b => b.total), 1)
+
+  const recentCompleted = [...completed]
+    .sort((a, b) => {
+      const dA = (a.updatedAt ?? a.createdAt)?.toDate?.() ?? new Date(0)
+      const dB = (b.updatedAt ?? b.createdAt)?.toDate?.() ?? new Date(0)
+      return dB - dA
+    })
+    .slice(0, 6)
+
+  const EARNING_STATS = [
+    { label: 'All-time earnings', value: `₱${totalEarned.toFixed(2)}`, color: 'text-[#F5A623]'   },
+    { label: 'This month',        value: `₱${monthEarned.toFixed(2)}`, color: 'text-emerald-600' },
+    { label: 'This week',         value: `₱${weekEarned.toFixed(2)}`,  color: 'text-[#1B6CA8]'   },
+    { label: 'Avg. per order',    value: `₱${avgPerOrder.toFixed(2)}`, color: 'text-violet-600'  },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <h2 className="font-heading font-bold text-[17px] text-gray-900">Earnings</h2>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-4 gap-4">
+        {EARNING_STATS.map(stat => (
+          <div key={stat.label} className="bg-white rounded-2xl border border-[#e5e7eb] px-5 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">{stat.label}</p>
+            <p className={`font-heading font-bold text-2xl leading-tight ${stat.color}`}>{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Full-width chart */}
+      <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h3 className="font-heading font-bold text-[15px] text-gray-900">Monthly Earnings</h3>
+        </div>
+        <div className="p-6">
+          <EarningsChart orders={orders} chartHeight={220} />
+        </div>
+      </div>
+
+      {/* Bottom 2-col */}
+      <div className="grid grid-cols-2 gap-6">
+
+        {/* By service */}
+        <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#e5e7eb]">
+            <h3 className="font-heading font-bold text-[15px] text-gray-900">Earnings by Service</h3>
+          </div>
+          <div className="p-6 space-y-4">
+            {byService.map(({ service, count, total }) => (
+              <div key={service}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-gray-700">{service}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-400">{count} order{count !== 1 ? 's' : ''}</span>
+                    <span className="text-xs font-bold text-gray-800">₱{total.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full bg-[#1B6CA8] transition-all duration-500"
+                    style={{ width: `${total > 0 ? (total / maxServiceTotal) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+            {completed.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">No completed orders yet</p>
+            )}
+          </div>
+        </div>
+
+        {/* Recent completions */}
+        <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#e5e7eb]">
+            <h3 className="font-heading font-bold text-[15px] text-gray-900">Recent Completions</h3>
+          </div>
+          <div className="divide-y divide-[#e5e7eb]">
+            {recentCompleted.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8 px-6">No completed orders yet</p>
+            ) : recentCompleted.map(order => {
+              const ref = `LBG-${order.id.substring(0, 8).toUpperCase()}`
+              const ts  = (order.updatedAt ?? order.createdAt)?.toDate?.()
+              return (
+                <div key={order.id} className="flex items-center justify-between px-6 py-3.5">
+                  <div>
+                    <p className="text-[13px] font-semibold text-gray-800">{ref}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{order.customerName} · {order.serviceType}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-[#1B6CA8]">₱{(order.finalPrice ?? order.estimatedPrice ?? 0).toFixed(2)}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {ts ? ts.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) : '—'}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MerchantDashboard() {
@@ -976,15 +1342,19 @@ export default function MerchantDashboard() {
           if (!shopFormLoaded.current) {
             shopFormLoaded.current = true
             setShopForm({
-              name:        data.name        ?? '',
-              description: data.description ?? '',
-              address:     data.address     ?? '',
-              gcash:       data.gcash       ?? '',
-              pricePerKg:  data.pricePerKg  ?? 50,
-              services:    data.services    ?? [],
-              detergents:  data.detergents  ?? ['Any'],
-              isSameDay:   data.isSameDay   ?? false,
-              image:       data.image       ?? null,
+              name:             data.name             ?? '',
+              description:      data.description      ?? '',
+              address:          data.address          ?? '',
+              gcash:            data.gcash            ?? '',
+              pricePerKg:       data.pricePerKg       ?? 50,
+              pickupFee:        data.pickupFee        ?? 49,
+              deliveryFee:      data.deliveryFee      ?? 49,
+              services:         data.services         ?? [],
+              detergents:       data.detergents       ?? ['Any'],
+              isSameDay:        data.isSameDay        ?? false,
+              conditioner:      data.conditioner      ?? false,
+              conditionerPrice: data.conditionerPrice ?? 0,
+              image:            data.image            ?? null,
             })
           }
         }
@@ -1046,6 +1416,14 @@ export default function MerchantDashboard() {
     { label: 'In progress',      value: inProgress.length     },
     { label: 'Completed today',  value: completedToday.length },
   ]
+
+  const completedOrders = orders.filter(o => o.status === 'COMPLETED')
+  const monthEarned = completedOrders
+    .filter(o => isThisMonth(o.updatedAt ?? o.createdAt))
+    .reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+  const weekEarned = completedOrders
+    .filter(o => isThisWeek(o.updatedAt ?? o.createdAt))
+    .reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
 
   // ── Tab filtering ─────────────────────────────────────────────────────────
   const filteredOrders = orders.filter(o => {
@@ -1316,7 +1694,7 @@ export default function MerchantDashboard() {
                 </div>
               </div>
 
-              {/* Earnings */}
+              {/* Earnings summary */}
               <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
                 <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
@@ -1326,8 +1704,24 @@ export default function MerchantDashboard() {
                   </div>
                   <h2 className="font-heading font-bold text-[15px] text-gray-900">Earnings</h2>
                 </div>
-                <div className="p-6">
-                  <EarningsChart orders={orders} />
+                <div className="p-6 space-y-5">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1.5">This month</p>
+                    <p className="font-heading font-bold text-[2rem] text-[#F5A623] leading-none">₱{monthEarned.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1">This week</p>
+                    <p className="font-heading font-bold text-xl text-emerald-600">₱{weekEarned.toFixed(2)}</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveNav('earnings')}
+                    className="w-full flex items-center justify-center gap-1.5 border border-[#e5e7eb] rounded-xl py-2.5 text-sm font-semibold text-[#1B6CA8] hover:bg-[#E8F4FD] transition-colors"
+                  >
+                    View full report
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
 
@@ -1354,6 +1748,22 @@ export default function MerchantDashboard() {
               shopRating={shopMeta.rating}
               reviewCount={shopMeta.reviewCount}
             />
+          )}
+
+          {/* ── Services & Pricing tab ────────────────────────────────── */}
+          {activeNav === 'services' && (
+            <ServicesTab
+              shopForm={shopForm}
+              setShopForm={setShopForm}
+              isSaving={isSaving}
+              saveSuccess={saveSuccess}
+              onSave={handleSaveShop}
+            />
+          )}
+
+          {/* ── Earnings tab ──────────────────────────────────────────── */}
+          {activeNav === 'earnings' && (
+            <EarningsTab orders={orders} />
           )}
 
         </main>
