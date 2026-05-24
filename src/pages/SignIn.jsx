@@ -10,7 +10,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -230,13 +230,16 @@ export default function SignIn() {
       const snap = await getDoc(ref)
       if (!snap.exists()) {
         await setDoc(ref, {
-          fullName: user.displayName ?? '',
-          email: user.email ?? '',
-          mobile: '',
-          role: 'customer',
+          fullName:  user.displayName ?? '',
+          email:     user.email ?? '',
+          photoURL:  user.photoURL ?? '',
+          mobile:    '',
+          role:      'customer',
           createdAt: serverTimestamp(),
-          isActive: true,
+          isActive:  true,
         })
+      } else if (user.photoURL) {
+        await updateDoc(ref, { photoURL: user.photoURL })
       }
       navigate('/browse', { replace: true })
     } catch (err) {
