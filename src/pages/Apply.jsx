@@ -18,6 +18,12 @@ import MapPicker from '../components/MapPicker'
 const SERVICES    = ['Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
 const VEHICLES    = ['Motorcycle', 'Bicycle', 'Car']
 const CARD_COLORS = ['bg-[#DBEAFE]', 'bg-[#D1FAE5]', 'bg-[#FEE2E2]', 'bg-[#EDE9FE]', 'bg-[#FEF3C7]', 'bg-[#CCFBF1]']
+const AMENITY_OPTIONS = ['Free pickup', 'Free delivery', 'Folding included', 'Fabric conditioner', 'Ironing available', 'Same-day service', 'Stain treatment', 'Hang drying']
+const DEFAULT_HOURS = [
+  { day: 'Monday–Friday', open: true,  time: '7:00 AM – 6:00 PM' },
+  { day: 'Saturday',       open: true,  time: '7:00 AM – 4:00 PM' },
+  { day: 'Sunday',         open: false, time: '' },
+]
 
 const MERCHANT_STEPS = [
   { label: 'Personal Info',     desc: 'Your basic details'          },
@@ -109,11 +115,16 @@ export default function Apply() {
   const [shopCoords,     setShopCoords]     = useState(null)
   const [shopFrontPhoto, setShopFrontPhoto] = useState(null)
   const [photoPreview,   setPhotoPreview]   = useState(null)
-  const [services,    setServices]    = useState([])
-  const [pricePerKg,  setPricePerKg]  = useState('')
-  const [gcash,       setGcash]       = useState('')
-  const [description, setDescription] = useState('')
-  const [bizPermit,   setBizPermit]   = useState(null)
+  const [services,       setServices]       = useState([])
+  const [pricePerKg,     setPricePerKg]     = useState('')
+  const [gcash,          setGcash]          = useState('')
+  const [about,          setAbout]          = useState('')
+  const [shopPhone,      setShopPhone]      = useState('')
+  const [shopEmail,      setShopEmail]      = useState('')
+  const [hours,          setHours]          = useState(DEFAULT_HOURS)
+  const [servicePricing, setServicePricing] = useState([{ name: '', price: '', desc: '' }])
+  const [amenities,      setAmenities]      = useState([])
+  const [bizPermit,      setBizPermit]      = useState(null)
 
   // Step 2 — Rider
   const [vehicle, setVehicle] = useState('Motorcycle')
@@ -169,25 +180,33 @@ export default function Apply() {
         const shopImageUrl  = await uploadToCloudinary(shopFrontPhoto)
         const bizPermitUrl  = bizPermit ? await uploadToCloudinary(bizPermit) : null
 
+        const builtHours = hours.map(h => ({ day: h.day, time: h.open ? h.time.trim() || 'Closed' : 'Closed' }))
+        const builtPricing = servicePricing.filter(s => s.name.trim()).map(s => ({ name: s.name.trim(), price: s.price.trim(), desc: s.desc.trim() }))
+
         await setDoc(shopRef, {
-          name:        shopName.trim(),
-          address:     shopAddress.trim(),
-          coords:      shopCoords ?? null,
-          image:       shopImageUrl,
-          gcash:       gcash.trim(),
-          pricePerKg:  pricePerKg ? parseInt(pricePerKg, 10) : 65,
-          description: description.trim(),
+          name:           shopName.trim(),
+          address:        shopAddress.trim(),
+          coords:         shopCoords ?? null,
+          image:          shopImageUrl,
+          gcash:          gcash.trim(),
+          pricePerKg:     pricePerKg ? parseInt(pricePerKg, 10) : 65,
+          about:          about.trim(),
+          phone:          shopPhone.trim(),
+          email:          shopEmail.trim(),
+          hours:          builtHours,
+          servicePricing: builtPricing,
+          amenities,
           services,
-          detergents:  ['Any'],
-          rating:      5.0,
-          reviewCount: 0,
-          distanceKm:  +(Math.random() * 4 + 0.5).toFixed(1),
-          isOpen:      true,
-          isSameDay:   false,
-          isFeatured:  false,
-          color:       CARD_COLORS[colorIdx],
-          ownerId:     user.uid,
-          createdAt:   serverTimestamp(),
+          detergents:     ['Any'],
+          rating:         5.0,
+          reviewCount:    0,
+          distanceKm:     +(Math.random() * 4 + 0.5).toFixed(1),
+          isOpen:         true,
+          isSameDay:      false,
+          isFeatured:     false,
+          color:          CARD_COLORS[colorIdx],
+          ownerId:        user.uid,
+          createdAt:      serverTimestamp(),
         })
         const fullName = [firstName, middleInitial, lastName].filter(Boolean).join(' ').trim()
         await setDoc(appRef, {
@@ -428,9 +447,108 @@ export default function Apply() {
                     <input value={gcash} onChange={e => setGcash(e.target.value)} placeholder="09XXXXXXXXX" className={inputCls} />
                   </Field>
                 </div>
-                <Field label="Short description">
-                  <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="What makes your shop special?" className={`${inputCls} resize-none`} />
+                <Field label="About your shop" hint="Shown on your shop profile — what makes your shop special?">
+                  <textarea value={about} onChange={e => setAbout(e.target.value)} rows={3} placeholder="e.g. Family-owned laundry shop with over 10 years of experience…" className={`${inputCls} resize-none`} />
                 </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Shop phone number">
+                    <input type="tel" value={shopPhone} onChange={e => setShopPhone(e.target.value)} placeholder="e.g. 09171234567" className={inputCls} />
+                  </Field>
+                  <Field label="Shop email">
+                    <input type="email" value={shopEmail} onChange={e => setShopEmail(e.target.value)} placeholder="shop@email.com" className={inputCls} />
+                  </Field>
+                </div>
+
+                {/* Operating Hours */}
+                <Field label="Operating hours">
+                  <div className="space-y-2 mt-1">
+                    {hours.map((h, i) => (
+                      <div key={h.day} className="flex items-center gap-3 p-3 rounded-xl border border-[#e5e7eb] bg-white">
+                        <button
+                          type="button"
+                          onClick={() => setHours(prev => prev.map((x, j) => j === i ? { ...x, open: !x.open } : x))}
+                          className={`w-10 h-5 rounded-full transition-colors shrink-0 ${h.open ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`}
+                        >
+                          <span className={`block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5 ${h.open ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                        <span className="text-sm text-gray-700 w-28 shrink-0">{h.day}</span>
+                        {h.open ? (
+                          <input
+                            value={h.time}
+                            onChange={e => setHours(prev => prev.map((x, j) => j === i ? { ...x, time: e.target.value } : x))}
+                            placeholder="e.g. 7:00 AM – 6:00 PM"
+                            className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#e5e7eb] text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8]"
+                          />
+                        ) : (
+                          <span className="text-sm text-red-500 font-medium">Closed</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Field>
+
+                {/* Services & Pricing */}
+                <Field label="Services & Pricing" hint="Add individual service prices shown on your profile">
+                  <div className="space-y-2 mt-1">
+                    {servicePricing.map((svc, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <div className="flex-1 grid grid-cols-3 gap-2">
+                          <input
+                            value={svc.name}
+                            onChange={e => setServicePricing(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                            placeholder="Service name"
+                            className={inputCls}
+                          />
+                          <input
+                            value={svc.price}
+                            onChange={e => setServicePricing(prev => prev.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
+                            placeholder="₱65/kg"
+                            className={inputCls}
+                          />
+                          <input
+                            value={svc.desc}
+                            onChange={e => setServicePricing(prev => prev.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
+                            placeholder="Short note (optional)"
+                            className={inputCls}
+                          />
+                        </div>
+                        {servicePricing.length > 1 && (
+                          <button type="button" onClick={() => setServicePricing(prev => prev.filter((_, j) => j !== i))}
+                            className="mt-2 text-gray-400 hover:text-red-500 transition-colors shrink-0">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button type="button"
+                      onClick={() => setServicePricing(prev => [...prev, { name: '', price: '', desc: '' }])}
+                      className="text-xs font-semibold text-[#1B6CA8] hover:underline mt-1">
+                      + Add another service
+                    </button>
+                  </div>
+                </Field>
+
+                {/* Amenities */}
+                <Field label="What's included" hint="Select amenities available at your shop">
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {AMENITY_OPTIONS.map(opt => (
+                      <label key={opt} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors text-sm ${amenities.includes(opt) ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8] font-medium' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
+                        <input type="checkbox" className="hidden" checked={amenities.includes(opt)} onChange={() => setAmenities(prev => prev.includes(opt) ? prev.filter(a => a !== opt) : [...prev, opt])} />
+                        <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${amenities.includes(opt) ? 'bg-[#1B6CA8] border-[#1B6CA8]' : 'border-gray-300'}`}>
+                          {amenities.includes(opt) && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+
                 <FileInput
                   label="Business Permit / DTI Certificate"
                   hint="Required for verification — PDF, JPG or PNG"
@@ -501,7 +619,12 @@ export default function Apply() {
                     <ReviewRow label="Services"        value={services.join(', ')} />
                     <ReviewRow label="Price"           value={pricePerKg ? `₱${pricePerKg}/kg` : '₱65/kg (default)'} />
                     <ReviewRow label="GCash"           value={gcash || '—'} />
-                    <ReviewRow label="Description"     value={description || null} />
+                    <ReviewRow label="Phone"           value={shopPhone || '—'} />
+                    <ReviewRow label="Email"           value={shopEmail || '—'} />
+                    <ReviewRow label="About"           value={about || null} />
+                    <ReviewRow label="Hours"           value={hours.map(h => `${h.day}: ${h.open ? h.time || '—' : 'Closed'}`).join(' | ')} />
+                    <ReviewRow label="Pricing items"   value={servicePricing.filter(s => s.name.trim()).length > 0 ? servicePricing.filter(s => s.name.trim()).map(s => `${s.name} ${s.price}`).join(', ') : '—'} />
+                    <ReviewRow label="Amenities"       value={amenities.length > 0 ? amenities.join(', ') : '—'} />
                     <ReviewRow label="Business Permit" value={bizPermit ? `${bizPermit.name} ✓` : 'Not uploaded'} />
                   </div>
                 ) : (
