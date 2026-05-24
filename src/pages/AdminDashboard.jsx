@@ -624,10 +624,131 @@ function ShopsTab({ shops, users, orders }) {
 
 // ─── Riders Tab ───────────────────────────────────────────────────────────────
 
+function RiderDetailModal({ rider, deliveryCount, onClose }) {
+  const [app, setApp] = useState(null)
+
+  useEffect(() => {
+    if (!rider?.id) return
+    getDoc(doc(db, 'applications', rider.id)).then(snap => {
+      if (snap.exists()) setApp(snap.data())
+    }).catch(() => {})
+  }, [rider?.id])
+
+  if (!rider) return null
+
+  const isSuspended = rider.status === 'suspended'
+  const joined = rider.createdAt?.toDate
+    ? rider.createdAt.toDate().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+    : '—'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="relative bg-gradient-to-br from-[#0A3358] to-[#1B6CA8] px-6 pt-6 pb-8 rounded-t-2xl">
+          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div className="flex items-center gap-4">
+            {rider.photoURL
+              ? <img src={rider.photoURL} alt="" referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover ring-2 ring-white/40 shrink-0" />
+              : <div className="w-16 h-16 rounded-full bg-sky-400 flex items-center justify-center ring-2 ring-white/40 shrink-0">
+                  <span className="text-lg font-bold text-white">{initials(rider.fullName)}</span>
+                </div>
+            }
+            <div>
+              <h2 className="font-heading font-bold text-xl text-white leading-tight">{rider.fullName ?? '—'}</h2>
+              <p className="text-white/70 text-sm mt-0.5">{rider.email}</p>
+              <div className="flex gap-2 mt-2">
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${isSuspended ? 'bg-red-400/90 text-white' : 'bg-emerald-400/90 text-white'}`}>
+                  {isSuspended ? 'Suspended' : 'Active'}
+                </span>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${rider.available ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
+                  {rider.available ? 'Available' : 'Unavailable'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-5">
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'Deliveries',  value: deliveryCount },
+              { label: 'Vehicle',     value: app?.vehicle ?? '—' },
+              { label: 'Joined',      value: rider.createdAt?.toDate ? rider.createdAt.toDate().toLocaleDateString('en-PH', { month: 'short', year: 'numeric' }) : '—' },
+            ].map(s => (
+              <div key={s.label} className="bg-[#F4F7FB] rounded-xl px-3 py-3 text-center">
+                <p className="text-base font-bold text-gray-900">{s.value}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Personal Details */}
+          <div className="bg-[#F4F7FB] rounded-xl p-4 space-y-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Personal Details</p>
+            <Row label="Full Name"  value={rider.fullName || '—'} />
+            <Row label="Email"      value={rider.email || '—'} />
+            <Row label="Mobile"     value={rider.mobile || app?.mobile || '—'} />
+            <Row label="Contact"    value={app?.contact || '—'} />
+            <Row label="Age"        value={app?.age ?? '—'} />
+            <Row label="Sex"        value={app?.sex || '—'} />
+            <Row label="Address"    value={app?.address || '—'} />
+            <Row label="Joined"     value={joined} />
+          </div>
+
+          {/* Vehicle Details */}
+          <div className="bg-[#F4F7FB] rounded-xl p-4 space-y-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Vehicle Details</p>
+            <Row label="Type"       value={app?.vehicle || '—'} />
+            <Row label="Plate No."  value={app?.plate || '—'} />
+          </div>
+
+          {/* Documents */}
+          {(app?.license || app?.validId) && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Documents</p>
+              <div className="grid grid-cols-2 gap-3">
+                {app.license && (
+                  <a href={app.license} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#1B6CA8]/30 bg-[#E8F4FD] text-[#1B6CA8] text-xs font-semibold hover:bg-[#DBEAFE] transition-colors">
+                    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Driver's License
+                  </a>
+                )}
+                {app.validId && (
+                  <a href={app.validId} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#1B6CA8]/30 bg-[#E8F4FD] text-[#1B6CA8] text-xs font-semibold hover:bg-[#DBEAFE] transition-colors">
+                    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2" />
+                    </svg>
+                    Government ID
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function RidersTab({ users, orders }) {
-  const [confirm, setConfirm] = useState(null)
-  const [busy,    setBusy]    = useState(null)
-  const [search,  setSearch]  = useState('')
+  const [confirm,      setConfirm]      = useState(null)
+  const [busy,         setBusy]         = useState(null)
+  const [search,       setSearch]       = useState('')
+  const [detailRider,  setDetailRider]  = useState(null)
 
   const riders = useMemo(() => users.filter(u => u.role === 'rider'), [users])
 
@@ -653,6 +774,7 @@ function RidersTab({ users, orders }) {
     <div>
       <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">Riders</h2>
       {confirm && <ConfirmModal message={confirm.message} confirmLabel={confirm.label} danger={confirm.danger} onConfirm={() => handleStatus(confirm.uid, confirm.status)} onCancel={() => setConfirm(null)} />}
+      {detailRider && <RiderDetailModal rider={detailRider} deliveryCount={completedByRider[detailRider.id] ?? 0} onClose={() => setDetailRider(null)} />}
 
       <FilterBar count={displayed.length} noun="rider">
         <SearchInput value={search} onChange={setSearch} placeholder="Search riders…" />
@@ -678,7 +800,7 @@ function RidersTab({ users, orders }) {
                   </div>
                 </div>
               </TD>
-              <TD><span className="text-gray-500 text-xs">{r.phone ?? '—'}</span></TD>
+              <TD><span className="text-gray-500 text-xs">{r.mobile ?? '—'}</span></TD>
               <TD align="center">
                 <div className="flex justify-center">
                   <Toggle checked={!!r.available} disabled={busy === r.id + 'a'} onChange={val => handleAvailable(r.id, val)} />
@@ -691,12 +813,20 @@ function RidersTab({ users, orders }) {
                 </span>
               </TD>
               <TD align="right">
-                <button disabled={busy === r.id}
-                  onClick={() => setConfirm({ uid: r.id, status: isSuspended ? 'active' : 'suspended', label: isSuspended ? 'Activate' : 'Suspend', danger: !isSuspended, message: isSuspended ? `Reactivate rider ${r.fullName ?? r.email}?` : `Suspend rider ${r.fullName ?? r.email}?` })}
-                  className={['text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors', isSuspended ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
-                >
-                  {isSuspended ? 'Activate' : 'Suspend'}
-                </button>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => setDetailRider(r)}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[#1B6CA8]/40 text-[#1B6CA8] hover:bg-[#E8F4FD] transition-colors"
+                  >
+                    Details
+                  </button>
+                  <button disabled={busy === r.id}
+                    onClick={() => setConfirm({ uid: r.id, status: isSuspended ? 'active' : 'suspended', label: isSuspended ? 'Activate' : 'Suspend', danger: !isSuspended, message: isSuspended ? `Reactivate rider ${r.fullName ?? r.email}?` : `Suspend rider ${r.fullName ?? r.email}?` })}
+                    className={['text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors', isSuspended ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
+                  >
+                    {isSuspended ? 'Activate' : 'Suspend'}
+                  </button>
+                </div>
               </TD>
             </TR>
           )
