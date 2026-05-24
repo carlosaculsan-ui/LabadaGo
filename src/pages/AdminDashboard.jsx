@@ -385,10 +385,32 @@ function OrdersTab({ orders }) {
 // ─── Shops Tab ────────────────────────────────────────────────────────────────
 
 function ShopDetailModal({ shop, owner, orderCount, onClose }) {
+  const [app,        setApp]        = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+
+  useEffect(() => {
+    if (!shop?.id) return
+    getDoc(doc(db, 'applications', shop.id)).then(snap => {
+      if (snap.exists()) setApp(snap.data())
+    }).catch(() => {})
+  }, [shop?.id])
+
   if (!shop) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+        {/* Image preview overlay */}
+        {previewUrl && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
+            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+            <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* Hero */}
         <div className="relative h-44 bg-gradient-to-br from-[#DBEAFE] to-[#93C5FD] shrink-0 overflow-hidden rounded-t-2xl">
@@ -523,6 +545,20 @@ function ShopDetailModal({ shop, owner, orderCount, onClose }) {
             </div>
           )}
 
+          {/* Documents from application */}
+          {app?.bizPermit && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Documents</p>
+              <button onClick={() => setPreviewUrl(app.bizPermit)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#1B6CA8]/30 bg-[#E8F4FD] text-[#1B6CA8] text-xs font-semibold hover:bg-[#DBEAFE] transition-colors">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Business Permit / DTI Certificate
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
@@ -625,7 +661,8 @@ function ShopsTab({ shops, users, orders }) {
 // ─── Riders Tab ───────────────────────────────────────────────────────────────
 
 function RiderDetailModal({ rider, deliveryCount, onClose }) {
-  const [app, setApp] = useState(null)
+  const [app,        setApp]        = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
 
   useEffect(() => {
     if (!rider?.id) return
@@ -644,6 +681,18 @@ function RiderDetailModal({ rider, deliveryCount, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+        {/* Image preview overlay */}
+        {previewUrl && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
+            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+            <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* Header */}
         <div className="relative bg-gradient-to-br from-[#0A3358] to-[#1B6CA8] px-6 pt-6 pb-8 rounded-t-2xl">
@@ -717,22 +766,22 @@ function RiderDetailModal({ rider, deliveryCount, onClose }) {
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Documents</p>
               <div className="grid grid-cols-2 gap-3">
                 {app.license && (
-                  <a href={app.license} target="_blank" rel="noopener noreferrer"
+                  <button onClick={() => setPreviewUrl(app.license)}
                     className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#1B6CA8]/30 bg-[#E8F4FD] text-[#1B6CA8] text-xs font-semibold hover:bg-[#DBEAFE] transition-colors">
                     <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Driver's License
-                  </a>
+                  </button>
                 )}
                 {app.validId && (
-                  <a href={app.validId} target="_blank" rel="noopener noreferrer"
+                  <button onClick={() => setPreviewUrl(app.validId)}
                     className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#1B6CA8]/30 bg-[#E8F4FD] text-[#1B6CA8] text-xs font-semibold hover:bg-[#DBEAFE] transition-colors">
                     <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2" />
                     </svg>
                     Government ID
-                  </a>
+                  </button>
                 )}
               </div>
             </div>
