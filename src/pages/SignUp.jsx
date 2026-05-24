@@ -252,6 +252,64 @@ function TermsModal({ onAgree, onDisagree }) {
   )
 }
 
+// ─── PrivacyModal ──────────────────────────────────────────────────────────
+
+function PrivacyModal({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-[#0c2d54] border border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] flex flex-col max-h-[80vh]">
+
+        <div className="px-7 pt-6 pb-4 border-b border-white/10 shrink-0">
+          <h2 className="text-white font-heading font-bold text-lg">Privacy Policy</h2>
+          <p className="text-white/50 text-xs mt-0.5">How LabadaGo collects, uses, and protects your data.</p>
+        </div>
+
+        <div className="overflow-y-auto px-7 py-5 space-y-5 text-white/70 text-sm leading-relaxed">
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">1. Information We Collect</h3>
+            <p>We collect personal information including your name, email address, mobile number, and location data for the purpose of providing our services. We may also collect order history, device identifiers, and usage data to improve the platform.</p>
+          </section>
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">2. How We Use Your Information</h3>
+            <p>Your data is used to process and fulfill laundry orders, communicate with you about your account and orders, improve our services, and comply with legal obligations. We will never sell your personal information to third parties.</p>
+          </section>
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">3. Information Sharing</h3>
+            <p>We may share necessary information with merchants and riders solely to fulfill your orders (e.g., your name and address for pickup). We do not share your data with advertisers or unrelated third parties.</p>
+          </section>
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">4. Data Security</h3>
+            <p>Your data is stored securely using industry-standard encryption. We take reasonable measures to protect your information from unauthorized access, alteration, or disclosure.</p>
+          </section>
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">5. Data Retention</h3>
+            <p>We retain your personal data for as long as your account is active or as needed to provide services. You may request deletion of your account and associated data at any time by contacting our support team. Some data may be retained for legal or regulatory compliance purposes even after account deletion.</p>
+          </section>
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">6. Your Rights</h3>
+            <p>You have the right to access, correct, or delete your personal data. To exercise these rights, contact us through the Help Center. By using LabadaGo, you consent to the collection and use of your information as described herein.</p>
+          </section>
+          <section>
+            <h3 className="text-white font-semibold mb-1.5">7. Governing Law</h3>
+            <p>This Privacy Policy is governed by the laws of the Republic of the Philippines and complies with the Data Privacy Act of 2012 (Republic Act No. 10173).</p>
+          </section>
+        </div>
+
+        <div className="px-7 py-5 border-t border-white/10 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-2.5 rounded-full bg-white/10 border border-white/20 text-white text-sm font-semibold hover:bg-white/20 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider' }
@@ -266,7 +324,8 @@ export default function SignUp() {
   const [password,        setPassword]        = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [termsAccepted,   setTermsAccepted]   = useState(false)
-  const [showTermsModal,  setShowTermsModal]  = useState(false)
+  const [showTermsModal,   setShowTermsModal]   = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [error,           setError]           = useState('')
   const [loading,         setLoading]         = useState(false)
   const [exiting,         setExiting]         = useState(false)
@@ -352,6 +411,9 @@ export default function SignUp() {
           onAgree={() => { setTermsAccepted(true); setShowTermsModal(false) }}
           onDisagree={() => { setTermsAccepted(false); setShowTermsModal(false) }}
         />
+      )}
+      {showPrivacyModal && (
+        <PrivacyModal onClose={() => setShowPrivacyModal(false)} />
       )}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {BUBBLES.map((b, i) => (
@@ -504,7 +566,7 @@ export default function SignUp() {
               {' '}and{' '}
               <button
                 type="button"
-                onClick={() => setShowTermsModal(true)}
+                onClick={() => setShowPrivacyModal(true)}
                 className="text-orange-400 hover:underline"
               >
                 Privacy Policy

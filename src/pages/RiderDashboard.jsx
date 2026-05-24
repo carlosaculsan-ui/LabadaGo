@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet'
 import {
   collection, query, where, onSnapshot,
   updateDoc, doc, serverTimestamp,
@@ -11,6 +14,29 @@ import {
 } from 'firebase/auth'
 import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
+
+// ─── Leaflet icons ────────────────────────────────────────────────────────────
+
+const RIDER_ICON = L.divIcon({
+  className: '',
+  iconSize:   [40, 40],
+  iconAnchor: [20, 20],
+  html: `<div style="width:40px;height:40px;border-radius:50%;background:#1B6CA8;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35);">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2.5L4.5 21l.5.5L12 18.5l7 3 .5-.5L12 2.5z"/></svg>
+  </div>`,
+})
+
+const DEST_ICON = L.divIcon({
+  className: '',
+  iconSize:   [40, 48],
+  iconAnchor: [20, 48],
+  html: `<div style="display:flex;flex-direction:column;align-items:center;">
+    <div style="width:40px;height:40px;border-radius:10px;background:#0A2540;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </div>
+    <div style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #0A2540;margin-top:-1px;"></div>
+  </div>`,
+})
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
@@ -323,9 +349,176 @@ function EarningsChart({ orders, chartHeight = 140 }) {
   )
 }
 
+// ─── DeliveryMapModal ─────────────────────────────────────────────────────────
+
+function MapFitter({ positions }) {
+  const map = useMap()
+  useEffect(() => {
+    if (positions.length >= 2) {
+      map.fitBounds(L.latLngBounds(positions), { padding: [50, 50] })
+    } else if (positions.length === 1) {
+      map.setView(positions[0], 15)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, positions.length])
+  return null
+}
+
+function DeliveryMapModal({ order, onArrive, onClose }) {
+  const isPickup    = order.status === 'PICKUP_EN_ROUTE'
+  const destination = isPickup
+    ? order.pickupAddress
+    : (order.deliveryAddress ?? order.pickupAddress)
+
+  const [riderPos,    setRiderPos]    = useState(null)
+  const [destPos,     setDestPos]     = useState(null)
+  const [destLabel,   setDestLabel]   = useState('')
+  const [route,       setRoute]       = useState([])
+  const [distanceKm,  setDistanceKm]  = useState(null)
+  const [durationMin, setDurationMin] = useState(null)
+  const [geoError,    setGeoError]    = useState('')
+
+  // Geocode destination once on open
+  useEffect(() => {
+    if (!destination) return
+    const q = [destination.street, destination.landmark, 'Philippines']
+      .filter(Boolean).join(', ')
+    fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    )
+      .then(r => r.json())
+      .then(data => {
+        if (data[0]) {
+          setDestPos([parseFloat(data[0].lat), parseFloat(data[0].lon)])
+          setDestLabel(data[0].display_name)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Watch rider GPS continuously
+  useEffect(() => {
+    if (!navigator.geolocation) { setGeoError('Geolocation is not supported.'); return }
+    const id = navigator.geolocation.watchPosition(
+      pos => setRiderPos([pos.coords.latitude, pos.coords.longitude]),
+      ()  => setGeoError('Enable GPS permission to use navigation.'),
+      { enableHighAccuracy: true, maximumAge: 4000, timeout: 10000 }
+    )
+    return () => navigator.geolocation.clearWatch(id)
+  }, [])
+
+  // Re-fetch route whenever rider position updates
+  useEffect(() => {
+    if (!riderPos || !destPos) return
+    fetch(
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${riderPos[1]},${riderPos[0]};${destPos[1]},${destPos[0]}` +
+      `?overview=full&geometries=geojson`
+    )
+      .then(r => r.json())
+      .then(data => {
+        const r = data.routes?.[0]
+        if (!r) return
+        setDistanceKm((r.distance / 1000).toFixed(1))
+        setDurationMin(Math.ceil(r.duration / 60))
+        setRoute(r.geometry.coordinates.map(([lng, lat]) => [lat, lng]))
+      })
+      .catch(() => {})
+  }, [riderPos, destPos])
+
+  const allPos = [riderPos, destPos].filter(Boolean)
+  const center = riderPos ?? destPos ?? [14.5995, 120.9842]
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+
+        {/* Header */}
+        <div className="px-5 pt-5 pb-3">
+          <h2 className="font-heading font-bold text-[17px] text-gray-900">
+            {isPickup ? 'Navigating to customer' : 'Delivering to customer'}
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">Live route updates as you move</p>
+        </div>
+
+        {/* Map */}
+        <div className="h-[300px]">
+          {geoError && !destPos ? (
+            <div className="h-full bg-gray-50 flex items-center justify-center px-8">
+              <p className="text-sm text-red-500 text-center">{geoError}</p>
+            </div>
+          ) : (
+            <MapContainer center={center} zoom={14} style={{ height: '100%', width: '100%' }}>
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              />
+              {route.length > 0 && (
+                <Polyline
+                  positions={route}
+                  pathOptions={{ color: '#F5A623', weight: 5, opacity: 0.9 }}
+                />
+              )}
+              {riderPos && <Marker position={riderPos} icon={RIDER_ICON} />}
+              {destPos  && <Marker position={destPos}  icon={DEST_ICON}  />}
+              <MapFitter positions={allPos} />
+            </MapContainer>
+          )}
+        </div>
+
+        {/* Stats row */}
+        <div className="px-5 py-4 border-b border-[#e5e7eb] flex items-start gap-6">
+          <div className="shrink-0">
+            <p className="font-heading font-bold text-[1.7rem] text-gray-900 leading-none">
+              {distanceKm ?? '—'}
+            </p>
+            <p className="text-[10px] font-bold tracking-widest text-gray-400 mt-1 uppercase">KM Away</p>
+          </div>
+          <div className="shrink-0">
+            <p className="font-heading font-bold text-[1.7rem] text-[#F5A623] leading-none">
+              {durationMin != null ? `${durationMin} min` : '—'}
+            </p>
+            <p className="text-[10px] font-bold tracking-widest text-gray-400 mt-1 uppercase">Est. Arrival</p>
+          </div>
+          {destLabel && (
+            <div className="flex-1 min-w-0 flex items-start gap-1.5 mt-1">
+              <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
+              </svg>
+              <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{destLabel}</p>
+            </div>
+          )}
+          {!distanceKm && !geoError && (
+            <p className="text-sm text-gray-400 mt-1">Locating you…</p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="px-5 py-4 flex gap-3">
+          <button
+            onClick={onArrive}
+            className="flex-1 bg-[#F5A623] hover:bg-[#e09415] text-white font-heading font-semibold py-3 rounded-xl transition-colors text-sm"
+          >
+            {isPickup ? "I've Arrived — Start Pickup" : "I've Arrived — Confirm Delivery"}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-5 border border-[#e5e7eb] text-gray-600 font-semibold text-sm rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ─── DeliveriesTab ────────────────────────────────────────────────────────────
 
-function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, onClaimOrder, refreshKey, setRefreshKey }) {
+function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, onClaimOrder, onNavigate, refreshKey, setRefreshKey }) {
   const [tab,        setTab]        = useState('All')
   const [search,     setSearch]     = useState('')
   const [dateFilter, setDateFilter] = useState('all')
@@ -551,14 +744,27 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
                     </div>
                   </div>
 
-                  {action && (
-                    <button
-                      onClick={() => onAdvanceStatus(order)}
-                      className="w-full bg-[#1B6CA8] text-white font-heading font-semibold py-2.5 rounded-xl hover:bg-[#155a8a] transition-colors text-sm"
-                    >
-                      {action.label}
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {(order.status === 'PICKUP_EN_ROUTE' || order.status === 'DELIVERY_EN_ROUTE') && (
+                      <button
+                        onClick={() => onNavigate(order)}
+                        className="flex items-center gap-1.5 bg-[#F5A623] text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-[#e09415] transition-colors whitespace-nowrap"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                        </svg>
+                        Navigate
+                      </button>
+                    )}
+                    {action && (
+                      <button
+                        onClick={() => onAdvanceStatus(order)}
+                        className="flex-1 bg-[#1B6CA8] text-white font-heading font-semibold py-2.5 rounded-xl hover:bg-[#155a8a] transition-colors text-sm"
+                      >
+                        {action.label}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )
@@ -1213,6 +1419,7 @@ export default function RiderDashboard() {
   const [isAvailable,     setIsAvailable]     = useState(true)
   const [activeNav,       setActiveNav]       = useState('dashboard')
   const [menuOpen,        setMenuOpen]        = useState(false)
+  const [mapOrder,        setMapOrder]        = useState(null)
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -1317,6 +1524,7 @@ export default function RiderDashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
+    <>
     <div className="flex h-screen bg-[#EDF1F7] overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
@@ -1522,12 +1730,29 @@ export default function RiderDashboard() {
                           </p>
                         </div>
                       </div>
-                      <div className="min-h-48 rounded-xl border-2 border-dashed border-blue-200 bg-[#E8F4FD] flex flex-col items-center justify-center p-4 gap-3">
-                        <svg className="w-8 h-8 text-[#1B6CA8]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                        </svg>
-                        <p className="text-xs text-[#1B6CA8]/50 text-center leading-relaxed max-w-[160px]">Live map coming soon</p>
-                      </div>
+                      {(activeTask.status === 'PICKUP_EN_ROUTE' || activeTask.status === 'DELIVERY_EN_ROUTE') ? (
+                        <button
+                          onClick={() => setMapOrder(activeTask)}
+                          className="min-h-48 w-full rounded-xl bg-[#0A2540] flex flex-col items-center justify-center gap-3 hover:bg-[#0d2e52] transition-colors group"
+                        >
+                          <div className="w-14 h-14 rounded-full bg-[#F5A623] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                            </svg>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-white font-heading font-semibold text-sm">Open Navigation</p>
+                            <p className="text-white/40 text-xs mt-0.5">Live GPS · Route · ETA</p>
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="min-h-48 rounded-xl border-2 border-dashed border-blue-200 bg-[#E8F4FD] flex flex-col items-center justify-center p-4 gap-3">
+                          <svg className="w-8 h-8 text-[#1B6CA8]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                          </svg>
+                          <p className="text-xs text-[#1B6CA8]/50 text-center leading-relaxed max-w-[160px]">Navigation available when en route</p>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <button
@@ -1664,6 +1889,7 @@ export default function RiderDashboard() {
               isAvailable={isAvailable}
               onAdvanceStatus={handleAdvanceStatus}
               onClaimOrder={handleClaimOrder}
+              onNavigate={setMapOrder}
               refreshKey={refreshKey}
               setRefreshKey={setRefreshKey}
             />
@@ -1686,5 +1912,14 @@ export default function RiderDashboard() {
         </main>
       </div>
     </div>
+
+    {mapOrder && (
+      <DeliveryMapModal
+        order={mapOrder}
+        onArrive={() => { handleAdvanceStatus(mapOrder); setMapOrder(null) }}
+        onClose={() => setMapOrder(null)}
+      />
+    )}
+    </>
   )
 }

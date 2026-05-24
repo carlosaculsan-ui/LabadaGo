@@ -114,8 +114,8 @@ export default function Browse() {
 
         {/* Video background — same video as home */}
         <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay muted loop playsInline
+          className="absolute inset-0 w-full h-full object-cover outline-none"
+          autoPlay muted loop playsInline tabIndex={-1}
           src="/Hero.mp4"
         />
         <div className="absolute inset-0 bg-[#0D3F6B]/55" />

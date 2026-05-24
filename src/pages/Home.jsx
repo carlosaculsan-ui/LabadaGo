@@ -307,7 +307,7 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-[1280px] mx-auto px-8">
-          <div className={`grid gap-4 ${showPersonalStat ? 'grid-cols-6' : 'grid-cols-5'}`}>
+          <div className={`grid gap-4 ${showPersonalStat ? 'xl:grid-cols-6 grid-cols-5' : 'grid-cols-5'}`}>
 
             <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
               <div className="w-11 h-11 rounded-xl bg-[#DBEAFE]/20 flex items-center justify-center mb-4">
@@ -367,7 +367,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <p className="font-heading font-bold text-[1.75rem] text-white leading-none">{userOrderCount}</p>
-                <p className="text-[11px] text-white/60 mt-2">your orders</p>
+                <p className="text-[11px] text-white/60 mt-2">orders placed</p>
               </div>
             )}
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
@@ -79,9 +79,6 @@ export default function Navbar() {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   })()
   const photoURL = user?.photoURL
-
-  const linkClass = ({ isActive }) =>
-    `text-sm font-medium transition-colors ${isActive ? 'text-[#1B6CA8]' : 'text-gray-600 hover:text-[#1B6CA8]'}`
 
   return (
     <header className="w-full fixed top-0 left-0 right-0 z-50 px-6 pt-4 pb-2 pointer-events-none">
@@ -179,16 +176,10 @@ export default function Navbar() {
           </div>
 
           {/* Nav links — visible to everyone */}
-          <nav className="flex items-center gap-12 flex-1 justify-center">
+          <nav className="flex items-center flex-1 justify-evenly">
             <a href="/#nearby-shops" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">Nearby shops</a>
             <a href="/#how-it-works" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">How it works</a>
             <a href="/#testimonials"  className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">Reviews</a>
-            {user && role === 'merchant' && (
-              <NavLink to="/merchant" className={linkClass}>My Dashboard</NavLink>
-            )}
-            {user && role === 'rider' && (
-              <NavLink to="/rider" className={linkClass}>My Deliveries</NavLink>
-            )}
           </nav>
 
           {/* Auth area */}
@@ -234,6 +225,22 @@ export default function Navbar() {
                   >
                     My profile
                   </button>
+                  {role === 'merchant' && (
+                    <button
+                      onClick={() => { setDropdownOpen(false); navigate('/merchant') }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Dashboard
+                    </button>
+                  )}
+                  {role === 'rider' && (
+                    <button
+                      onClick={() => { setDropdownOpen(false); navigate('/rider') }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      My Deliveries
+                    </button>
+                  )}
                   {(role === 'customer' || !role) && (
                     <>
                       <button

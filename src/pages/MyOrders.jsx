@@ -254,11 +254,22 @@ export default function MyOrders() {
             <p className="font-heading font-semibold text-gray-700 mb-1">
               {activeTab === 'All' ? 'No orders yet' : `No ${activeTab.toLowerCase()} orders`}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 mb-5">
               {activeTab === 'All'
                 ? 'Book your first pickup and your orders will appear here.'
                 : 'Switch tabs to see other orders.'}
             </p>
+            {activeTab === 'All' && (
+              <button
+                onClick={() => navigate('/browse')}
+                className="inline-flex items-center gap-2 bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-[#155a8a] transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Browse shops
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
