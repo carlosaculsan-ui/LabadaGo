@@ -3,7 +3,8 @@ import { useEffect } from 'react'
 import Navbar from '../components/Navbar'
 
 const FOOTER_LINKS = {
-  Company: ['About us', 'Careers', 'Press'],
+  Company:  ['About us', 'Careers', 'Press'],
+  Services: ['Wash & fold', 'Dry cleaning', 'Comforters', 'Towels & linens'],
   Support:  ['Help center', 'Contact', 'FAQs'],
 }
 
@@ -22,8 +23,8 @@ export default function RootLayout() {
       </main>
 
       <footer className="bg-[#0D3F6B]">
-        <div className="max-w-[1280px] mx-auto px-8 py-12 flex items-start justify-between gap-16">
-          <div className="max-w-[280px]">
+        <div className="max-w-[1280px] mx-auto px-8 py-12 grid grid-cols-[1fr_auto] gap-16 items-start">
+          <div className="max-w-[300px]">
             <div className="mb-4">
               <img src="/LabadaGoLogo.png" alt="LabadaGo" className="h-8 w-auto" />
             </div>
@@ -31,7 +32,7 @@ export default function RootLayout() {
               Pickup, wash, and delivery — connecting you with verified local laundry shops across the Philippines.
             </p>
           </div>
-          <div className="flex gap-16 shrink-0">
+          <div className="flex gap-12 shrink-0">
             {Object.entries(FOOTER_LINKS).map(([heading, links]) => (
               <div key={heading}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40 mb-4">

@@ -127,6 +127,33 @@ const TESTIMONIALS = [
   },
 ]
 
+const FAQ_ITEMS = [
+  {
+    q: 'How does LabadaGo work?',
+    a: 'Choose a verified shop near you, pick a convenient pickup time, and a rider collects your laundry from your door. The shop washes, dries, and folds everything, then delivers it back clean on the date you selected — you don\'t leave the house.',
+  },
+  {
+    q: 'How much does a pickup cost?',
+    a: 'Pricing depends on the shop and service type. Most shops start at ₱50 per kg for wash & fold. A ₱49 pickup fee and ₱49 delivery fee apply per order. You\'ll see the full estimated total on the booking page before you confirm.',
+  },
+  {
+    q: 'How do I know the shops are trustworthy?',
+    a: 'Every shop on LabadaGo is personally inspected before being listed. We verify the business permit, check the equipment, and confirm the facility is clean and operational. Shops that receive consistent complaints are suspended immediately.',
+  },
+  {
+    q: 'What happens if my clothes are damaged or lost?',
+    a: 'Report the issue through your order page within 48 hours of delivery. Our team coordinates with the shop for a resolution — repair, replacement value, or a refund depending on the situation. We take every claim seriously.',
+  },
+  {
+    q: 'Can I cancel my order after booking?',
+    a: 'Yes — as long as the rider hasn\'t picked up your laundry yet. A "Cancel order" link appears on your order tracking page while the status is still PENDING. Once pickup is underway, cancellation is no longer available.',
+  },
+  {
+    q: 'How is the final price determined?',
+    a: 'We estimate the cost using the weight you enter at checkout. After the shop physically weighs your laundry, the price is adjusted to reflect the actual weight. You\'ll be notified of the final amount before any payment is collected.',
+  },
+]
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function ShopSkeleton() {
@@ -165,6 +192,7 @@ export default function Home() {
   const [userOrderCount,  setUserOrderCount]  = useState(0)
   const [activeOrderCount, setActiveOrderCount] = useState(0)
   const [userDataLoaded,  setUserDataLoaded]  = useState(false)
+  const [openFaq,         setOpenFaq]         = useState(null)
 
   // Fetch shops — count + first 4 for preview; pad with mocks if fewer than 4
   useEffect(() => {
@@ -408,6 +436,43 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Trust / verification ─────────────────────────────────────────────── */}
+      <section className="bg-white border-y border-[#e5e7eb] py-9">
+        <div className="max-w-[1280px] mx-auto px-8">
+          <div className="flex items-center gap-10">
+            <div className="shrink-0 min-w-[160px]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#1B6CA8] mb-1">
+                LabadaGo verified
+              </p>
+              <p className="text-xs text-gray-500 leading-snug">
+                What it takes to list on our platform
+              </p>
+            </div>
+            <div className="w-px self-stretch bg-[#e5e7eb] shrink-0" />
+            <div className="flex items-start gap-8 flex-1">
+              {[
+                { title: 'On-site inspection',       desc: 'Every shop is physically visited and assessed before being approved.' },
+                { title: 'Valid business permit',     desc: 'Shops must hold a current DTI or city-issued business permit.'       },
+                { title: 'Verified customer ratings', desc: 'Star ratings only appear after an order is marked delivered.'        },
+                { title: '48-hr damage resolution',   desc: 'Any damage or loss claim is reviewed and resolved within 48 hours.'  },
+              ].map(item => (
+                <div key={item.title} className="flex items-start gap-2.5 min-w-0">
+                  <div className="w-5 h-5 rounded-full bg-[#D1FAE5] flex items-center justify-center shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 leading-snug">{item.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── How it works ──────────────────────────────────────────────────────── */}
       <section id="how-it-works" className="bg-[#F4F7FA] py-16">
         <div className="max-w-[1280px] mx-auto px-8">
@@ -546,6 +611,44 @@ export default function Home() {
 
         </div>
       </section>
+      {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
+      <section className="bg-[#F4F7FA] py-16">
+        <div className="max-w-[760px] mx-auto px-8">
+          <div className="text-center mb-10">
+            <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
+              Frequently asked questions
+            </h2>
+            <p className="text-sm text-gray-500 mt-2">
+              Everything you need to know before your first pickup.
+            </p>
+          </div>
+          <div className="divide-y divide-[#e5e7eb] bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-[#F4F7FA] transition-colors"
+                >
+                  <span className="font-heading font-semibold text-[15px] text-gray-900">
+                    {item.q}
+                  </span>
+                  <span className={`shrink-0 text-[#1B6CA8] transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-5 text-sm text-gray-600 leading-relaxed border-t border-[#e5e7eb] pt-4">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA Banner ───────────────────────────────────────────────────────── */}
       <section className="bg-[#0D3F6B] py-16 border-b-4 border-[#F5A623]">
         <div className="max-w-[1280px] mx-auto px-8 flex items-center justify-between gap-8">
