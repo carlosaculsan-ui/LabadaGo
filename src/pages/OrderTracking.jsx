@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { collection, query, where, orderBy, limit, getDocs, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -109,13 +109,11 @@ export default function OrderTracking() {
 
     getDocs(query(
       collection(db, 'orders'),
-      where('customerId', '==', uid),
-      orderBy('createdAt', 'desc'),
-      limit(10)
+      where('customerId', '==', uid)
     )).then(snap => {
-      const activeDoc = snap.docs.find(
-        d => !['COMPLETED', 'CANCELLED'].includes(d.data().status)
-      )
+      const activeDoc = snap.docs
+        .sort((a, b) => (b.data().createdAt?.seconds ?? 0) - (a.data().createdAt?.seconds ?? 0))
+        .find(d => !['COMPLETED', 'CANCELLED'].includes(d.data().status))
       if (activeDoc) {
         navigate(`/order-tracking?id=${activeDoc.id}`, { replace: true })
       } else {

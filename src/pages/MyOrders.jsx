@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import { db, auth } from '../lib/firebase'
 
@@ -175,11 +175,13 @@ export default function MyOrders() {
     function subscribe(uid) {
       const q = query(
         collection(db, 'orders'),
-        where('customerId', '==', uid),
-        orderBy('createdAt', 'desc')
+        where('customerId', '==', uid)
       )
       unsubscribeQuery = onSnapshot(q, snap => {
-        setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        const sorted = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0))
+        setOrders(sorted)
         setLoading(false)
       }, () => setLoading(false))
     }
