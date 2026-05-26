@@ -189,10 +189,16 @@ export default function OrderTracking() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <ImgPlaceholder
-                  label="Shop logo"
-                  className="w-10 h-10 rounded-lg bg-[#DBEAFE] border-blue-300 shrink-0"
-                />
+                <div className="w-10 h-10 rounded-lg bg-[#1B6CA8] flex items-center justify-center shrink-0">
+                  <span className="text-[11px] font-bold text-white leading-none">
+                    {(() => {
+                      const parts = (order.shopName || '').trim().split(/\s+/).filter(Boolean)
+                      if (parts.length === 0) return '?'
+                      if (parts.length === 1) return parts[0][0].toUpperCase()
+                      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                    })()}
+                  </span>
+                </div>
                 <div>
                   <p className="text-[13px] font-semibold text-gray-800">{order.shopName}</p>
                 </div>
@@ -365,14 +371,17 @@ export default function OrderTracking() {
           {/* ── Right column ──────────────────────────────────────────────── */}
           <div className="w-96 shrink-0 sticky top-20 self-start space-y-4">
 
-            {/* Map placeholder */}
-            <div className="min-h-[400px] rounded-xl border-2 border-dashed border-blue-200 bg-[#E8F4FD] flex flex-col items-center justify-center p-6">
-              <ImgPlaceholder
-                label="Rider pin icon"
-                className="w-12 h-12 rounded-lg bg-[#FEF3C7] border-amber-300 mb-3"
-              />
-              <p className="text-xs text-[#1B6CA8] opacity-60 text-center leading-relaxed max-w-[200px]">
-                Live map — rider location updated in real time. Integrate Google Maps or Leaflet here.
+            {/* Live tracking card */}
+            <div className="min-h-[400px] rounded-xl border border-[#e5e7eb] bg-white flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#E8F4FD] flex items-center justify-center mb-5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="1.75" className="w-8 h-8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                  <circle cx="12" cy="9" r="2.5" fill="#1B6CA8" stroke="none"/>
+                </svg>
+              </div>
+              <p className="font-heading font-bold text-gray-900 text-[15px] mb-1.5">Live tracking coming soon</p>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-[200px]">
+                Real-time rider location will appear here once your pickup is en route.
               </p>
             </div>
 

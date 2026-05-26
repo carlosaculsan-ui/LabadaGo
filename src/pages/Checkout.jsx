@@ -413,6 +413,22 @@ export default function Checkout() {
               </div>
             </div>
 
+            {/* Bottom confirm button */}
+            <div className="p-6">
+              <button
+                onClick={handleConfirm}
+                disabled={submitting}
+                className="w-full bg-[#1B6CA8] text-white font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Confirming...
+                  </>
+                ) : 'Confirm booking'}
+              </button>
+            </div>
+
           </div>
 
           {/* ── Right: sticky price summary ────────────────────────────────── */}
