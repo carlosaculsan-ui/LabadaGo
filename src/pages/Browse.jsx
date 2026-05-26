@@ -10,6 +10,7 @@ import { MOCK_SHOPS, CARD_COLORS } from '../data/mockShops'
 const CHIPS = ['All', 'Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
 
 const SORT_OPTIONS = [
+  { key: 'all',     label: 'All' },
   { key: 'nearest', label: 'Nearest' },
   { key: 'rating',  label: 'Top rated' },
   { key: 'price',   label: 'Price' },
@@ -54,7 +55,7 @@ export default function Browse() {
     new URLSearchParams(location.search).get('search') ?? ''
   )
   const [selectedShop, setSelectedShop] = useState(null)
-  const [sortBy, setSortBy] = useState('nearest')
+  const [sortBy, setSortBy] = useState('all')
   const [filters, setFilters] = useState(() => {
     const param = new URLSearchParams(location.search).get('service')
     const service = param && CHIPS.slice(1).includes(param) ? [param] : []
@@ -64,6 +65,21 @@ export default function Browse() {
   const activeChip = filters.services.length === 1 && CHIPS.slice(1).includes(filters.services[0])
     ? filters.services[0]
     : 'All'
+
+  function resetFilters() {
+    setFilters(DEFAULT_FILTERS)
+    setSearchQuery('')
+  }
+
+  const hasActiveFilters =
+    searchQuery.trim() !== '' ||
+    filters.maxDistance !== DEFAULT_FILTERS.maxDistance ||
+    filters.services.length > 0 ||
+    filters.detergent !== 'Any' ||
+    filters.maxPrice !== DEFAULT_FILTERS.maxPrice ||
+    filters.rating !== null ||
+    filters.openNow ||
+    filters.sameDay
 
   useEffect(() => {
     getDocs(collection(db, 'shops')).then(snap => {
@@ -99,6 +115,7 @@ export default function Browse() {
       return true
     })
 
+    if (sortBy === 'all') return filtered
     return [...filtered].sort((a, b) => {
       if (sortBy === 'nearest') return a.distanceKm - b.distanceKm
       if (sortBy === 'rating')  return b.rating - a.rating
@@ -251,9 +268,19 @@ export default function Browse() {
               </button>
             ))}
             {!loading && (
-              <span className="ml-auto text-sm text-gray-600">
-                {displayed.length} shop{displayed.length !== 1 ? 's' : ''}
-              </span>
+              <div className="ml-auto flex items-center gap-3">
+                {hasActiveFilters && (
+                  <button
+                    onClick={resetFilters}
+                    className="text-xs font-medium text-[#DC2626] hover:underline underline-offset-2"
+                  >
+                    Clear filters ×
+                  </button>
+                )}
+                <span className="text-sm text-gray-600">
+                  {displayed.length} shop{displayed.length !== 1 ? 's' : ''}
+                </span>
+              </div>
             )}
           </div>
 
@@ -270,9 +297,18 @@ export default function Browse() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-24 text-gray-600">
+            <div className="flex flex-col items-center justify-center py-24 text-center">
               <span className="text-4xl mb-3">🧺</span>
-              <p className="text-sm">No shops match your filters.</p>
+              <p className="text-base font-semibold text-gray-800 mb-1">No shops match your filters</p>
+              <p className="text-sm text-gray-500 mb-6">
+                Try widening your distance range or removing a filter.
+              </p>
+              <button
+                onClick={resetFilters}
+                className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
+              >
+                Show all shops
+              </button>
             </div>
           )}
         </div>

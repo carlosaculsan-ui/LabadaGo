@@ -16,15 +16,29 @@ const MOCK_SHOPS = [
 ]
 
 export default function Navbar() {
-  const [search,       setSearch]       = useState('')
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [search,          setSearch]          = useState('')
+  const [dropdownOpen,    setDropdownOpen]    = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [allShops,     setAllShops]     = useState([])
-  const [shopsFetched, setShopsFetched] = useState(false)
+  const [allShops,        setAllShops]        = useState([])
+  const [shopsFetched,    setShopsFetched]    = useState(false)
   const dropdownRef   = useRef(null)
   const searchRef     = useRef(null)
   const navigate      = useNavigate()
   const { user, userProfile, role } = useAuth()
+
+  function handleUseLocation() {
+    setShowSuggestions(false)
+    navigate('/browse')
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          sessionStorage.setItem('userLat', String(pos.coords.latitude))
+          sessionStorage.setItem('userLng', String(pos.coords.longitude))
+        },
+        () => {}
+      )
+    }
+  }
 
   async function fetchShops() {
     if (shopsFetched) return
@@ -108,7 +122,7 @@ export default function Navbar() {
                 setShowSuggestions(true)
                 fetchShops()
               }}
-              onFocus={() => { if (search.trim()) setShowSuggestions(true) }}
+              onFocus={() => { setShowSuggestions(true); fetchShops() }}
               onKeyDown={e => {
                 if (e.key === 'Enter' && search.trim()) {
                   navigate(`/browse?search=${encodeURIComponent(search.trim())}`)
@@ -121,10 +135,44 @@ export default function Navbar() {
               className="w-full pl-9 pr-4 py-2 rounded-full text-sm outline-none bg-white border border-[#e5e7eb] text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8]"
             />
 
-            {/* Autocomplete dropdown */}
-            {showSuggestions && search.trim().length > 0 && (
+            {/* Autocomplete dropdown / location prompt */}
+            {showSuggestions && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#e5e7eb] overflow-hidden z-50">
-                {suggestions.length > 0 ? (
+                {search.trim().length === 0 ? (
+                  <>
+                    <button
+                      onMouseDown={handleUseLocation}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#F4F7FA] transition-colors text-left"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-[#D1FAE5] flex items-center justify-center shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" className="w-3.5 h-3.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                          <circle cx="12" cy="9" r="2.5"/>
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-gray-800">Use my current location</span>
+                    </button>
+                    <div className="border-t border-[#e5e7eb] px-4 pt-3 pb-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">
+                        Popular areas
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['Quezon City', 'Makati', 'Pasig', 'Manila', 'Mandaluyong'].map(area => (
+                          <button
+                            key={area}
+                            onMouseDown={() => {
+                              navigate(`/browse?search=${encodeURIComponent(area)}`)
+                              setShowSuggestions(false)
+                            }}
+                            className="text-xs px-3 py-1.5 rounded-full bg-[#F4F7FA] text-gray-600 hover:bg-[#E8F4FD] hover:text-[#1B6CA8] transition-colors"
+                          >
+                            {area}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : suggestions.length > 0 ? (
                   <>
                     {suggestions.map(shop => (
                       <button

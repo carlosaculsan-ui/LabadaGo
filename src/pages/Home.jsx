@@ -612,8 +612,8 @@ export default function Home() {
         </div>
       </section>
       {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      <section className="bg-[#F4F7FA] py-16">
-        <div className="max-w-[760px] mx-auto px-8">
+      <section className="bg-[#F4F7FA] py-14">
+        <div className="max-w-[1280px] mx-auto px-8">
           <div className="text-center mb-10">
             <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
               Frequently asked questions
@@ -622,27 +622,34 @@ export default function Home() {
               Everything you need to know before your first pickup.
             </p>
           </div>
-          <div className="divide-y divide-[#e5e7eb] bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-            {FAQ_ITEMS.map((item, i) => (
-              <div key={i}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-[#F4F7FA] transition-colors"
-                >
-                  <span className="font-heading font-semibold text-[15px] text-gray-900">
-                    {item.q}
-                  </span>
-                  <span className={`shrink-0 text-[#1B6CA8] transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </span>
-                </button>
-                {openFaq === i && (
-                  <div className="px-6 pb-5 text-sm text-gray-600 leading-relaxed border-t border-[#e5e7eb] pt-4">
-                    {item.a}
-                  </div>
-                )}
+          <div className="grid grid-cols-2 gap-5">
+            {[FAQ_ITEMS.slice(0, 3), FAQ_ITEMS.slice(3)].map((half, col) => (
+              <div key={col} className="divide-y divide-[#e5e7eb] bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+                {half.map((item, row) => {
+                  const i = col * 3 + row
+                  return (
+                    <div key={i}>
+                      <button
+                        onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                        className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-[#F4F7FA] transition-colors"
+                      >
+                        <span className="font-heading font-semibold text-[15px] text-gray-900">
+                          {item.q}
+                        </span>
+                        <span className={`shrink-0 text-[#1B6CA8] transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
+                        </span>
+                      </button>
+                      {openFaq === i && (
+                        <div className="px-6 pb-5 text-sm text-gray-600 leading-relaxed border-t border-[#e5e7eb] pt-4">
+                          {item.a}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </div>
