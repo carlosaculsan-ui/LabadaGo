@@ -19,10 +19,9 @@ const SERVICE_TYPES = [
 ]
 
 const DETERGENTS = [
-  { id: 'Ariel',          price: 25 },
-  { id: 'Tide',           price: 25 },
-  { id: 'Breeze',         price: 20 },
-  { id: 'Hypoallergenic', price: 35 },
+  { id: 'Standard (No preference)', price: 0  },
+  { id: 'Ariel',                    price: 25 },
+  { id: 'Hypoallergenic',           price: 35 },
 ]
 const CONDITIONERS = [
   { id: 'Downy',   price: 20 },
@@ -162,7 +161,7 @@ export default function Checkout() {
   // Laundry details
   const [serviceType, setServiceType] = useState('Wash & Fold')
   const [weight,      setWeight]      = useState(3)
-  const [detergent,   setDetergent]   = useState('Ariel')
+  const [detergent,   setDetergent]   = useState('Standard (No preference)')
   const [conditioner, setConditioner] = useState('Downy')
 
   // Payment
@@ -268,6 +267,14 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-8 py-10">
+
+        {/* Back link */}
+        <button
+          onClick={() => navigate('/browse')}
+          className="text-sm text-[#1B6CA8] hover:underline underline-offset-2 mb-5 flex items-center gap-1.5"
+        >
+          ← Back to shops
+        </button>
 
         {/* Page heading */}
         <div className="mb-7">
@@ -613,9 +620,15 @@ export default function Checkout() {
                 </span>
               </div>
 
-              <p className="text-[11px] text-gray-600 mt-2 mb-5 leading-relaxed">
-                Final price adjusted after shop weighs your laundry.
-              </p>
+              <div className="mt-3 mb-5 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" className="w-4 h-4 shrink-0 mt-0.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01"/>
+                </svg>
+                <p className="text-[12px] text-amber-800 leading-relaxed">
+                  Final price is adjusted after the shop weighs your actual laundry.
+                </p>
+              </div>
 
               {Object.values(errors).length > 0 && (
                 <div className="mb-3 space-y-1.5">
