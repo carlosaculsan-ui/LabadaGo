@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, orderBy, limit, getDocs, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
-import { useAuth } from '../hooks/useAuth'
+import { db, auth } from '../lib/firebase'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -67,7 +66,6 @@ function Spinner({ text }) {
 export default function OrderTracking() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
 
   const orderId = searchParams.get('id')
 
@@ -87,7 +85,7 @@ export default function OrderTracking() {
             return
           }
           const data = snap.data()
-          if (data.customerId !== user?.uid) {
+          if (data.customerId !== auth.currentUser?.uid) {
             navigate('/', { replace: true })
             return
           }
@@ -103,14 +101,15 @@ export default function OrderTracking() {
     }
 
     // No orderId: find the most recent non-completed order for this user
-    if (!user?.uid) {
+    const uid = auth.currentUser?.uid
+    if (!uid) {
       setLoading(false)
       return
     }
 
     getDocs(query(
       collection(db, 'orders'),
-      where('customerId', '==', user.uid),
+      where('customerId', '==', uid),
       orderBy('createdAt', 'desc'),
       limit(10)
     )).then(snap => {
@@ -125,7 +124,7 @@ export default function OrderTracking() {
     }).catch(() => {
       setLoading(false)
     })
-  }, [orderId, user?.uid, navigate])
+  }, [orderId, navigate])
 
   async function handleCancel() {
     setCancelling(true)
