@@ -97,6 +97,8 @@ const HOW_STEPS = [
   },
 ]
 
+const CITIES = ['All', 'Manila', 'Quezon City', 'Makati', 'Pasig', 'Mandaluyong']
+
 const TESTIMONIALS = [
   {
     name: 'Maria Santos',
@@ -193,6 +195,7 @@ export default function Home() {
   const [activeOrderCount, setActiveOrderCount] = useState(0)
   const [userDataLoaded,  setUserDataLoaded]  = useState(false)
   const [openFaq,         setOpenFaq]         = useState(null)
+  const [selectedCity,    setSelectedCity]    = useState('All')
 
   // Fetch shops — count + first 4 for preview; pad with mocks if fewer than 4
   useEffect(() => {
@@ -287,9 +290,23 @@ export default function Home() {
               Laundry picked up,<br />
               <span className="text-[#F5A623]">washed, delivered.</span>
             </h1>
-            <p className="text-white/70 text-[1.1rem] leading-relaxed mb-12">
+            <p className="text-white/70 text-[1.1rem] leading-relaxed mb-6">
               Connecting you with verified local laundry shops in your neighborhood. Pickup, wash, fold, and deliver — all in one place.
             </p>
+
+            {/* Pricing comparison hook */}
+            <div className="flex items-center gap-3 mb-10">
+              <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2">
+                <span className="text-[#F5A623] font-bold text-sm">From ₱50/kg</span>
+                <span className="text-white/50 text-xs">· door-to-door</span>
+              </div>
+              <span className="text-white/30 text-xs font-semibold uppercase tracking-wider">vs.</span>
+              <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-4 py-2">
+                <span className="text-white/35 text-xs line-through">2-hr laundromat trip</span>
+                <span className="text-white/25 text-xs">+ jeepney + heavy bags</span>
+              </div>
+            </div>
+
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/browse')}
@@ -407,13 +424,31 @@ export default function Home() {
       {/* ── Nearby shops ──────────────────────────────────────────────────────── */}
       <section id="nearby-shops" className="bg-white py-14">
         <div className="max-w-[1280px] mx-auto px-8">
-          <div className="flex items-baseline justify-between mb-7">
-            <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
-              Shops near you
-            </h2>
+          <div className="flex items-start justify-between mb-7">
+            <div>
+              <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
+                {selectedCity === 'All' ? 'Shops near you' : `Shops in ${selectedCity}`}
+              </h2>
+              <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                {CITIES.map(city => (
+                  <button
+                    key={city}
+                    onClick={() => setSelectedCity(city)}
+                    className={[
+                      'text-xs font-medium px-3 py-1 rounded-full border transition-colors',
+                      selectedCity === city
+                        ? 'bg-[#1B6CA8] text-white border-[#1B6CA8]'
+                        : 'bg-white text-gray-600 border-[#e5e7eb] hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
+                    ].join(' ')}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Link
-              to="/browse"
-              className="text-sm font-medium text-[#1B6CA8] hover:underline underline-offset-2"
+              to={selectedCity === 'All' ? '/browse' : `/browse?search=${encodeURIComponent(selectedCity)}`}
+              className="text-sm font-medium text-[#1B6CA8] hover:underline underline-offset-2 shrink-0 mt-1"
             >
               See all →
             </Link>
@@ -492,12 +527,12 @@ export default function Home() {
             <div className="absolute top-[18px] left-[12.5%] right-[12.5%] border-t-2 border-[#94A3B8] pointer-events-none z-0" />
 
             {HOW_STEPS.map(step => (
-              <div key={step.num} className="relative z-10 bg-white rounded-2xl p-6 pt-10 flex flex-col items-center text-center shadow-sm">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#1B6CA8] text-white text-sm font-bold flex items-center justify-center shadow-md border-2 border-[#F4F7FA]">
+              <div key={step.num} className="group relative z-10 bg-white rounded-2xl p-6 pt-10 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-[#1B6CA8] group-hover:bg-[#F5A623] text-white text-sm font-bold flex items-center justify-center shadow-md border-2 border-[#F4F7FA] transition-colors duration-200">
                   {step.num}
                 </div>
 
-                <div className={`w-16 h-16 rounded-2xl ${step.bg} flex items-center justify-center mb-5`}>
+                <div className={`w-16 h-16 rounded-2xl ${step.bg} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-200`}>
                   {step.num === 1 && (
                     <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="2" className="w-7 h-7">
                       <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
