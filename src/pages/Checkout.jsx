@@ -31,9 +31,9 @@ const CONDITIONERS = [
 ]
 
 const PAYMENT_METHODS = [
-  { id: 'gcash', label: 'GCash',            desc: 'Pay with GCash wallet',    image: '/GCash.png'              },
-  { id: 'maya',  label: 'Maya',             desc: 'Pay with Maya wallet',     image: '/Maya.png'               },
-  { id: 'cod',   label: 'Cash on Delivery', desc: 'Pay when laundry arrives', image: '/cash-on-delivery.png'   },
+  { id: 'gcash', label: 'GCash',            desc: 'Pay with GCash wallet',    image: '/GCash.png'            },
+  { id: 'maya',  label: 'Maya',             desc: 'Pay with Maya wallet',     image: '/Maya.png'             },
+  { id: 'cod',   label: 'Cash on Delivery', desc: 'Pay when laundry arrives', image: '/cash-on-delivery.png' },
 ]
 
 const PRICE_PER_KG = 50
@@ -41,14 +41,6 @@ const PICKUP_FEE   = 49
 const DELIVERY_FEE = 49
 
 // ─── Reusable small components ────────────────────────────────────────────────
-
-function SectionTitle({ children }) {
-  return (
-    <h2 className="font-heading font-bold text-[16px] text-gray-900 mb-5">
-      {children}
-    </h2>
-  )
-}
 
 function FieldLabel({ children }) {
   return (
@@ -91,19 +83,56 @@ function RadioPills({ options, value, onChange }) {
   )
 }
 
-// A clearly labeled image placeholder. bg, border-dashed, centered label.
-function ImgPlaceholder({ label, className }) {
+function StepIndicator({ current }) {
+  const STEP_LABELS = ['Where & When', 'Your Laundry', 'Review & Pay']
   return (
-    <div
-      className={[
-        'bg-gray-100 border border-dashed border-gray-300 rounded-xl',
-        'flex items-center justify-center',
-        className,
-      ].join(' ')}
-    >
-      <span className="text-[8px] font-medium text-gray-600 text-center leading-snug px-1.5">
-        {label}
-      </span>
+    <div className="flex items-start">
+      {STEP_LABELS.map((label, i) => {
+        const num = i + 1
+        const isCompleted = num < current
+        const isActive    = num === current
+        return (
+          <div key={i} className="flex-1 flex flex-col items-center relative">
+            {i > 0 && (
+              <div className={`absolute left-0 right-1/2 top-[15px] h-0.5 ${num <= current ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`} />
+            )}
+            {i < STEP_LABELS.length - 1 && (
+              <div className={`absolute left-1/2 right-0 top-[15px] h-0.5 ${isCompleted ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`} />
+            )}
+            <div className={[
+              'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold relative z-10 border-2',
+              isCompleted ? 'bg-[#1B6CA8] border-[#1B6CA8] text-white'
+                : isActive ? 'bg-white border-[#1B6CA8] text-[#1B6CA8]'
+                : 'bg-white border-gray-200 text-gray-400',
+            ].join(' ')}>
+              {isCompleted ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : num}
+            </div>
+            <span className={`text-[11px] font-semibold mt-2 text-center leading-tight ${isActive ? 'text-[#1B6CA8]' : isCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
+              {label}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function SectionCard({ icon, title, children }) {
+  return (
+    <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 bg-[#F4F7FA] border-b border-[#e5e7eb]">
+        <div className="w-7 h-7 rounded-lg bg-[#1B6CA8] flex items-center justify-center shrink-0">
+          {icon}
+        </div>
+        <span className="font-heading font-bold text-[15px] text-gray-900">{title}</span>
+      </div>
+      <div className="p-6">
+        {children}
+      </div>
     </div>
   )
 }
@@ -143,6 +172,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false)
   const [errors,     setErrors]     = useState({})
   const [shopImage,  setShopImage]  = useState(null)
+  const [step,       setStep]       = useState(1)
 
   useEffect(() => {
     // Try Firestore first, fall back to mock data
@@ -216,6 +246,25 @@ export default function Checkout() {
     }
   }
 
+  function handleNext() {
+    if (step === 1) {
+      const newErrors = {}
+      if (!street)     newErrors.street     = 'Please enter your pickup address.'
+      if (!pickupDate) newErrors.pickupDate = 'Please select a pickup date.'
+      if (!pickupTime) newErrors.pickupTime = 'Please select a pickup time.'
+      if (Object.keys(newErrors).length) { setErrors(newErrors); return }
+      setErrors({})
+    }
+    setStep(s => s + 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function handleBack() {
+    setErrors({})
+    setStep(s => s - 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-8 py-10">
@@ -232,202 +281,298 @@ export default function Checkout() {
 
         <div className="flex gap-7 items-start">
 
-          {/* ── Left: booking form ─────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0 bg-white rounded-xl border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
+          {/* ── Left: step form ─────────────────────────────────────────── */}
+          <div className="flex-1 min-w-0 space-y-5">
 
-            {/* Section 1 — Address */}
-            <div className="p-6">
-              <SectionTitle>Your pickup address</SectionTitle>
-              <MapPicker
-                label="Pickup location"
-                address={street}
-                onAddressChange={v => { setStreet(v); if (v) setErrors(e => { const n = { ...e }; delete n.street; return n }) }}
-                onCoordsChange={setPickupCoords}
-              />
-              <input
-                type="text"
-                value={landmark}
-                onChange={e => setLandmark(e.target.value)}
-                placeholder="Landmark / Unit / Floor (optional)"
-                className="mt-3 w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
-              />
+            {/* Step indicator */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] p-5">
+              <StepIndicator current={step} />
             </div>
 
-            {/* Section 2 — Schedule */}
-            <div className="p-6">
-              <SectionTitle>Pickup schedule</SectionTitle>
-              <div className="grid grid-cols-2 gap-5 items-start">
-
-                <div>
-                  <CalendarPicker
-                    label="Pickup date"
-                    value={pickupDate}
-                    onChange={handlePickupDateChange}
+            {/* ── Step 1: Where & When ──────────────────────────────────── */}
+            {step === 1 && (
+              <>
+                <SectionCard
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                      <circle cx="12" cy="9" r="2.5" fill="white" stroke="none"/>
+                    </svg>
+                  }
+                  title="Your pickup address"
+                >
+                  <MapPicker
+                    label="Pickup location"
+                    address={street}
+                    onAddressChange={v => { setStreet(v); if (v) setErrors(e => { const n = { ...e }; delete n.street; return n }) }}
+                    onCoordsChange={setPickupCoords}
                   />
-                  <div className="mt-3">
-                    <FieldLabel>Pickup time</FieldLabel>
-                    <div className="flex flex-wrap gap-1.5">
-                      {TIME_SLOTS.map(slot => (
-                        <button
-                          key={slot}
-                          onClick={() => handlePickupTimeChange(slot)}
-                          className={[
-                            'text-xs px-3 py-1.5 rounded-full border transition-colors',
-                            pickupTime === slot
-                              ? 'bg-[#1B6CA8] text-white border-[#1B6CA8] font-medium'
-                              : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
-                          ].join(' ')}
-                        >
-                          {slot}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                  <input
+                    type="text"
+                    value={landmark}
+                    onChange={e => setLandmark(e.target.value)}
+                    placeholder="Landmark / Unit / Floor (optional)"
+                    className="mt-3 w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/25 focus:border-[#1B6CA8] transition-colors"
+                  />
+                </SectionCard>
 
-                {/* Expected delivery info */}
-                <div className="border border-[#e5e7eb] rounded-xl p-4 bg-white">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-4">
-                    Expected delivery
-                  </p>
-                  {deliveryDate ? (
-                    <>
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
-                          <svg className="w-5 h-5 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-heading font-bold text-gray-900 text-sm">
-                            {deliveryDate.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">2 days after pickup</p>
+                <SectionCard
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                  }
+                  title="Pickup schedule"
+                >
+                  <div className="grid grid-cols-2 gap-5 items-start">
+                    <div>
+                      <CalendarPicker
+                        label="Pickup date"
+                        value={pickupDate}
+                        onChange={handlePickupDateChange}
+                      />
+                      <div className="mt-3">
+                        <FieldLabel>Pickup time</FieldLabel>
+                        <div className="flex flex-wrap gap-1.5">
+                          {TIME_SLOTS.map(slot => (
+                            <button
+                              key={slot}
+                              onClick={() => handlePickupTimeChange(slot)}
+                              className={[
+                                'text-xs px-3 py-1.5 rounded-full border transition-colors',
+                                pickupTime === slot
+                                  ? 'bg-[#1B6CA8] text-white border-[#1B6CA8] font-medium'
+                                  : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
+                              ].join(' ')}
+                            >
+                              {slot}
+                            </button>
+                          ))}
                         </div>
                       </div>
-                      <p className="text-xs text-gray-500 leading-relaxed">
-                        Your clean laundry will be delivered on this date. The rider will contact you before arrival.
-                      </p>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-6 text-center">
-                      <svg className="w-8 h-8 text-gray-200 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-xs text-gray-400">Select a pickup date to see your estimated delivery date.</p>
                     </div>
-                  )}
+
+                    <div className="border border-[#e5e7eb] rounded-xl p-4 bg-white">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-4">
+                        Expected delivery
+                      </p>
+                      {deliveryDate ? (
+                        <>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
+                              <svg className="w-5 h-5 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="font-heading font-bold text-gray-900 text-sm">
+                                {deliveryDate.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">2 days after pickup</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 leading-relaxed">
+                            Your clean laundry will be delivered on this date. The rider will contact you before arrival.
+                          </p>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-6 text-center">
+                          <svg className="w-8 h-8 text-gray-200 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="text-xs text-gray-400">Select a pickup date to see your estimated delivery date.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </SectionCard>
+
+                {Object.values(errors).length > 0 && (
+                  <div className="space-y-1.5">
+                    {Object.values(errors).map((msg, i) => (
+                      <div key={i} className="px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
+                        {msg}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleNext}
+                    className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors flex items-center gap-2"
+                  >
+                    Next: Your Laundry
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </button>
                 </div>
+              </>
+            )}
 
-              </div>
-            </div>
+            {/* ── Step 2: Your Laundry ──────────────────────────────────── */}
+            {step === 2 && (
+              <>
+                <SectionCard
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" className="w-4 h-4">
+                      <rect x="3" y="3" width="18" height="18" rx="3" strokeLinecap="round"/>
+                      <circle cx="12" cy="13" r="4"/>
+                      <path strokeLinecap="round" d="M7 7h2"/>
+                    </svg>
+                  }
+                  title="Laundry details"
+                >
+                  <FieldLabel>Service type</FieldLabel>
+                  <div className="grid grid-cols-4 gap-3 mb-6">
+                    {SERVICE_TYPES.map(st => (
+                      <button
+                        key={st.id}
+                        onClick={() => setServiceType(st.id)}
+                        className={[
+                          'py-4 px-2 rounded-xl border text-center transition-colors',
+                          serviceType === st.id
+                            ? 'border-[#1B6CA8] bg-[#F0F7FF]'
+                            : 'border-[#e5e7eb] hover:border-gray-300',
+                        ].join(' ')}
+                      >
+                        <img
+                          src={st.image}
+                          alt={st.id}
+                          className="w-24 h-24 mx-auto mb-3 rounded-lg object-contain"
+                        />
+                        <span className={[
+                          'text-[11px] font-semibold leading-tight block',
+                          serviceType === st.id ? 'text-[#1B6CA8]' : 'text-gray-600',
+                        ].join(' ')}>
+                          {st.id}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
 
-            {/* Section 3 — Laundry details */}
-            <div className="p-6">
-              <SectionTitle>Laundry details</SectionTitle>
-
-              {/* Service type cards */}
-              <FieldLabel>Service type</FieldLabel>
-              <div className="grid grid-cols-4 gap-3 mb-6">
-                {SERVICE_TYPES.map(st => (
-                  <button
-                    key={st.id}
-                    onClick={() => setServiceType(st.id)}
-                    className={[
-                      'py-4 px-2 rounded-xl border text-center transition-colors',
-                      serviceType === st.id
-                        ? 'border-[#1B6CA8] bg-[#F0F7FF]'
-                        : 'border-[#e5e7eb] hover:border-gray-300',
-                    ].join(' ')}
-                  >
-                    {/* ↓ image placeholder — replace with real service illustration */}
-                    <img
-                      src={st.image}
-                      alt={st.id}
-                      className="w-24 h-24 mx-auto mb-3 rounded-lg object-contain"
-                    />
-                    <span className={[
-                      'text-[11px] font-semibold leading-tight block',
-                      serviceType === st.id ? 'text-[#1B6CA8]' : 'text-gray-600',
-                    ].join(' ')}>
-                      {st.id}
+                  <FieldLabel>Estimated weight</FieldLabel>
+                  <div className="flex items-center gap-3 mb-6">
+                    <button
+                      onClick={() => setWeight(w => Math.max(1, w - 1))}
+                      className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-600 text-lg hover:border-[#1B6CA8] hover:text-[#1B6CA8] transition-colors select-none"
+                    >
+                      −
+                    </button>
+                    <span className="font-heading font-bold text-xl text-gray-900 w-8 text-center tabular-nums">
+                      {weight}
                     </span>
-                  </button>
-                ))}
-              </div>
+                    <button
+                      onClick={() => setWeight(w => Math.min(30, w + 1))}
+                      className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-600 text-lg hover:border-[#1B6CA8] hover:text-[#1B6CA8] transition-colors select-none"
+                    >
+                      +
+                    </button>
+                    <span className="text-sm text-gray-600">kg</span>
+                  </div>
 
-              {/* Weight stepper */}
-              <FieldLabel>Estimated weight</FieldLabel>
-              <div className="flex items-center gap-3 mb-6">
-                <button
-                  onClick={() => setWeight(w => Math.max(1, w - 1))}
-                  className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-600 text-lg hover:border-[#1B6CA8] hover:text-[#1B6CA8] transition-colors select-none"
-                >
-                  −
-                </button>
-                <span className="font-heading font-bold text-xl text-gray-900 w-8 text-center tabular-nums">
-                  {weight}
-                </span>
-                <button
-                  onClick={() => setWeight(w => Math.min(30, w + 1))}
-                  className="w-9 h-9 rounded-lg border border-[#e5e7eb] flex items-center justify-center text-gray-600 text-lg hover:border-[#1B6CA8] hover:text-[#1B6CA8] transition-colors select-none"
-                >
-                  +
-                </button>
-                <span className="text-sm text-gray-600">kg</span>
-              </div>
+                  <div className="mb-4">
+                    <FieldLabel>Detergent preference</FieldLabel>
+                    <RadioPills options={DETERGENTS} value={detergent} onChange={setDetergent} />
+                  </div>
 
-              {/* Detergent */}
-              <div className="mb-4">
-                <FieldLabel>Detergent preference</FieldLabel>
-                <RadioPills options={DETERGENTS} value={detergent} onChange={setDetergent} />
-              </div>
+                  <div>
+                    <FieldLabel>Fabric conditioner</FieldLabel>
+                    <RadioPills options={CONDITIONERS} value={conditioner} onChange={setConditioner} />
+                  </div>
+                </SectionCard>
 
-              {/* Fabric conditioner */}
-              <div>
-                <FieldLabel>Fabric conditioner</FieldLabel>
-                <RadioPills options={CONDITIONERS} value={conditioner} onChange={setConditioner} />
-              </div>
-            </div>
-
-            {/* Section 4 — Payment */}
-            <div className="p-6">
-              <SectionTitle>Payment method</SectionTitle>
-              <div className="grid grid-cols-3 gap-3">
-                {PAYMENT_METHODS.map(pm => (
+                <div className="flex justify-between items-center">
                   <button
-                    key={pm.id}
-                    onClick={() => setPayment(pm.id)}
-                    className={[
-                      'text-left p-4 rounded-xl border transition-all',
-                      payment === pm.id
-                        ? 'border-[#1B6CA8] bg-[#F0F7FF]'
-                        : 'border-[#e5e7eb] hover:border-gray-300',
-                    ].join(' ')}
+                    onClick={handleBack}
+                    className="text-sm font-semibold text-gray-600 px-5 py-2.5 rounded-lg border border-[#e5e7eb] hover:border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-2"
                   >
-                    <img src={pm.image} alt={pm.label} className={`mb-3 rounded-xl object-contain ${pm.id === 'gcash' ? 'w-[77px] h-[77px]' : 'w-16 h-16'}`} />
-                    <p className="text-sm font-semibold text-gray-900">{pm.label}</p>
-                    <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">{pm.desc}</p>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                    Back
                   </button>
-                ))}
-              </div>
-            </div>
+                  <button
+                    onClick={handleNext}
+                    className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors flex items-center gap-2"
+                  >
+                    Next: Review & Pay
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </button>
+                </div>
+              </>
+            )}
 
-            {/* Bottom confirm button */}
-            <div className="p-6">
-              <button
-                onClick={handleConfirm}
-                disabled={submitting}
-                className="w-full bg-[#1B6CA8] text-white font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                    Confirming...
-                  </>
-                ) : 'Confirm booking'}
-              </button>
-            </div>
+            {/* ── Step 3: Review & Pay ──────────────────────────────────── */}
+            {step === 3 && (
+              <>
+                <SectionCard
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-4 h-4">
+                      <rect x="1" y="4" width="22" height="16" rx="2"/>
+                      <path strokeLinecap="round" d="M1 10h22"/>
+                    </svg>
+                  }
+                  title="Payment method"
+                >
+                  <div className="grid grid-cols-3 gap-3">
+                    {PAYMENT_METHODS.map(pm => (
+                      <button
+                        key={pm.id}
+                        onClick={() => setPayment(pm.id)}
+                        className={[
+                          'text-left p-4 rounded-xl border transition-all',
+                          payment === pm.id
+                            ? 'border-[#1B6CA8] bg-[#F0F7FF]'
+                            : 'border-[#e5e7eb] hover:border-gray-300',
+                        ].join(' ')}
+                      >
+                        <img src={pm.image} alt={pm.label} className={`mb-3 rounded-xl object-contain ${pm.id === 'gcash' ? 'w-[77px] h-[77px]' : 'w-16 h-16'}`} />
+                        <p className="text-sm font-semibold text-gray-900">{pm.label}</p>
+                        <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">{pm.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </SectionCard>
+
+                {Object.values(errors).length > 0 && (
+                  <div className="space-y-1.5">
+                    {Object.values(errors).map((msg, i) => (
+                      <div key={i} className="px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
+                        {msg}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={handleBack}
+                    className="text-sm font-semibold text-gray-600 px-5 py-2.5 rounded-lg border border-[#e5e7eb] hover:border-gray-300 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                    Back
+                  </button>
+                  <button
+                    onClick={handleConfirm}
+                    disabled={submitting}
+                    className="bg-[#1B6CA8] text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-[#155a8a] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {submitting ? (
+                      <>
+                        <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                        Confirming...
+                      </>
+                    ) : 'Confirm booking'}
+                  </button>
+                </div>
+              </>
+            )}
 
           </div>
 

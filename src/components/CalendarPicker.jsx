@@ -100,7 +100,7 @@ export default function CalendarPicker({ label, value, onChange }) {
                   isSelected(day)
                     ? 'bg-[#1B6CA8] text-white font-semibold'
                     : isPast(day)
-                      ? 'text-gray-600 cursor-not-allowed'
+                      ? 'text-gray-300 cursor-not-allowed opacity-50'
                       : isToday(day)
                         ? 'border border-[#1B6CA8] text-[#1B6CA8] font-semibold hover:bg-[#E8F4FD]'
                         : 'text-gray-700 hover:bg-gray-100',
