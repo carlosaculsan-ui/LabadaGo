@@ -224,8 +224,8 @@ export default function OrderTracking() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#1B6CA8] flex items-center justify-center shrink-0">
-                  <span className="text-[11px] font-bold text-white leading-none">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br from-[#2179BE] to-[#0C447C] shadow-sm">
+                  <span className="text-[13px] font-bold text-white leading-none tracking-wide">
                     {(() => {
                       const parts = (order.shopName || '').trim().split(/\s+/).filter(Boolean)
                       if (parts.length === 0) return '?'
@@ -465,17 +465,30 @@ export default function OrderTracking() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-600">No rider assigned yet.</p>
+                <div className="flex flex-col items-center text-center py-3 gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">No rider assigned yet</p>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed max-w-[180px]">
+                      {['PENDING', 'ACCEPTED'].includes(order.status)
+                        ? 'A rider will be assigned once the shop confirms your pickup.'
+                        : 'Your rider details will appear here shortly.'}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
 
             {/* Estimated arrival */}
             <div className="bg-white rounded-xl border border-[#e5e7eb] p-5">
               <div className="flex items-center gap-2 mb-1">
-                <ImgPlaceholder
-                  label="clock"
-                  className="w-5 h-5 rounded bg-gray-100 border-gray-300 shrink-0"
-                />
+                <svg className="w-5 h-5 text-[#1B6CA8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 <p className="font-heading font-semibold text-[15px] text-gray-900">
                   Pickup window: {order.pickupTime ?? '—'}
                 </p>
