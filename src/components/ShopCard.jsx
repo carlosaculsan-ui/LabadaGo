@@ -52,7 +52,7 @@ export default function ShopCard({
       <div
         onClick={() => onSelect ? onSelect() : navigate('/browse')}
         className={[
-          'bg-white rounded-xl overflow-hidden flex flex-col cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-150',
+          'bg-white rounded-xl overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-150',
           isFeatured ? 'border border-[#1B6CA8]' : 'border border-[#e5e7eb]',
         ].join(' ')}
       >

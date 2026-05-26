@@ -183,6 +183,7 @@ export default function Home() {
       setNearbyShops(padded)
       setShopsLoading(false)
     }).catch(() => {
+      setShopsCount(MOCK_SHOPS.length)
       setNearbyShops(MOCK_SHOPS)
       setShopsLoading(false)
     })
@@ -263,16 +264,16 @@ export default function Home() {
             </p>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
+                onClick={() => navigate('/browse')}
                 className="bg-[#F5A623] text-[#0D3F6B] font-bold px-10 py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base"
               >
-                Book a pickup
+                Browse shops
               </button>
               <button
-                onClick={() => navigate('/browse')}
+                onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
                 className="border-2 border-white/60 text-white font-semibold px-10 py-4 rounded-xl hover:bg-white/10 transition-colors text-base"
               >
-                Browse shops
+                Book a pickup
               </button>
             </div>
           </div>
@@ -423,7 +424,7 @@ export default function Home() {
           </div>
 
           <div className="relative grid grid-cols-4 gap-6 pt-4">
-            <div className="absolute top-[18px] left-[12.5%] right-[12.5%] border-t-2 border-dashed border-[#CBD5E1] pointer-events-none z-0" />
+            <div className="absolute top-[18px] left-[12.5%] right-[12.5%] border-t-2 border-[#94A3B8] pointer-events-none z-0" />
 
             {HOW_STEPS.map(step => (
               <div key={step.num} className="relative z-10 bg-white rounded-2xl p-6 pt-10 flex flex-col items-center text-center shadow-sm">
