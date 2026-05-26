@@ -124,7 +124,7 @@ export default function Checkout() {
   const [pickupCoords,  setPickupCoords]  = useState(null)
 
   // Schedule
-  const [pickupDate, setPickupDate] = useState(null)
+  const [pickupDate, setPickupDate] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d })
   const [pickupTime, setPickupTime] = useState(null)
 
   // Delivery is always pickup + 2 days
@@ -141,7 +141,7 @@ export default function Checkout() {
 
   // UI state
   const [submitting, setSubmitting] = useState(false)
-  const [error,      setError]      = useState('')
+  const [errors,     setErrors]     = useState({})
   const [shopImage,  setShopImage]  = useState(null)
 
   useEffect(() => {
@@ -161,12 +161,23 @@ export default function Checkout() {
   const total            = subtotal + PICKUP_FEE + DELIVERY_FEE + detergentPrice + conditionerPrice
   const totalPrice       = total
 
-  async function handleConfirm() {
-    setError('')
+  function handlePickupDateChange(d) {
+    setPickupDate(d)
+    setErrors(e => { const n = { ...e }; delete n.pickupDate; return n })
+  }
 
-    if (!street)     return setError('Please enter your pickup address.')
-    if (!pickupDate) return setError('Please select a pickup date.')
-    if (!pickupTime) return setError('Please select a pickup time.')
+  function handlePickupTimeChange(slot) {
+    setPickupTime(slot)
+    setErrors(e => { const n = { ...e }; delete n.pickupTime; return n })
+  }
+
+  async function handleConfirm() {
+    const newErrors = {}
+    if (!street)     newErrors.street     = 'Please enter your pickup address.'
+    if (!pickupDate) newErrors.pickupDate = 'Please select a pickup date.'
+    if (!pickupTime) newErrors.pickupTime = 'Please select a pickup time.'
+    if (Object.keys(newErrors).length) { setErrors(newErrors); return }
+    setErrors({})
 
     setSubmitting(true)
     try {
@@ -200,7 +211,7 @@ export default function Checkout() {
       const newDoc = await addDoc(collection(db, 'orders'), orderObject)
       navigate(`/order-tracking?id=${newDoc.id}`, { replace: true })
     } catch (err) {
-      setError(err.message)
+      setErrors({ submit: err.message })
       setSubmitting(false)
     }
   }
@@ -230,7 +241,7 @@ export default function Checkout() {
               <MapPicker
                 label="Pickup location"
                 address={street}
-                onAddressChange={setStreet}
+                onAddressChange={v => { setStreet(v); if (v) setErrors(e => { const n = { ...e }; delete n.street; return n }) }}
                 onCoordsChange={setPickupCoords}
               />
               <input
@@ -251,7 +262,7 @@ export default function Checkout() {
                   <CalendarPicker
                     label="Pickup date"
                     value={pickupDate}
-                    onChange={setPickupDate}
+                    onChange={handlePickupDateChange}
                   />
                   <div className="mt-3">
                     <FieldLabel>Pickup time</FieldLabel>
@@ -259,7 +270,7 @@ export default function Checkout() {
                       {TIME_SLOTS.map(slot => (
                         <button
                           key={slot}
-                          onClick={() => setPickupTime(slot)}
+                          onClick={() => handlePickupTimeChange(slot)}
                           className={[
                             'text-xs px-3 py-1.5 rounded-full border transition-colors',
                             pickupTime === slot
@@ -445,9 +456,13 @@ export default function Checkout() {
                 Final price adjusted after shop weighs your laundry.
               </p>
 
-              {error && (
-                <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
-                  {error}
+              {Object.values(errors).length > 0 && (
+                <div className="mb-3 space-y-1.5">
+                  {Object.values(errors).map((msg, i) => (
+                    <div key={i} className="px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
+                      {msg}
+                    </div>
+                  ))}
                 </div>
               )}
 

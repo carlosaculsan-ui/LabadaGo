@@ -77,10 +77,7 @@ export default function OrderTracking() {
   const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
-    if (!orderId) {
-      navigate('/browse', { replace: true })
-      return
-    }
+    if (!orderId) return
 
     const unsubscribe = onSnapshot(
       doc(db, 'orders', orderId),
@@ -118,6 +115,25 @@ export default function OrderTracking() {
     } catch {
       setCancelling(false)
     }
+  }
+
+  if (!orderId) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
+        <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
+          <p className="font-heading font-bold text-gray-900 text-lg mb-2">No active order</p>
+          <p className="text-sm text-gray-600 mb-6">
+            You don't have an active order to track right now.
+          </p>
+          <button
+            onClick={() => navigate('/browse')}
+            className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
+          >
+            Browse shops
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (loading) return <Spinner text="Loading your order..." />
