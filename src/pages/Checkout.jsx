@@ -314,6 +314,14 @@ export default function Checkout() {
                     onAddressChange={v => { setStreet(v); if (v) setErrors(e => { const n = { ...e }; delete n.street; return n }) }}
                     onCoordsChange={setPickupCoords}
                   />
+                  {street.trim() && (
+                    <div className="mt-2 flex items-center gap-1.5 text-green-600">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-xs font-medium">Address set</span>
+                    </div>
+                  )}
                   <input
                     type="text"
                     value={landmark}
@@ -349,7 +357,7 @@ export default function Checkout() {
                                 'text-xs px-3 py-1.5 rounded-full border transition-colors',
                                 pickupTime === slot
                                   ? 'bg-[#1B6CA8] text-white border-[#1B6CA8] font-medium'
-                                  : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
+                                  : 'border-[#e5e7eb] text-gray-600 cursor-pointer hover:border-[#1B6CA8] hover:text-[#1B6CA8] hover:bg-[#EEF5FB]',
                               ].join(' ')}
                             >
                               {slot}

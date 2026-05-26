@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
-import { db } from '../lib/firebase'
-import { useAuth } from '../hooks/useAuth'
+import { onAuthStateChanged } from 'firebase/auth'
+import { db, auth } from '../lib/firebase'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -163,26 +163,41 @@ function OrderCard({ order }) {
 const TABS = ['All', 'Active', 'Completed', 'Cancelled']
 
 export default function MyOrders() {
-  const { user } = useAuth()
+  const navigate = useNavigate()
   const [orders,  setOrders]  = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('All')
 
   useEffect(() => {
-    if (!user?.uid) return
+    let unsubscribeQuery = null
 
-    const q = query(
-      collection(db, 'orders'),
-      where('customerId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    )
-    const unsubscribe = onSnapshot(q, snap => {
-      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-      setLoading(false)
-    }, () => setLoading(false))
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (unsubscribeQuery) {
+        unsubscribeQuery()
+        unsubscribeQuery = null
+      }
+      if (!firebaseUser) {
+        setOrders([])
+        setLoading(false)
+        return
+      }
 
-    return unsubscribe
-  }, [user?.uid])
+      const q = query(
+        collection(db, 'orders'),
+        where('customerId', '==', firebaseUser.uid),
+        orderBy('createdAt', 'desc')
+      )
+      unsubscribeQuery = onSnapshot(q, snap => {
+        setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        setLoading(false)
+      }, () => setLoading(false))
+    })
+
+    return () => {
+      unsubscribeAuth()
+      if (unsubscribeQuery) unsubscribeQuery()
+    }
+  }, [])
 
   const filtered = orders.filter(o => {
     if (activeTab === 'All')       return true

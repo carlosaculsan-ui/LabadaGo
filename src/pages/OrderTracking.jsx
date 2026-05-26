@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, orderBy, limit, getDocs, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -77,32 +77,55 @@ export default function OrderTracking() {
   const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
-    if (!orderId) return
-
-    const unsubscribe = onSnapshot(
-      doc(db, 'orders', orderId),
-      (snap) => {
-        if (!snap.exists()) {
-          setError('Order not found.')
+    if (orderId) {
+      const unsubscribe = onSnapshot(
+        doc(db, 'orders', orderId),
+        (snap) => {
+          if (!snap.exists()) {
+            setError('Order not found.')
+            setLoading(false)
+            return
+          }
+          const data = snap.data()
+          if (data.customerId !== user?.uid) {
+            navigate('/', { replace: true })
+            return
+          }
+          setOrder(data)
           setLoading(false)
-          return
+        },
+        () => {
+          setError('Could not load order. You may not have permission to view it.')
+          setLoading(false)
         }
-        const data = snap.data()
-        if (data.customerId !== user?.uid) {
-          navigate('/', { replace: true })
-          return
-        }
-        setOrder(data)
-        setLoading(false)
-      },
-      () => {
-        setError('Could not load order. You may not have permission to view it.')
+      )
+      return unsubscribe
+    }
+
+    // No orderId: find the most recent non-completed order for this user
+    if (!user?.uid) {
+      setLoading(false)
+      return
+    }
+
+    getDocs(query(
+      collection(db, 'orders'),
+      where('customerId', '==', user.uid),
+      orderBy('createdAt', 'desc'),
+      limit(10)
+    )).then(snap => {
+      const activeDoc = snap.docs.find(
+        d => !['COMPLETED', 'CANCELLED'].includes(d.data().status)
+      )
+      if (activeDoc) {
+        navigate(`/order-tracking?id=${activeDoc.id}`, { replace: true })
+      } else {
         setLoading(false)
       }
-    )
-
-    return unsubscribe
-  }, [orderId, user, navigate])
+    }).catch(() => {
+      setLoading(false)
+    })
+  }, [orderId, user?.uid, navigate])
 
   async function handleCancel() {
     setCancelling(true)
@@ -115,25 +138,6 @@ export default function OrderTracking() {
     } catch {
       setCancelling(false)
     }
-  }
-
-  if (!orderId) {
-    return (
-      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
-        <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
-          <p className="font-heading font-bold text-gray-900 text-lg mb-2">No active order</p>
-          <p className="text-sm text-gray-600 mb-6">
-            You don't have an active order to track right now.
-          </p>
-          <button
-            onClick={() => navigate('/browse')}
-            className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
-          >
-            Browse shops
-          </button>
-        </div>
-      </div>
-    )
   }
 
   if (loading) return <Spinner text="Loading your order..." />
@@ -155,6 +159,25 @@ export default function OrderTracking() {
     )
   }
 
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
+        <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
+          <p className="font-heading font-bold text-gray-900 text-lg mb-2">No active order</p>
+          <p className="text-sm text-gray-600 mb-6">
+            You don't have an active order to track right now.
+          </p>
+          <button
+            onClick={() => navigate('/browse')}
+            className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
+          >
+            Browse shops
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const activeIndex  = STATUS_INDEX[order.status] ?? 0
   const activeStatus = ORDER_STATUSES[activeIndex]
   const displayPrice = order.finalPrice ?? order.estimatedPrice
@@ -170,6 +193,18 @@ export default function OrderTracking() {
 
           {/* ── Left column ───────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 space-y-5">
+
+            {/* Confirmation note */}
+            {order.status === 'PENDING' && (
+              <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-5 py-3">
+                <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-sm text-green-800">
+                  Booking confirmed! A confirmation has been sent to your registered email.
+                </p>
+              </div>
+            )}
 
             {/* Section 1 — Order header */}
             <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
