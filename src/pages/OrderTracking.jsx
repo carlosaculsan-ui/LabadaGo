@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const ORDER_STATUSES = [
-  { id: 'PENDING',            label: 'Order placed',        desc: 'Your booking has been submitted and is awaiting confirmation.'     },
+  { id: 'PENDING',            label: 'Pending',             desc: 'Your booking has been submitted and is awaiting confirmation.'     },
   { id: 'ACCEPTED',           label: 'Accepted by shop',    desc: 'The shop has confirmed your order and is preparing for pickup.'    },
   { id: 'PICKUP_EN_ROUTE',    label: 'Pickup en route',     desc: 'Your rider is on the way to collect your laundry.'                 },
   { id: 'PICKED_UP',          label: 'Laundry picked up',   desc: 'Your rider has collected your laundry and is heading to the shop.' },
@@ -337,7 +337,7 @@ export default function OrderTracking() {
                   <div className="space-y-2">
                     {[
                       ['Pickup',   `${fmtDate(order.pickupDate)} · ${order.pickupTime ?? '—'}`    ],
-                      ['Delivery', `${fmtDate(order.deliveryDate)} · ${order.deliveryTime ?? '—'}` ],
+                      ['Delivery', `${fmtDate(order.deliveryDate)} · ${order.deliveryTime ?? 'TBD'}` ],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between text-sm">
                         <span className="text-gray-600">{label}</span>
@@ -371,16 +371,34 @@ export default function OrderTracking() {
                 Price breakdown
               </h2>
               <div className="space-y-3">
-                {[
-                  [`Est. ${order.estimatedWeight} kg × ₱50`, `₱${(order.estimatedWeight * 50).toLocaleString()}`],
-                  ['Pickup fee',                              `₱${order.pickupFee}`  ],
-                  ['Delivery fee',                            `₱${order.deliveryFee}`],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between text-sm">
-                    <span className="text-gray-600">{label}</span>
-                    <span className="font-medium text-gray-700">{value}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">
+                    Est. {order.estimatedWeight} kg × ₱{order.pricePerKg ?? 50}
+                  </span>
+                  <span className="font-medium text-gray-700">
+                    ₱{(order.estimatedWeight * (order.pricePerKg ?? 50)).toLocaleString()}
+                  </span>
+                </div>
+                {order.detergentPrice > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Detergent ({order.detergent})</span>
+                    <span className="font-medium text-gray-700">₱{order.detergentPrice}</span>
                   </div>
-                ))}
+                )}
+                {order.conditioner !== 'None' && order.conditionerPrice > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Conditioner ({order.conditioner})</span>
+                    <span className="font-medium text-gray-700">₱{order.conditionerPrice}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Pickup fee</span>
+                  <span className="font-medium text-gray-700">₱{order.pickupFee}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Delivery fee</span>
+                  <span className="font-medium text-gray-700">₱{order.deliveryFee}</span>
+                </div>
               </div>
               <hr className="border-[#e5e7eb] my-4" />
               <div className="flex justify-between items-baseline">

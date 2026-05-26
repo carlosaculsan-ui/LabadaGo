@@ -172,21 +172,30 @@ export default function Checkout() {
   const [errors,     setErrors]     = useState({})
   const [shopImage,  setShopImage]  = useState(null)
   const [step,       setStep]       = useState(1)
+  const [pricePerKg, setPricePerKg] = useState(PRICE_PER_KG)
 
   useEffect(() => {
     // Try Firestore first, fall back to mock data
     const mockMatch = MOCK_SHOPS.find(s => s.id === shopId || s.name === shopName)
-    if (mockMatch?.image) { setShopImage(mockMatch.image); return }
+    if (mockMatch) {
+      if (mockMatch.image)      setShopImage(mockMatch.image)
+      if (mockMatch.pricePerKg) setPricePerKg(mockMatch.pricePerKg)
+      return
+    }
     if (!shopId) return
     getDoc(doc(db, 'shops', shopId)).then(snap => {
-      if (snap.exists()) setShopImage(snap.data().image ?? null)
+      if (snap.exists()) {
+        const data = snap.data()
+        setShopImage(data.image ?? null)
+        setPricePerKg(data.pricePerKg ?? PRICE_PER_KG)
+      }
     })
   }, [shopId, shopName])
 
   // Derived prices
   const detergentPrice   = DETERGENTS.find(d => d.id === detergent)?.price ?? 0
   const conditionerPrice = CONDITIONERS.find(c => c.id === conditioner)?.price ?? 0
-  const subtotal         = weight * PRICE_PER_KG
+  const subtotal         = weight * pricePerKg
   const total            = subtotal + PICKUP_FEE + DELIVERY_FEE + detergentPrice + conditionerPrice
   const totalPrice       = total
 
@@ -215,6 +224,7 @@ export default function Checkout() {
         customerName:    userProfile?.fullName ?? user.displayName ?? '',
         shopId,
         shopName,
+        pricePerKg,
         status:          'PENDING',
         serviceType,
         estimatedWeight: weight,
@@ -608,7 +618,7 @@ export default function Checkout() {
                 <SummaryRow label="Shop"        value={shopName}              />
                 <SummaryRow label="Service"     value={serviceType ?? '—'}    />
                 <SummaryRow
-                  label={`Est. ${weight} kg × ₱${PRICE_PER_KG}`}
+                  label={`Est. ${weight} kg × ₱${pricePerKg}`}
                   value={`₱${subtotal.toLocaleString()}`}
                 />
                 <SummaryRow label="Detergent"    value={detergentPrice > 0   ? `₱${detergentPrice}`   : 'Free'} />
