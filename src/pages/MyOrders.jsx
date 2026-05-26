@@ -170,31 +170,34 @@ export default function MyOrders() {
 
   useEffect(() => {
     let unsubscribeQuery = null
+    let unsubscribeAuth = null
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      if (unsubscribeQuery) {
-        unsubscribeQuery()
-        unsubscribeQuery = null
-      }
-      if (!firebaseUser) {
-        setOrders([])
-        setLoading(false)
-        return
-      }
-
+    function subscribe(uid) {
       const q = query(
         collection(db, 'orders'),
-        where('customerId', '==', firebaseUser.uid),
+        where('customerId', '==', uid),
         orderBy('createdAt', 'desc')
       )
       unsubscribeQuery = onSnapshot(q, snap => {
         setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() })))
         setLoading(false)
       }, () => setLoading(false))
-    })
+    }
+
+    // auth.currentUser is already populated once AuthContext has resolved,
+    // so skip the onAuthStateChanged cycle that fires null first on hard refresh
+    if (auth.currentUser) {
+      subscribe(auth.currentUser.uid)
+    } else {
+      unsubscribeAuth = onAuthStateChanged(auth, firebaseUser => {
+        if (unsubscribeQuery) { unsubscribeQuery(); unsubscribeQuery = null }
+        if (!firebaseUser) { setOrders([]); setLoading(false); return }
+        subscribe(firebaseUser.uid)
+      })
+    }
 
     return () => {
-      unsubscribeAuth()
+      if (unsubscribeAuth) unsubscribeAuth()
       if (unsubscribeQuery) unsubscribeQuery()
     }
   }, [])
