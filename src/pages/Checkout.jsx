@@ -162,7 +162,7 @@ export default function Checkout() {
   const [serviceType, setServiceType] = useState('Wash & Fold')
   const [weight,      setWeight]      = useState(3)
   const [detergent,   setDetergent]   = useState('Standard (No preference)')
-  const [conditioner, setConditioner] = useState('Downy')
+  const [conditioner, setConditioner] = useState('None')
 
   // Payment
   const [payment, setPayment] = useState('gcash')
@@ -495,6 +495,7 @@ export default function Checkout() {
                       +
                     </button>
                     <span className="text-sm text-gray-600">kg</span>
+                    <span className="text-xs text-gray-400 ml-1">avg. load is 3–5 kg</span>
                   </div>
 
                   <div className="mb-4">
@@ -516,7 +517,7 @@ export default function Checkout() {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                     </svg>
-                    Back
+                    Where & When
                   </button>
                   <button
                     onClick={handleNext}
@@ -581,7 +582,7 @@ export default function Checkout() {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                     </svg>
-                    Back
+                    Your Laundry
                   </button>
                   <button
                     onClick={handleConfirm}
@@ -621,7 +622,7 @@ export default function Checkout() {
                   label={`Est. ${weight} kg × ₱${pricePerKg}`}
                   value={`₱${subtotal.toLocaleString()}`}
                 />
-                <SummaryRow label="Detergent"    value={detergentPrice > 0   ? `₱${detergentPrice}`   : 'Free'} />
+                <SummaryRow label="Detergent"    value={detergentPrice > 0 ? `${detergent} · ₱${detergentPrice}` : detergent} />
                 {conditioner !== 'None' && (
                   <SummaryRow label="Conditioner" value={`₱${conditionerPrice}`} />
                 )}
