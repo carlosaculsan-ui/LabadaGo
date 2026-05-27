@@ -254,13 +254,100 @@ function OverviewTab({ orders, users, shops, onNavigate }) {
   )
 }
 
+// ─── User Detail Modal ────────────────────────────────────────────────────────
+
+function UserDetailModal({ user, onClose, onSuspend, busy }) {
+  const isSuspended = user.status === 'suspended'
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e7eb]">
+          <p className="font-heading font-bold text-[15px] text-gray-900">User Details</p>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+
+          {/* Avatar + name */}
+          <div className="flex items-center gap-4">
+            {user.photoURL
+              ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="w-14 h-14 rounded-full object-cover shrink-0" />
+              : <div className="w-14 h-14 rounded-full bg-[#1B6CA8] flex items-center justify-center shrink-0">
+                  <span className="text-lg font-bold text-white">{initials(user.fullName)}</span>
+                </div>
+            }
+            <div className="min-w-0">
+              <p className="font-heading font-bold text-[17px] text-gray-900 truncate">{user.fullName ?? '—'}</p>
+              <p className="text-sm text-gray-500 truncate">{user.email}</p>
+            </div>
+          </div>
+
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1.5">Role</p>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize ${ROLE_PILL[user.role ?? 'customer'] ?? 'bg-gray-100 text-gray-600'}`}>
+                {user.role ?? 'customer'}
+              </span>
+            </div>
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1.5">Status</p>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${isSuspended ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+                {isSuspended ? 'Suspended' : 'Active'}
+              </span>
+            </div>
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1">Member since</p>
+              <p className="text-xs font-semibold text-gray-800">{fmtDate(user.createdAt)}</p>
+            </div>
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1">User ID</p>
+              <p className="text-[11px] font-mono text-gray-600 truncate">{user.id.substring(0, 14)}…</p>
+            </div>
+          </div>
+
+          {/* Status action — only for non-admin */}
+          {user.role !== 'admin' && (
+            <div className="border-t border-[#e5e7eb] pt-4 flex items-center justify-between">
+              <p className="text-xs text-gray-500">
+                {isSuspended
+                  ? 'This account is currently suspended. The user cannot log in.'
+                  : 'Account is active. Suspending will immediately block access.'}
+              </p>
+              <button
+                disabled={busy}
+                onClick={() => onSuspend(user, isSuspended ? 'active' : 'suspended')}
+                className={`ml-4 shrink-0 text-xs font-semibold px-4 py-2 rounded-xl border transition-colors disabled:opacity-50 ${
+                  isSuspended
+                    ? 'border-green-300 text-green-700 hover:bg-green-50'
+                    : 'border-red-300 text-red-600 hover:bg-red-50'
+                }`}
+              >
+                {isSuspended ? 'Activate account' : 'Suspend account'}
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Users Tab ────────────────────────────────────────────────────────────────
 
 function UsersTab({ users }) {
-  const [search,     setSearch]     = useState('')
-  const [roleFilter, setRoleFilter] = useState('All')
-  const [confirm,    setConfirm]    = useState(null)
-  const [busy,       setBusy]       = useState(null)
+  const [search,       setSearch]       = useState('')
+  const [roleFilter,   setRoleFilter]   = useState('All')
+  const [confirm,      setConfirm]      = useState(null)
+  const [busy,         setBusy]         = useState(null)
+  const [selectedUser, setSelectedUser] = useState(null)
 
   const displayed = useMemo(() => {
     const q = search.toLowerCase()
@@ -281,6 +368,25 @@ function UsersTab({ users }) {
     <div>
       <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">Users</h2>
       {confirm && <ConfirmModal message={confirm.message} confirmLabel={confirm.label} danger={confirm.danger} onConfirm={() => handleStatus(confirm.uid, confirm.status)} onCancel={() => setConfirm(null)} />}
+
+      {selectedUser && (
+        <UserDetailModal
+          user={selectedUser}
+          busy={busy === selectedUser.id}
+          onClose={() => setSelectedUser(null)}
+          onSuspend={(u, status) => {
+            setSelectedUser(null)
+            setConfirm({
+              uid: u.id, status,
+              label:   status === 'suspended' ? 'Suspend' : 'Activate',
+              danger:  status === 'suspended',
+              message: status === 'suspended'
+                ? `Suspend ${u.fullName ?? u.email}? They won't be able to log in.`
+                : `Activate account for ${u.fullName ?? u.email}?`,
+            })
+          }}
+        />
+      )}
 
       <FilterBar count={displayed.length} noun="user">
         <SearchInput value={search} onChange={setSearch} placeholder="Search by name or email…" />
@@ -319,14 +425,22 @@ function UsersTab({ users }) {
                 </span>
               </TD>
               <TD align="right">
-                {u.role !== 'admin' && (
-                  <button disabled={busy === u.id}
-                    onClick={() => setConfirm({ uid: u.id, status: isSuspended ? 'active' : 'suspended', label: isSuspended ? 'Activate' : 'Suspend', danger: !isSuspended, message: isSuspended ? `Activate account for ${u.fullName ?? u.email}?` : `Suspend ${u.fullName ?? u.email}? They won't be able to log in.` })}
-                    className={['text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors', isSuspended ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => setSelectedUser(u)}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    {isSuspended ? 'Activate' : 'Suspend'}
+                    Details
                   </button>
-                )}
+                  {u.role !== 'admin' && (
+                    <button disabled={busy === u.id}
+                      onClick={() => setConfirm({ uid: u.id, status: isSuspended ? 'active' : 'suspended', label: isSuspended ? 'Activate' : 'Suspend', danger: !isSuspended, message: isSuspended ? `Activate account for ${u.fullName ?? u.email}?` : `Suspend ${u.fullName ?? u.email}? They won't be able to log in.` })}
+                      className={['text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors', isSuspended ? 'border-green-400 bg-green-50 text-green-700 hover:bg-green-100' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
+                    >
+                      {isSuspended ? '✓ Activate' : 'Suspend'}
+                    </button>
+                  )}
+                </div>
               </TD>
             </TR>
           )
