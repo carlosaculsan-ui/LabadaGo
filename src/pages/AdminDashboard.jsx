@@ -1208,29 +1208,57 @@ function RidersTab({ users, orders }) {
 // ─── Analytics Tab ────────────────────────────────────────────────────────────
 
 function AnalyticsTab({ orders, users }) {
-  const completedOrders = useMemo(() => orders.filter(o => o.status === 'COMPLETED'), [orders])
+  const [dateFilter, setDateFilter] = useState('This Year')
 
+  const filteredOrders = useMemo(() => {
+    const now = new Date()
+    return orders.filter(o => {
+      if (dateFilter === 'All Time') return true
+      if (!o.createdAt?.toDate) return false
+      const d = o.createdAt.toDate()
+      if (dateFilter === 'This Year')  return d.getFullYear() === now.getFullYear()
+      if (dateFilter === 'This Month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      if (dateFilter === 'This Week')  { const sow = new Date(now); sow.setDate(now.getDate() - now.getDay()); sow.setHours(0, 0, 0, 0); return d >= sow }
+      return true
+    })
+  }, [orders, dateFilter])
+
+  const completedOrders = useMemo(() => filteredOrders.filter(o => o.status === 'COMPLETED'), [filteredOrders])
+
+  // Bar charts always show current year regardless of dateFilter
   const monthlyRevenue = useMemo(() => {
     const year = new Date().getFullYear()
     const data = Array(12).fill(0)
-    completedOrders.forEach(o => {
+    orders.filter(o => o.status === 'COMPLETED').forEach(o => {
       if (!o.createdAt?.toDate) return
       const d = o.createdAt.toDate()
       if (d.getFullYear() === year) data[d.getMonth()] += o.finalPrice ?? o.estimatedPrice ?? 0
     })
     return data
-  }, [completedOrders])
+  }, [orders])
+
+  const monthlyNewUsers = useMemo(() => {
+    const year = new Date().getFullYear()
+    const data = Array(12).fill(0)
+    users.forEach(u => {
+      if (!u.createdAt?.toDate) return
+      const d = u.createdAt.toDate()
+      if (d.getFullYear() === year) data[d.getMonth()]++
+    })
+    return data
+  }, [users])
 
   const maxRev   = Math.max(...monthlyRevenue, 1)
-  const totalRev = monthlyRevenue.reduce((s, v) => s + v, 0)
+  const maxUsers = Math.max(...monthlyNewUsers, 1)
+  const totalRev = completedOrders.reduce((s, o) => s + (o.finalPrice ?? o.estimatedPrice ?? 0), 0)
   const avgOrder = completedOrders.length > 0 ? totalRev / completedOrders.length : 0
-  const completion = orders.length > 0 ? ((completedOrders.length / orders.length) * 100).toFixed(1) : '0.0'
+  const completion = filteredOrders.length > 0 ? ((completedOrders.length / filteredOrders.length) * 100).toFixed(1) : '0.0'
 
   const topShops = useMemo(() => {
     const counts = {}
-    orders.forEach(o => { const k = o.shopName ?? o.shopId; if (k) counts[k] = (counts[k] ?? 0) + 1 })
+    filteredOrders.forEach(o => { const k = o.shopName ?? o.shopId; if (k) counts[k] = (counts[k] ?? 0) + 1 })
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5)
-  }, [orders])
+  }, [filteredOrders])
 
   const topRiders = useMemo(() => {
     const counts = {}
@@ -1242,26 +1270,40 @@ function AnalyticsTab({ orders, users }) {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5)
   }, [completedOrders, users])
 
+  const revenueByService = useMemo(() => {
+    const totals = {}
+    completedOrders.forEach(o => {
+      const svc = o.serviceType ?? 'Other'
+      totals[svc] = (totals[svc] ?? 0) + (o.finalPrice ?? o.estimatedPrice ?? 0)
+    })
+    return Object.entries(totals).sort((a, b) => b[1] - a[1])
+  }, [completedOrders])
+
   const summaryStats = [
-    { label: 'Total Revenue',      value: `₱${totalRev.toLocaleString()}`,          color: 'text-[#F5A623]'   },
-    { label: 'Completed Orders',   value: completedOrders.length,                    color: 'text-emerald-600' },
-    { label: 'Avg Order Value',    value: `₱${Math.round(avgOrder).toLocaleString()}`, color: 'text-[#1B6CA8]'   },
-    { label: 'Completion Rate',    value: `${completion}%`,                           color: 'text-violet-600'  },
+    { label: 'Total Revenue',    value: `₱${totalRev.toLocaleString()}`,             color: 'text-[#F5A623]',   sub: null },
+    { label: 'Completed Orders', value: completedOrders.length,                       color: 'text-emerald-600', sub: null },
+    { label: 'Avg Order Value',  value: `₱${Math.round(avgOrder).toLocaleString()}`, color: 'text-[#1B6CA8]',   sub: null },
+    { label: 'Completion Rate',  value: `${completion}%`,                             color: 'text-violet-600',  sub: 'of total orders in period' },
   ]
 
   return (
     <div className="space-y-8">
-      <h2 className="font-heading font-bold text-[17px] text-gray-900">Analytics</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-heading font-bold text-[17px] text-gray-900">Analytics</h2>
+        <FilterPills options={['All Time', 'This Year', 'This Month', 'This Week']} active={dateFilter} onChange={setDateFilter} />
+      </div>
 
       <div className="grid grid-cols-4 gap-4">
         {summaryStats.map(s => (
           <div key={s.label} className="bg-white rounded-2xl border border-[#e5e7eb] px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">{s.label}</p>
             <p className={`font-heading font-bold text-2xl leading-tight ${s.color}`}>{s.value}</p>
+            {s.sub && <p className="text-[10px] text-gray-400 mt-1">{s.sub}</p>}
           </div>
         ))}
       </div>
 
+      {/* Monthly Revenue bar chart — always current year */}
       <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
         <p className="font-heading font-semibold text-gray-800 mb-6">Monthly Revenue — {new Date().getFullYear()}</p>
         <div className="flex items-end gap-2">
@@ -1285,27 +1327,29 @@ function AnalyticsTab({ orders, users }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      {/* Leaderboards + service breakdown */}
+      <div className="grid grid-cols-3 gap-6">
         {[
-          { title: 'Top 5 Shops by Orders',        data: topShops,  color: '#0A2540', unit: 'orders'     },
-          { title: 'Top 5 Riders by Deliveries',   data: topRiders, color: '#0EA5E9', unit: 'deliveries' },
-        ].map(({ title, data, color, unit }) => (
+          { title: 'Top 5 Shops by Orders',      data: topShops,         color: '#0A2540', fmt: v => `${v} orders`,             empty: 'No orders yet'     },
+          { title: 'Top 5 Riders by Deliveries', data: topRiders,        color: '#0EA5E9', fmt: v => `${v} deliveries`,         empty: 'No deliveries yet' },
+          { title: 'Revenue by Service Type',    data: revenueByService, color: '#7C3AED', fmt: v => `₱${v.toLocaleString()}`,  empty: 'No revenue data'   },
+        ].map(({ title, data, color, fmt, empty }) => (
           <div key={title} className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
             <p className="font-heading font-semibold text-gray-800 mb-4">{title}</p>
             {data.length === 0
-              ? <p className="text-sm text-gray-400 text-center py-6">No data yet</p>
+              ? <p className="text-sm text-gray-400 text-center py-6">{empty}</p>
               : (
                 <div className="space-y-3">
-                  {data.map(([name, count], i) => (
+                  {data.map(([name, value], i) => (
                     <div key={name} className="flex items-center gap-3">
                       <span className="text-xs font-bold text-gray-400 w-4 text-right">{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-medium text-gray-800 truncate">{name}</span>
-                          <span className="text-xs text-gray-500 shrink-0 ml-2">{count} {unit}</span>
+                          <span className="text-xs text-gray-500 shrink-0 ml-2">{fmt(value)}</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${(count / (data[0]?.[1] ?? 1)) * 100}%`, background: color }} />
+                          <div className="h-full rounded-full" style={{ width: `${(value / (data[0]?.[1] ?? 1)) * 100}%`, background: color }} />
                         </div>
                       </div>
                     </div>
@@ -1315,6 +1359,30 @@ function AnalyticsTab({ orders, users }) {
             }
           </div>
         ))}
+      </div>
+
+      {/* New User Signups bar chart — always current year */}
+      <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
+        <p className="font-heading font-semibold text-gray-800 mb-6">New User Signups — {new Date().getFullYear()}</p>
+        <div className="flex items-end gap-2">
+          {monthlyNewUsers.map((val, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center group">
+              <div className="relative w-full flex justify-center items-end" style={{ height: '120px' }}>
+                <div
+                  className="w-full rounded-t-lg bg-emerald-600 group-hover:bg-emerald-500 transition-colors relative"
+                  style={{ height: `${(val / maxUsers) * 120}px`, minHeight: val > 0 ? '4px' : '0' }}
+                >
+                  {val > 0 && (
+                    <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-gray-600 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                      {val} user{val !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span className="text-[10px] text-gray-400 mt-1.5">{MONTHS[i]}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
