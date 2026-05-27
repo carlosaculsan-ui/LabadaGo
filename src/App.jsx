@@ -31,16 +31,21 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
+          { path: 'profile', element: <Profile /> },
+        ],
+      },
+      {
+        element: <ProtectedRoute blockedRoles={['admin']} />,
+        children: [
           { path: 'checkout', element: <Checkout /> },
           { path: 'order-tracking', element: <OrderTracking /> },
           { path: 'my-orders', element: <MyOrders /> },
-          { path: 'profile', element: <Profile /> },
         ],
       },
     ],
   },
   {
-    element: <ProtectedRoute />,
+    element: <ProtectedRoute blockedRoles={['admin']} />,
     children: [{ path: '/apply/:type', element: <Apply /> }],
   },
   {

@@ -23,13 +23,16 @@ function Spinner() {
   )
 }
 
-export default function ProtectedRoute({ allowedRoles }) {
+export default function ProtectedRoute({ allowedRoles, blockedRoles }) {
   const { user, userProfile, loading, profileLoading } = useAuth()
 
   if (loading || profileLoading) return <Spinner />
   if (!user) return <Navigate to="/signin" replace />
   if (allowedRoles && !allowedRoles.includes(userProfile?.role)) {
     return <Navigate to="/" replace />
+  }
+  if (blockedRoles && blockedRoles.includes(userProfile?.role)) {
+    return <Navigate to="/admin" replace />
   }
 
   return <Outlet />

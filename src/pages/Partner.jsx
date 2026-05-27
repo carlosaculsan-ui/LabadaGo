@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
@@ -36,6 +37,10 @@ function PerkList({ perks, color }) {
 export default function Partner() {
   const navigate       = useNavigate()
   const { user, role } = useAuth()
+
+  useEffect(() => {
+    if (role === 'admin') navigate('/admin', { replace: true })
+  }, [role, navigate])
 
   function handleApply(type) {
     if (!user) { navigate('/signin'); return }
