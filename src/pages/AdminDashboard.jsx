@@ -450,24 +450,158 @@ function UsersTab({ users }) {
   )
 }
 
+// ─── Admin Order Detail Modal ─────────────────────────────────────────────────
+
+function AdminOrderDetailModal({ order, users, busy, onClose, onStatusChange }) {
+  const rider = users?.find(u => u.id === order.riderId)
+
+  function fmtIso(val) {
+    if (!val) return '—'
+    if (val?.toDate) return val.toDate().toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+    const d = new Date(val)
+    return isNaN(d) ? val : d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-[#e5e7eb]">
+          <div>
+            <p className="font-mono text-sm font-semibold text-gray-800">LBG-{order.id.substring(0, 8).toUpperCase()}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{fmtDate(order.createdAt)}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
+              {STATUS_LABEL[order.status] ?? order.status}
+            </span>
+            <button onClick={onClose} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+
+          {/* Customer + Shop */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1">Customer</p>
+              <p className="text-sm font-semibold text-gray-800">{order.customerName ?? '—'}</p>
+            </div>
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1">Shop</p>
+              <p className="text-sm font-semibold text-gray-800">{order.shopName ?? '—'}</p>
+            </div>
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1">Service</p>
+              <p className="text-sm font-semibold text-gray-800">{order.serviceType ?? '—'}</p>
+            </div>
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1">Payment</p>
+              <p className="text-sm font-semibold text-gray-800 capitalize">{order.paymentMethod ?? '—'}</p>
+            </div>
+          </div>
+
+          {/* Pickup & Delivery */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Pickup &amp; Delivery</p>
+            <div className="bg-[#F4F7FA] rounded-xl p-3 space-y-1.5">
+              <Row label="Address"       value={order.pickupAddress?.street ?? '—'} />
+              {order.pickupAddress?.landmark && <Row label="Landmark"     value={order.pickupAddress.landmark} />}
+              <Row label="Pickup date"   value={fmtIso(order.pickupDate)} />
+              {order.pickupTime         && <Row label="Pickup time"   value={order.pickupTime} />}
+              <Row label="Delivery date" value={fmtIso(order.deliveryDate)} />
+            </div>
+          </div>
+
+          {/* Laundry Details */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Laundry Details</p>
+            <div className="bg-[#F4F7FA] rounded-xl p-3 space-y-1.5">
+              <Row label="Est. weight"  value={order.estimatedWeight ? `${order.estimatedWeight} kg` : '—'} />
+              {order.actualWeight != null && <Row label="Actual weight" value={`${order.actualWeight} kg`} />}
+              <Row label="Detergent"    value={order.detergent ?? '—'} />
+              <Row label="Conditioner"  value={order.conditioner ?? 'None'} />
+            </div>
+          </div>
+
+          {/* Price Breakdown */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Price Breakdown</p>
+            <div className="bg-[#F4F7FA] rounded-xl p-3 space-y-1.5">
+              <Row label="Est. price"    value={`₱${(order.estimatedPrice ?? 0).toLocaleString()}`} />
+              {order.pickupFee   > 0 && <Row label="Pickup fee"    value={`₱${order.pickupFee.toLocaleString()}`} />}
+              {order.deliveryFee > 0 && <Row label="Delivery fee"  value={`₱${order.deliveryFee.toLocaleString()}`} />}
+              <div className="border-t border-[#e5e7eb] pt-1.5 mt-1">
+                <Row label="Total" value={`₱${(order.finalPrice ?? order.estimatedPrice ?? 0).toLocaleString()}`} />
+              </div>
+            </div>
+          </div>
+
+          {/* Assigned Rider */}
+          {order.riderId && (
+            <div className="bg-[#F4F7FA] rounded-xl p-3">
+              <p className="text-[10px] font-semibold text-gray-400 mb-1">Assigned Rider</p>
+              <p className="text-sm font-semibold text-gray-800">{rider?.fullName ?? order.riderId}</p>
+              {rider?.mobile && <p className="text-xs text-gray-500 mt-0.5">{rider.mobile}</p>}
+            </div>
+          )}
+
+          {/* Status Change */}
+          <div className="border-t border-[#e5e7eb] pt-4">
+            <p className="text-xs font-semibold text-gray-500 mb-2">Update Status</p>
+            <select
+              value={order.status}
+              disabled={busy}
+              onChange={e => onStatusChange(order.id, e.target.value)}
+              className="w-full text-sm border border-[#e5e7eb] rounded-xl px-3 py-2.5 bg-white outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 cursor-pointer disabled:opacity-50"
+            >
+              {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Orders Tab ───────────────────────────────────────────────────────────────
 
-function OrdersTab({ orders }) {
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('All')
-  const [busy,   setBusy]   = useState(null)
+function OrdersTab({ orders, users }) {
+  const [search,        setSearch]        = useState('')
+  const [statusFilter,  setStatusFilter]  = useState('All')
+  const [dateFilter,    setDateFilter]    = useState('All Time')
+  const [busy,          setBusy]          = useState(null)
+  const [selectedOrder, setSelectedOrder] = useState(null)
 
   const displayed = useMemo(() => {
-    const q = search.toLowerCase()
+    const q   = search.toLowerCase()
+    const now = new Date()
     return [...orders].filter(o => {
-      if (filter === 'Pending'   && o.status !== 'PENDING')         return false
-      if (filter === 'Active'    && !ACTIVE_STATUSES.has(o.status)) return false
-      if (filter === 'Completed' && o.status !== 'COMPLETED')       return false
-      if (filter === 'Cancelled' && o.status !== 'CANCELLED')       return false
-      if (q && !o.shopName?.toLowerCase().includes(q) && !o.id.toLowerCase().includes(q)) return false
+      if (statusFilter === 'Pending'   && o.status !== 'PENDING')         return false
+      if (statusFilter === 'Active'    && !ACTIVE_STATUSES.has(o.status)) return false
+      if (statusFilter === 'Completed' && o.status !== 'COMPLETED')       return false
+      if (statusFilter === 'Cancelled' && o.status !== 'CANCELLED')       return false
+      if (q && !o.shopName?.toLowerCase().includes(q) && !o.id.toLowerCase().includes(q) && !o.customerName?.toLowerCase().includes(q)) return false
+      if (dateFilter !== 'All Time' && o.createdAt?.toDate) {
+        const d = o.createdAt.toDate()
+        if (dateFilter === 'Today') {
+          if (d.toDateString() !== now.toDateString()) return false
+        } else if (dateFilter === 'This Week') {
+          const sow = new Date(now); sow.setDate(now.getDate() - now.getDay()); sow.setHours(0, 0, 0, 0)
+          if (d < sow) return false
+        } else if (dateFilter === 'This Month') {
+          if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) return false
+        }
+      }
       return true
     }).sort((a, b) => (b.createdAt?.toDate?.()?.getTime() ?? 0) - (a.createdAt?.toDate?.()?.getTime() ?? 0))
-  }, [orders, filter, search])
+  }, [orders, statusFilter, dateFilter, search])
 
   async function handleStatus(id, status) {
     setBusy(id)
@@ -475,29 +609,75 @@ function OrdersTab({ orders }) {
     finally { setBusy(null) }
   }
 
+  function exportCSV() {
+    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const rows = [
+      ['Ref', 'Shop', 'Customer', 'Service', 'Status', 'Amount', 'Date'].map(esc).join(','),
+      ...displayed.map(o => [
+        `LBG-${o.id.substring(0, 8).toUpperCase()}`,
+        o.shopName ?? '',
+        o.customerName ?? '',
+        o.serviceType ?? '',
+        STATUS_LABEL[o.status] ?? o.status,
+        o.finalPrice ?? o.estimatedPrice ?? 0,
+        fmtDate(o.createdAt),
+      ].map(esc).join(',')),
+    ]
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a'); a.href = url; a.download = 'orders.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div>
-      <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">Orders</h2>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-heading font-bold text-[17px] text-gray-900">Orders</h2>
+        <button onClick={exportCSV}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </button>
+      </div>
+
+      {selectedOrder && (
+        <AdminOrderDetailModal
+          order={selectedOrder}
+          users={users}
+          busy={busy === selectedOrder.id}
+          onClose={() => setSelectedOrder(null)}
+          onStatusChange={(id, status) => {
+            handleStatus(id, status)
+            setSelectedOrder(o => o ? { ...o, status } : o)
+          }}
+        />
+      )}
+
       <FilterBar count={displayed.length} noun="order">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by shop or order ID…" />
-        <FilterPills options={['All', 'Pending', 'Active', 'Completed', 'Cancelled']} active={filter} onChange={setFilter} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by shop, customer, or ID…" />
+        <FilterPills options={['All', 'Pending', 'Active', 'Completed', 'Cancelled']} active={statusFilter} onChange={setStatusFilter} />
       </FilterBar>
+      <div className="mb-5">
+        <FilterPills options={['All Time', 'This Month', 'This Week', 'Today']} active={dateFilter} onChange={setDateFilter} />
+      </div>
 
       <TableWrap
-        cols={[{ label: 'Ref' }, { label: 'Shop' }, { label: 'Service' }, { label: 'Status' }, { label: 'Amount', align: 'right' }, { label: 'Date', align: 'right' }]}
+        cols={[{ label: 'Ref' }, { label: 'Shop' }, { label: 'Customer' }, { label: 'Service' }, { label: 'Status' }, { label: 'Amount', align: 'right' }, { label: 'Date', align: 'right' }]}
         empty={displayed.length === 0 ? 'No orders found' : null}
       >
         {displayed.map(o => (
-          <TR key={o.id}>
+          <TR key={o.id} onClick={() => setSelectedOrder(o)} className="cursor-pointer">
             <TD><span className="font-mono text-xs text-gray-500">LBG-{o.id.substring(0, 8).toUpperCase()}</span></TD>
             <TD><span className="text-gray-800">{o.shopName ?? '—'}</span></TD>
+            <TD><span className="text-gray-600 text-xs">{o.customerName ?? '—'}</span></TD>
             <TD><span className="text-gray-500 text-xs">{o.serviceType ?? '—'}</span></TD>
             <TD>
-              <select value={o.status} disabled={busy === o.id} onChange={e => handleStatus(o.id, e.target.value)}
-                className="text-xs border border-[#e5e7eb] rounded-lg px-2 py-1 bg-white outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 cursor-pointer"
-              >
-                {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-              </select>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_PILL[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                {STATUS_LABEL[o.status] ?? o.status}
+              </span>
             </TD>
             <TD align="right"><span className="font-medium text-gray-800">₱{(o.finalPrice ?? o.estimatedPrice ?? 0).toLocaleString()}</span></TD>
             <TD align="right"><span className="text-gray-500 text-xs">{fmtDate(o.createdAt)}</span></TD>
@@ -1369,7 +1549,7 @@ export default function AdminDashboard() {
         <main className="flex-1 p-8 space-y-6">
           {activeTab === 'Overview'  && <OverviewTab  orders={orders} users={users} shops={shops} onNavigate={setActiveTab} />}
           {activeTab === 'Users'     && <UsersTab     users={users} />}
-          {activeTab === 'Orders'    && <OrdersTab    orders={orders} />}
+          {activeTab === 'Orders'    && <OrdersTab    orders={orders} users={users} />}
           {activeTab === 'Shops'     && <ShopsTab     shops={shops} users={users} orders={orders} />}
           {activeTab === 'Riders'    && <RidersTab    users={users} orders={orders} />}
           {activeTab === 'Analytics' && <AnalyticsTab orders={orders} users={users} />}
