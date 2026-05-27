@@ -820,7 +820,7 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-1">Default rate</p>
                 <p className="text-[11px] text-gray-400 mb-2">Applies to any service without a custom rate</p>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Per kg</p>
                     <div className="relative">
@@ -1220,7 +1220,7 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
             <div className="p-6 space-y-2">
               {(shopForm.servicePricing ?? []).map((svc, i) => (
                 <div key={i} className="flex gap-2 items-start">
-                  <div className="flex-1 grid grid-cols-3 gap-2">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       value={svc.name}
                       onChange={e => field('servicePricing', (shopForm.servicePricing ?? []).map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
@@ -1946,7 +1946,7 @@ function EarningsTab({ orders }) {
       <h2 className="font-heading font-bold text-[17px] text-gray-900">Earnings</h2>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {EARNING_STATS.map(stat => (
           <div key={stat.label} className="bg-white rounded-2xl border border-[#e5e7eb] px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">{stat.label}</p>
@@ -2082,6 +2082,7 @@ export default function MerchantDashboard() {
   const [activeTab,     setActiveTab]     = useState('All')
   const [menuOpen,      setMenuOpen]      = useState(false)
   const [notifOpen,     setNotifOpen]     = useState(false)
+  const [sidebarOpen,   setSidebarOpen]   = useState(false)
   const [shopForm,      setShopForm]      = useState(null)
   const [isSaving,      setIsSaving]      = useState(false)
   const [saveSuccess,   setSaveSuccess]   = useState(false)
@@ -2286,8 +2287,13 @@ export default function MerchantDashboard() {
   return (
     <div className="flex h-screen bg-[#EDF1F7] overflow-hidden">
 
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-10 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20">
+      <aside className={`fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20 transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
 
         {/* Logo */}
         <div className="px-5 pt-6 pb-5">
@@ -2319,7 +2325,7 @@ export default function MerchantDashboard() {
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
-              onClick={() => setActiveNav(item.id)}
+              onClick={() => { setActiveNav(item.id); setSidebarOpen(false) }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                 activeNav === item.id
                   ? 'bg-white text-[#0A2540] font-semibold shadow-sm'
@@ -2336,11 +2342,18 @@ export default function MerchantDashboard() {
       </aside>
 
       {/* ── Main ────────────────────────────────────────────────────────── */}
-      <div className="ml-[240px] flex-1 flex flex-col overflow-y-auto">
+      <div className="ml-0 md:ml-[240px] flex-1 flex flex-col overflow-y-auto">
 
         {/* Top banner — greeting + stats */}
-        <div className="bg-[#0A2540] px-8 pt-7 pb-7 shrink-0">
-          <div className="flex items-start justify-between mb-7">
+        <div className="bg-[#0A2540] px-4 md:px-8 pt-5 md:pt-7 pb-5 md:pb-7 shrink-0">
+          <div className="flex items-start justify-between mb-5 md:mb-7">
+            {/* Mobile hamburger */}
+            <button onClick={() => setSidebarOpen(o => !o)} className="md:hidden w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors shrink-0 mr-3 self-center">
+              <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-start justify-between flex-1">
             <div>
               <p className="text-white/40 text-xs font-medium mb-1 tracking-wide">
                 {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
@@ -2464,10 +2477,11 @@ export default function MerchantDashboard() {
                 )}
               </div>
             </div>
+            </div>{/* end flex-1 inner wrapper */}
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {STATS.map((stat, i) => (
               <div
                 key={stat.label}
@@ -2483,7 +2497,7 @@ export default function MerchantDashboard() {
           </div>
         </div>
 
-        <main className="flex-1 p-8 space-y-6">
+        <main className="flex-1 p-4 md:p-8 space-y-6">
 
           {/* ── Dashboard tab ─────────────────────────────────────────── */}
           {activeNav === 'dashboard' && <>

@@ -1293,7 +1293,7 @@ function AnalyticsTab({ orders, users }) {
         <FilterPills options={['All Time', 'This Year', 'This Month', 'This Week']} active={dateFilter} onChange={setDateFilter} />
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
         {summaryStats.map(s => (
           <div key={s.label} className="bg-white rounded-2xl border border-[#e5e7eb] px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2">{s.label}</p>
@@ -1328,7 +1328,7 @@ function AnalyticsTab({ orders, users }) {
       </div>
 
       {/* Leaderboards + service breakdown */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
         {[
           { title: 'Top 5 Shops by Orders',      data: topShops,         color: '#0A2540', fmt: v => `${v} orders`,             empty: 'No orders yet'     },
           { title: 'Top 5 Riders by Deliveries', data: topRiders,        color: '#0EA5E9', fmt: v => `${v} deliveries`,         empty: 'No deliveries yet' },
@@ -1481,12 +1481,13 @@ export default function AdminDashboard() {
   const { user, userProfile } = useAuth()
   const menuRef         = useRef(null)
   const notifRef        = useRef(null)
-  const [activeTab,  setActiveTab]  = useState('Overview')
-  const [menuOpen,   setMenuOpen]   = useState(false)
-  const [notifOpen,  setNotifOpen]  = useState(false)
-  const [orders,     setOrders]     = useState([])
-  const [users,      setUsers]      = useState([])
-  const [shops,      setShops]      = useState([])
+  const [activeTab,    setActiveTab]    = useState('Overview')
+  const [menuOpen,     setMenuOpen]     = useState(false)
+  const [notifOpen,    setNotifOpen]    = useState(false)
+  const [sidebarOpen,  setSidebarOpen]  = useState(false)
+  const [orders,       setOrders]       = useState([])
+  const [users,        setUsers]        = useState([])
+  const [shops,        setShops]        = useState([])
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'orders'), snap => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
@@ -1529,8 +1530,16 @@ export default function AdminDashboard() {
   return (
     <div className="flex h-screen bg-[#EDF1F7] overflow-hidden">
 
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-10 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-      <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20">
+      <aside className={`fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20 transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="px-5 pt-6 pb-5">
           <button onClick={() => navigate('/')} className="cursor-pointer hover:opacity-85 transition-opacity focus:outline-none">
             <Logo />
@@ -1540,7 +1549,7 @@ export default function AdminDashboard() {
 
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {TABS.map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
+            <button key={tab} onClick={() => { setActiveTab(tab); setSidebarOpen(false) }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-left ${
                 activeTab === tab
                   ? 'bg-white text-[#0A2540] font-semibold shadow-sm'
@@ -1559,11 +1568,21 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ── Main ─────────────────────────────────────────────────────────── */}
-      <div className="ml-[240px] flex-1 flex flex-col overflow-y-auto">
+      <div className="ml-0 md:ml-[240px] flex-1 flex flex-col overflow-y-auto">
 
         {/* Top banner */}
-        <div className="bg-[#0A2540] px-8 pt-7 pb-7 shrink-0">
-          <div className="flex items-start justify-between mb-7">
+        <div className="bg-[#0A2540] px-4 md:px-8 pt-5 md:pt-7 pb-5 md:pb-7 shrink-0">
+          <div className="flex items-start justify-between mb-5 md:mb-7">
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setSidebarOpen(o => !o)}
+              className="md:hidden w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors shrink-0 mr-3 self-center"
+            >
+              <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-start justify-between flex-1">
             <div>
               <p className="text-white/40 text-xs font-medium mb-1 tracking-wide">
                 {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
@@ -1690,10 +1709,11 @@ export default function AdminDashboard() {
                 )}
               </div>
             </div>
+            </div>{/* end flex-1 wrapper */}
           </div>
 
           {/* Stat cards */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {STATS.map((stat, i) => (
               <div key={stat.label}
                 className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4 transition-all duration-200 hover:bg-white/[0.16] hover:border-white/30 hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 cursor-default"
@@ -1707,7 +1727,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab content */}
-        <main className="flex-1 p-8 space-y-6">
+        <main className="flex-1 p-4 md:p-8 space-y-6">
           {activeTab === 'Overview'  && <OverviewTab  orders={orders} users={users} shops={shops} onNavigate={setActiveTab} />}
           {activeTab === 'Users'     && <UsersTab     users={users} />}
           {activeTab === 'Orders'    && <OrdersTab    orders={orders} users={users} />}

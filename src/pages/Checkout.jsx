@@ -276,7 +276,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-8 py-10">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
 
         {/* Back link */}
         <button
@@ -296,7 +296,7 @@ export default function Checkout() {
           </p>
         </div>
 
-        <div className="flex gap-7 items-start">
+        <div className="flex flex-col md:flex-row gap-5 md:gap-7 items-start">
 
           {/* ── Left: step form ─────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 space-y-5">
@@ -349,7 +349,7 @@ export default function Checkout() {
                   }
                   title="Pickup schedule"
                 >
-                  <div className="grid grid-cols-2 gap-5 items-start">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
                     <div>
                       <CalendarPicker
                         label="Pickup date"
@@ -450,7 +450,7 @@ export default function Checkout() {
                   title="Laundry details"
                 >
                   <FieldLabel>Service type</FieldLabel>
-                  <div className="grid grid-cols-4 gap-3 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                     {SERVICE_TYPES.map(st => (
                       <button
                         key={st.id}
@@ -544,7 +544,7 @@ export default function Checkout() {
                   }
                   title="Payment method"
                 >
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {PAYMENT_METHODS.map(pm => (
                       <button
                         key={pm.id}
@@ -603,7 +603,7 @@ export default function Checkout() {
           </div>
 
           {/* ── Right: sticky price summary ────────────────────────────────── */}
-          <div className="w-80 shrink-0 sticky top-20 self-start">
+          <div className="w-full md:w-80 shrink-0 md:sticky md:top-20 md:self-start">
             <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
 
               <h2 className="font-heading font-bold text-lg text-gray-900 mb-5">

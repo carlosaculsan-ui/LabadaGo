@@ -56,6 +56,7 @@ export default function Browse() {
   )
   const [selectedShop, setSelectedShop] = useState(null)
   const [sortBy, setSortBy] = useState('all')
+  const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState(() => {
     const param = new URLSearchParams(location.search).get('service')
     const service = param && CHIPS.slice(1).includes(param) ? [param] : []
@@ -137,9 +138,9 @@ export default function Browse() {
         />
         <div className="absolute inset-0 bg-[#0D3F6B]/55" />
 
-        <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-20">
-          <div className="max-w-[55%]">
-            <h1 className="font-heading font-extrabold text-[4rem] leading-[1.0] tracking-tight text-white mb-5">
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-12 w-full pt-28 pb-14 md:pb-20">
+          <div className="max-w-full md:max-w-[55%]">
+            <h1 className="font-heading font-extrabold text-[2.5rem] md:text-[4rem] leading-[1.05] md:leading-[1.0] tracking-tight text-white mb-4 md:mb-5">
               Laundry picked up,{' '}
               <span className="text-[#F5A623]">washed, delivered.</span>
             </h1>
@@ -190,8 +191,8 @@ export default function Browse() {
             />
           ))}
         </div>
-        <div className="relative z-10 max-w-[1280px] mx-auto px-8">
-          <div className="grid grid-cols-5 gap-4">
+        <div className="relative z-10 max-w-[1280px] mx-auto px-4 md:px-8">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-4">
             <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
               <div className="w-11 h-11 rounded-xl bg-[#DBEAFE]/20 flex items-center justify-center mb-4">
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-5 h-5">
@@ -241,17 +242,53 @@ export default function Browse() {
         </div>
       </section>
 
+      {/* Mobile filter overlay */}
+      {showFilters && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
+          <div className="relative z-50 bg-white w-[280px] h-full overflow-y-auto flex flex-col">
+            <div className="px-4 py-4 flex items-center justify-between border-b border-[#e5e7eb] shrink-0">
+              <p className="font-heading font-semibold text-gray-900">Filters</p>
+              <button onClick={() => setShowFilters(false)} className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <FilterSidebar
+              services={filters.services}
+              onServicesChange={services => setFilters(f => ({ ...f, services }))}
+              onFilterChange={setFilters}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Body */}
-      <div className="max-w-[1280px] mx-auto px-8 py-8 flex gap-8">
-        <FilterSidebar
-          services={filters.services}
-          onServicesChange={services => setFilters(f => ({ ...f, services }))}
-          onFilterChange={setFilters}
-        />
+      <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8 flex gap-8">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block">
+          <FilterSidebar
+            services={filters.services}
+            onServicesChange={services => setFilters(f => ({ ...f, services }))}
+            onFilterChange={setFilters}
+          />
+        </div>
 
         <div className="flex-1 min-w-0">
+          {/* Mobile: filter button */}
+          <div className="flex items-center gap-3 mb-4 md:hidden">
+            <button
+              onClick={() => setShowFilters(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#e5e7eb] text-sm font-medium text-gray-700 bg-white hover:border-[#1B6CA8] hover:text-[#1B6CA8] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>
+              Filters
+              {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#1B6CA8] shrink-0" />}
+            </button>
+            {!loading && <span className="text-sm text-gray-500">{displayed.length} shop{displayed.length !== 1 ? 's' : ''}</span>}
+          </div>
+
           {/* Sort + count bar */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-5 md:mb-6 flex-wrap">
             <span className="text-sm text-gray-600 mr-1">Sort by</span>
             {SORT_OPTIONS.map(opt => (
               <button
@@ -277,7 +314,7 @@ export default function Browse() {
                     Clear filters ×
                   </button>
                 )}
-                <span className="text-sm text-gray-600">
+                <span className="hidden md:inline text-sm text-gray-600">
                   {displayed.length} shop{displayed.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -285,13 +322,13 @@ export default function Browse() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 md:gap-5">
               <ShopSkeleton />
               <ShopSkeleton />
               <ShopSkeleton />
             </div>
           ) : displayed.length > 0 ? (
-            <div className="grid grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 md:gap-5">
               {displayed.map(shop => (
                 <ShopCard key={shop.id} {...shop} onSelect={() => setSelectedShop(shop)} />
               ))}

@@ -75,7 +75,7 @@ export default function Partner() {
           ))}
         </div>
 
-        <div className="relative z-10 max-w-[1280px] mx-auto px-8 flex items-center gap-16">
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-8 flex flex-col md:flex-row items-center gap-10 md:gap-16">
 
           {/* Text */}
           <div className="flex-1 min-w-0">
@@ -89,7 +89,7 @@ export default function Partner() {
           </div>
 
           {/* Collage of 4 overlapping images */}
-          <div className="relative shrink-0 w-[540px] h-[290px]">
+          <div className="relative shrink-0 hidden md:block w-[540px] h-[290px]">
             {/* top-left, large, tilted left */}
             <div className="absolute w-[255px] h-[172px] rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl" style={{ left: 4, top: 4, transform: 'rotate(-5deg)', zIndex: 10 }}>
               <img src="/Image1.jpg" className="w-full h-full object-cover" alt="" />
@@ -112,7 +112,7 @@ export default function Partner() {
 
       {/* Role cards */}
       <section className="bg-[#F4F7FA] py-20">
-        <div className="max-w-[1280px] mx-auto px-8">
+        <div className="max-w-[1280px] mx-auto px-6 md:px-8">
 
           <div className="text-center mb-14">
             <h2 className="font-heading font-bold text-[1.75rem] text-gray-900 mb-3">Choose your role</h2>
@@ -121,7 +121,7 @@ export default function Partner() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Merchant */}
             <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden shadow-sm flex flex-col">

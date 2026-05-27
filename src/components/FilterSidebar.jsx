@@ -41,8 +41,8 @@ export default function FilterSidebar({ onFilterChange, services, onServicesChan
   }
 
   return (
-    <aside className="w-60 shrink-0 self-start sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
-      <div className="py-6 pr-5 space-y-7">
+    <aside className="w-60 shrink-0 self-start md:sticky md:top-16 md:h-[calc(100vh-4rem)] overflow-y-auto">
+      <div className="py-4 px-4 md:py-6 md:pr-5 md:px-0 space-y-7">
 
         <div>
           <SectionLabel>Distance</SectionLabel>

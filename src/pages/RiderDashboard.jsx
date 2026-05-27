@@ -588,7 +588,7 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
           <div className="divide-y divide-[#e5e7eb]">
             {availableOrders.map(order => (
               <div key={order.id} className="flex items-center gap-5 px-6 py-4">
-                <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 items-center">
+                <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Order</p>
                     <p className="font-heading font-bold text-[13px] text-gray-900">LBG-{order.id.substring(0, 8).toUpperCase()}</p>
@@ -713,7 +713,7 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
                   <StatusTimeline status={order.status} />
 
                   {/* Details grid */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-1">Customer</p>
                       <div className="flex items-center gap-2">
@@ -772,7 +772,7 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
 
           return (
             <div key={order.id} className="bg-white rounded-2xl border border-[#e5e7eb] flex items-center gap-5 px-6 py-4">
-              <div className="flex-1 min-w-0 grid grid-cols-5 gap-4 items-center">
+              <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
                 <div>
                   <p className="font-heading font-bold text-[13px] text-gray-900">{ref}</p>
                   <p className="text-[11px] text-gray-400 mt-0.5">{fmtDate(order.createdAt)}</p>
@@ -843,7 +843,7 @@ function EarningsTab({ orders }) {
       <h2 className="font-heading font-bold text-[17px] text-gray-900">Earnings</h2>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {SUMMARY.map(s => (
           <div key={s.label} className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
             <div className={`w-2 h-2 rounded-full ${s.accent} mb-3`} />
@@ -1247,7 +1247,7 @@ function ProfileTab({ user, userProfile, refreshProfile }) {
             <div className="px-6 py-4 border-b border-[#e5e7eb]">
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">Vehicle Information</h3>
             </div>
-            <div className="p-6 grid grid-cols-3 gap-4">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Vehicle Type</p>
                 <select
@@ -1419,6 +1419,7 @@ export default function RiderDashboard() {
   const [isAvailable,     setIsAvailable]     = useState(true)
   const [activeNav,       setActiveNav]       = useState('dashboard')
   const [menuOpen,        setMenuOpen]        = useState(false)
+  const [sidebarOpen,     setSidebarOpen]     = useState(false)
   const [mapOrder,        setMapOrder]        = useState(null)
   const menuRef = useRef(null)
 
@@ -1528,7 +1529,10 @@ export default function RiderDashboard() {
     <div className="flex h-screen bg-[#EDF1F7] overflow-hidden">
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20">
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-10 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+      <aside className={`fixed top-0 left-0 h-screen w-[240px] bg-[#0A2540] flex flex-col z-20 transform transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
 
         <div className="px-5 pt-6 pb-5">
           <button onClick={() => navigate('/')} className="cursor-pointer hover:opacity-85 transition-opacity focus:outline-none">
@@ -1554,7 +1558,7 @@ export default function RiderDashboard() {
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
-              onClick={() => setActiveNav(item.id)}
+              onClick={() => { setActiveNav(item.id); setSidebarOpen(false) }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                 activeNav === item.id
                   ? 'bg-white text-[#0A2540] font-semibold shadow-sm'
@@ -1570,11 +1574,18 @@ export default function RiderDashboard() {
       </aside>
 
       {/* ── Main area ───────────────────────────────────────────────────── */}
-      <div className="ml-[240px] flex-1 flex flex-col overflow-y-auto">
+      <div className="ml-0 md:ml-[240px] flex-1 flex flex-col overflow-y-auto">
 
         {/* Top banner */}
-        <div className="bg-[#0A2540] px-8 pt-7 pb-7 shrink-0">
-          <div className="flex items-start justify-between mb-7">
+        <div className="bg-[#0A2540] px-4 md:px-8 pt-5 md:pt-7 pb-5 md:pb-7 shrink-0">
+          <div className="flex items-start justify-between mb-5 md:mb-7">
+            {/* Mobile hamburger */}
+            <button onClick={() => setSidebarOpen(o => !o)} className="md:hidden w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors shrink-0 mr-3 self-center">
+              <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-start justify-between flex-1">
             <div>
               <p className="text-white/40 text-xs font-medium mb-1 tracking-wide">
                 {new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
@@ -1642,9 +1653,10 @@ export default function RiderDashboard() {
                 )}
               </div>
             </div>
+            </div>{/* end flex-1 inner wrapper */}
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {STATS.map((stat, i) => (
               <div
                 key={stat.label}
@@ -1658,7 +1670,7 @@ export default function RiderDashboard() {
           </div>
         </div>
 
-        <main className="flex-1 p-8 space-y-6">
+        <main className="flex-1 p-4 md:p-8 space-y-6">
 
           {/* ── Dashboard tab ─────────────────────────────────────────── */}
           {activeNav === 'dashboard' && <>
@@ -1690,7 +1702,7 @@ export default function RiderDashboard() {
                     <div className="mb-6">
                       <StatusTimeline status={activeTask.status} />
                     </div>
-                    <div className="grid grid-cols-2 gap-6 mb-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
                       <div className="space-y-4">
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-1">Order ID</p>
@@ -1801,7 +1813,7 @@ export default function RiderDashboard() {
                 <div className="space-y-3">
                   {availableOrders.map(order => (
                     <div key={order.id} className="flex items-center gap-5 border border-[#e5e7eb] rounded-xl p-4 hover:border-[#1B6CA8]/40 transition-colors">
-                      <div className="flex-1 min-w-0 grid grid-cols-4 gap-4 items-center">
+                      <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Order</p>
                           <p className="font-heading font-bold text-[14px] text-gray-900">LBG-{order.id.substring(0, 8).toUpperCase()}</p>

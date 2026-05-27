@@ -252,7 +252,7 @@ export default function Home() {
     <>
       {/* ── Active order banner ─────────────────────────────────────────────── */}
       {isLoggedIn && userDataLoaded && activeOrderCount > 0 && (
-        <div className="w-full bg-[#1B6CA8] px-8 py-2.5 flex items-center justify-center gap-2">
+        <div className="w-full bg-[#1B6CA8] px-4 md:px-8 py-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
           <span className="text-white text-sm">
             👋 Welcome back, {firstName}! You have{' '}
             <span className="font-semibold">{activeOrderCount}</span>{' '}
@@ -281,21 +281,21 @@ export default function Home() {
         <div className="absolute inset-0 bg-[#0D3F6B]/55" />
 
         {/* Content */}
-        <div className="relative z-10 max-w-[1280px] mx-auto px-12 w-full pt-28 pb-24">
-          <div className="max-w-[55%]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623] mb-5">
+        <div className="relative z-10 max-w-[1280px] mx-auto px-6 md:px-12 w-full pt-28 pb-16 md:pb-24">
+          <div className="max-w-full md:max-w-[55%]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623] mb-4 md:mb-5">
               {isLoggedIn && firstName ? `Welcome back, ${firstName}!` : 'Your neighborhood laundry service'}
             </p>
-            <h1 className="font-heading font-bold text-[5rem] leading-[1.0] tracking-tight text-white mb-6">
+            <h1 className="font-heading font-bold text-[2.8rem] md:text-[5rem] leading-[1.05] md:leading-[1.0] tracking-tight text-white mb-5 md:mb-6">
               Laundry picked up,<br />
               <span className="text-[#F5A623]">washed, delivered.</span>
             </h1>
-            <p className="text-white/70 text-[1.1rem] leading-relaxed mb-6">
+            <p className="text-white/70 text-base md:text-[1.1rem] leading-relaxed mb-5 md:mb-6">
               Connecting you with verified local laundry shops in your neighborhood. Pickup, wash, fold, and deliver — all in one place.
             </p>
 
             {/* Pricing comparison hook */}
-            <div className="flex items-center gap-3 mb-10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-7 md:mb-10">
               <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2">
                 <span className="text-[#F5A623] font-bold text-sm">From ₱50/kg</span>
                 <span className="text-white/50 text-xs">· door-to-door</span>
@@ -303,20 +303,19 @@ export default function Home() {
               <span className="text-white/30 text-xs font-semibold uppercase tracking-wider">vs.</span>
               <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-4 py-2">
                 <span className="text-white/35 text-xs line-through">2-hr laundromat trip</span>
-                <span className="text-white/25 text-xs">+ jeepney + heavy bags</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <button
                 onClick={() => navigate('/browse')}
-                className="bg-[#F5A623] text-[#0D3F6B] font-bold px-10 py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base"
+                className="bg-[#F5A623] text-[#0D3F6B] font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base w-full sm:w-auto"
               >
                 Browse shops
               </button>
               <button
                 onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
-                className="border-2 border-white/60 text-white font-semibold px-10 py-4 rounded-xl hover:bg-white/10 transition-colors text-base"
+                className="border-2 border-white/60 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-xl hover:bg-white/10 transition-colors text-base w-full sm:w-auto"
               >
                 Book a pickup
               </button>
@@ -352,8 +351,8 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="relative z-10 max-w-[1280px] mx-auto px-8">
-          <div className={`grid gap-4 ${showPersonalStat ? 'xl:grid-cols-6 grid-cols-5' : 'grid-cols-5'}`}>
+        <div className="relative z-10 max-w-[1280px] mx-auto px-4 md:px-8">
+          <div className={`grid gap-3 md:gap-4 ${showPersonalStat ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-6' : 'grid-cols-2 md:grid-cols-5'}`}>
 
             <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-6 flex flex-col items-center text-center hover:bg-white/20 hover:-translate-y-1 transition-all duration-200 cursor-default backdrop-blur-sm">
               <div className="w-11 h-11 rounded-xl bg-[#DBEAFE]/20 flex items-center justify-center mb-4">
@@ -422,9 +421,9 @@ export default function Home() {
       </section>
 
       {/* ── Nearby shops ──────────────────────────────────────────────────────── */}
-      <section id="nearby-shops" className="bg-white py-14">
-        <div className="max-w-[1280px] mx-auto px-8">
-          <div className="flex items-start justify-between mb-7">
+      <section id="nearby-shops" className="bg-white py-10 md:py-14">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8">
+          <div className="flex items-start justify-between mb-5 md:mb-7">
             <div>
               <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
                 {selectedCity === 'All' ? 'Shops near you' : `Shops in ${selectedCity}`}
@@ -454,7 +453,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
             {shopsLoading ? (
               <>
                 <ShopSkeleton />
@@ -472,10 +471,10 @@ export default function Home() {
       </section>
 
       {/* ── Trust / verification ─────────────────────────────────────────────── */}
-      <section className="bg-white border-y border-[#e5e7eb] py-9">
-        <div className="max-w-[1280px] mx-auto px-8">
-          <div className="flex items-center gap-10">
-            <div className="shrink-0 min-w-[160px]">
+      <section className="bg-white border-y border-[#e5e7eb] py-8 md:py-9">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:gap-10">
+            <div className="shrink-0 md:min-w-[160px]">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#1B6CA8] mb-1">
                 LabadaGo verified
               </p>
@@ -483,8 +482,8 @@ export default function Home() {
                 What it takes to list on our platform
               </p>
             </div>
-            <div className="w-px self-stretch bg-[#e5e7eb] shrink-0" />
-            <div className="flex items-start gap-8 flex-1">
+            <div className="hidden md:block w-px self-stretch bg-[#e5e7eb] shrink-0" />
+            <div className="grid grid-cols-2 gap-4 md:flex md:items-start md:gap-8 md:flex-1">
               {[
                 { title: 'On-site inspection',       desc: 'Every shop is physically visited and assessed before being approved.' },
                 { title: 'Valid business permit',     desc: 'Shops must hold a current DTI or city-issued business permit.'       },
@@ -509,10 +508,10 @@ export default function Home() {
       </section>
 
       {/* ── How it works ──────────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="bg-[#F4F7FA] py-16">
-        <div className="max-w-[1280px] mx-auto px-8">
+      <section id="how-it-works" className="bg-[#F4F7FA] py-12 md:py-16">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8">
 
-          <div className="text-center mb-14">
+          <div className="text-center mb-8 md:mb-14">
             <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
               {isLoggedIn ? "Your laundry journey" : "How LabadaGo works"}
             </h2>
@@ -523,8 +522,8 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative grid grid-cols-4 gap-6 pt-4">
-            <div className="absolute top-[18px] left-[12.5%] right-[12.5%] border-t-2 border-[#94A3B8] pointer-events-none z-0" />
+          <div className="relative grid grid-cols-2 gap-4 pt-8 md:grid-cols-4 md:gap-6 md:pt-4">
+            <div className="hidden md:block absolute top-[18px] left-[12.5%] right-[12.5%] border-t-2 border-[#94A3B8] pointer-events-none z-0" />
 
             {HOW_STEPS.map(step => (
               <div key={step.num} className="group relative z-10 bg-white rounded-2xl p-6 pt-10 flex flex-col items-center text-center shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200">
@@ -565,15 +564,15 @@ export default function Home() {
       </section>
 
       {/* ── Testimonials ─────────────────────────────────────────────────────── */}
-      <section id="testimonials" className="bg-white py-16">
-        <div className="max-w-[1280px] mx-auto px-8">
+      <section id="testimonials" className="bg-white py-12 md:py-16">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8">
 
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 md:mb-12">
             <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">What our customers say</h2>
             <p className="text-sm text-gray-500 mt-2">Trusted by hundreds of households across the Philippines.</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
             {TESTIMONIALS.map(t => (
               <div key={t.name} className="bg-[#F4F7FA] rounded-2xl p-6 flex flex-col gap-4">
                 <div className="flex items-center gap-1">
@@ -601,8 +600,8 @@ export default function Home() {
       </section>
 
       {/* ── Partner with us (teaser) ────────────────────────────────────── */}
-      <section className="bg-[#F4F7FA] py-20">
-        <div className="max-w-[1280px] mx-auto px-8 flex items-center gap-16">
+      <section className="bg-[#F4F7FA] py-14 md:py-20">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8 flex flex-col gap-8 md:flex-row md:items-center md:gap-16">
 
           {/* Left: text */}
           <div className="flex-1 min-w-0">
@@ -624,8 +623,8 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Right: collage of 4 overlapping images */}
-          <div className="relative shrink-0 w-[500px] h-[270px]">
+          {/* Right: collage of 4 overlapping images — hidden on mobile */}
+          <div className="hidden md:block relative shrink-0 w-[500px] h-[270px]">
             {/* top-left, large, tilted left */}
             <div className="absolute w-[235px] h-[158px] rounded-2xl overflow-hidden border-4 border-white shadow-lg" style={{ left: 4, top: 4, transform: 'rotate(-5deg)', zIndex: 10 }}>
               <img src="/Image1.jpg" className="w-full h-full object-cover" alt="" />
@@ -647,9 +646,9 @@ export default function Home() {
         </div>
       </section>
       {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      <section className="bg-[#F4F7FA] py-14">
-        <div className="max-w-[1280px] mx-auto px-8">
-          <div className="text-center mb-10">
+      <section className="bg-[#F4F7FA] py-10 md:py-14">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8">
+          <div className="text-center mb-6 md:mb-10">
             <h2 className="font-heading font-bold text-[1.6rem] text-gray-900">
               Frequently asked questions
             </h2>
@@ -657,7 +656,7 @@ export default function Home() {
               Everything you need to know before your first pickup.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
             {[FAQ_ITEMS.slice(0, 3), FAQ_ITEMS.slice(3)].map((half, col) => (
               <div key={col} className="divide-y divide-[#e5e7eb] bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
                 {half.map((item, row) => {
@@ -692,24 +691,24 @@ export default function Home() {
       </section>
 
       {/* ── CTA Banner ───────────────────────────────────────────────────────── */}
-      <section className="bg-[#0D3F6B] py-16 border-b-4 border-[#F5A623]">
-        <div className="max-w-[1280px] mx-auto px-8 flex items-center justify-between gap-8">
+      <section className="bg-[#0D3F6B] py-12 md:py-16 border-b-4 border-[#F5A623]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between md:gap-8">
           <div>
-            <h2 className="font-heading font-bold text-[2rem] text-white leading-tight mb-2">
+            <h2 className="font-heading font-bold text-[1.6rem] md:text-[2rem] text-white leading-tight mb-2">
               Ready for fresh laundry<br />at your doorstep?
             </h2>
             <p className="text-white/60 text-sm">Book a pickup in under a minute. No contracts, no hassle.</p>
           </div>
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:shrink-0">
             <button
               onClick={() => navigate(isLoggedIn ? '/browse' : '/signin')}
-              className="bg-[#F5A623] text-[#0D3F6B] font-bold px-10 py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base whitespace-nowrap"
+              className="bg-[#F5A623] text-[#0D3F6B] font-bold px-8 md:px-10 py-3.5 md:py-4 rounded-xl hover:bg-[#e89b15] transition-colors text-base whitespace-nowrap w-full sm:w-auto"
             >
               Book a pickup
             </button>
             <button
               onClick={() => navigate('/browse')}
-              className="border-2 border-white/40 text-white font-semibold px-10 py-4 rounded-xl hover:bg-white/10 transition-colors text-base whitespace-nowrap"
+              className="border-2 border-white/40 text-white font-semibold px-8 md:px-10 py-3.5 md:py-4 rounded-xl hover:bg-white/10 transition-colors text-base whitespace-nowrap w-full sm:w-auto"
             >
               Browse shops
             </button>

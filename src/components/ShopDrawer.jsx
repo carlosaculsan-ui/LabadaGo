@@ -47,7 +47,7 @@ export default function ShopDrawer({ shop, onClose }) {
       {/* Drawer */}
       <div
         className={[
-          'fixed right-0 top-0 h-full w-[500px] bg-white z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out',
+          'fixed right-0 top-0 h-full w-full md:w-[500px] bg-white z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out',
           shop ? 'translate-x-0' : 'translate-x-full',
         ].join(' ')}
       >
@@ -260,7 +260,7 @@ export default function ShopDrawer({ shop, onClose }) {
 
             {/* Demo modal */}
             {showDemo && (
-              <div className="fixed right-0 top-0 h-full w-[500px] z-[60] flex items-center justify-center bg-black/40 px-6" onClick={() => setShowDemo(false)}>
+              <div className="fixed right-0 top-0 h-full w-full md:w-[500px] z-[60] flex items-center justify-center bg-black/40 px-6" onClick={() => setShowDemo(false)}>
                 <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-xs" onClick={e => e.stopPropagation()}>
                   <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
                     <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" className="w-6 h-6">

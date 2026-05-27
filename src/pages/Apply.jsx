@@ -250,7 +250,7 @@ export default function Apply() {
     <div className="min-h-screen bg-[#F4F7FA] flex">
 
       {/* Left sidebar — step tracker */}
-      <aside className="w-72 shrink-0 bg-[#0A3358] min-h-screen px-8 py-12 flex flex-col">
+      <aside className="hidden md:flex w-72 shrink-0 bg-[#0A3358] min-h-screen px-8 py-12 flex-col">
         <div className="mb-10">
           <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isMerchant ? 'text-[#F5A623]' : 'text-emerald-400'}`}>
             {isMerchant ? 'Merchant Application' : 'Rider Application'}
@@ -307,7 +307,7 @@ export default function Apply() {
       </aside>
 
       {/* Right — form content */}
-      <main className="flex-1 px-12 py-12 overflow-y-auto">
+      <main className="flex-1 px-4 md:px-12 py-6 md:py-12 overflow-y-auto">
         <div className="max-w-[560px]">
 
           <h2 className="font-heading font-bold text-2xl text-gray-900 mb-1">
@@ -320,7 +320,7 @@ export default function Apply() {
             {/* ── Step 1: Personal Info ── */}
             {step === 0 && (
               <>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label="First name *">
                     <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Juan" className={inputCls} />
                   </Field>
@@ -492,7 +492,7 @@ export default function Apply() {
                   <div className="space-y-2 mt-1">
                     {servicePricing.map((svc, i) => (
                       <div key={i} className="flex gap-2 items-start">
-                        <div className="flex-1 grid grid-cols-3 gap-2">
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                           <input
                             value={svc.name}
                             onChange={e => setServicePricing(prev => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}

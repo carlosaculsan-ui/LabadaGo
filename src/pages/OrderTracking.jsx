@@ -185,8 +185,8 @@ export default function OrderTracking() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FA]">
-      <div className="max-w-6xl mx-auto px-8 py-10">
-        <div className="flex gap-8 items-start">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
 
           {/* ── Left column ───────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 space-y-5">
@@ -308,7 +308,7 @@ export default function OrderTracking() {
               <h2 className="font-heading font-bold text-[16px] text-gray-900 mb-5">
                 Order details
               </h2>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-3">
                     Laundry details
@@ -419,7 +419,7 @@ export default function OrderTracking() {
           </div>
 
           {/* ── Right column ──────────────────────────────────────────────── */}
-          <div className="w-96 shrink-0 sticky top-20 self-start space-y-4">
+          <div className="w-full md:w-96 shrink-0 md:sticky md:top-20 md:self-start space-y-4">
 
             {/* Live tracking card */}
             <div className="min-h-[400px] rounded-xl border border-[#e5e7eb] bg-white flex flex-col items-center justify-center p-8 text-center">
