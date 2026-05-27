@@ -757,7 +757,7 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
         </div>
 
         {/* ── Right: Edit form ─────────────────────────────────────────── */}
-        <div className="flex-1 space-y-5">
+        <div className="flex-1 min-w-0 space-y-5">
 
           {/* Services */}
           <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
@@ -913,6 +913,12 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
 
   const stars = Math.round(shopRating ?? 0)
 
+  function fmt12(t) {
+    if (!t) return ''
+    const [h, m] = t.split(':').map(Number)
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="font-heading font-bold text-[17px] text-gray-900">My Shop Profile</h2>
@@ -1004,7 +1010,7 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
         </div>
 
         {/* ── Right: Edit form ─────────────────────────────────────────── */}
-        <div className="flex-1 space-y-5">
+        <div className="flex-1 min-w-0 space-y-5">
 
           {/* Shop Identity */}
           <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
@@ -1108,34 +1114,26 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
             </div>
           </div>
 
-          {/* Operating Hours */}
+          {/* Operating Hours — read-only summary; edit via Settings → Business Hours */}
           <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+            <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between">
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">Operating Hours</h3>
+              <span className="text-[11px] text-gray-400">Edit in Settings → Business Hours</span>
             </div>
-            <div className="p-6 space-y-2">
-              {(shopForm.hours ?? DEFAULT_SHOP_HOURS).map((h, i) => (
-                <div key={h.day} className="flex items-center gap-3 p-3 rounded-xl border border-[#e5e7eb] bg-[#FAFAFA]">
-                  <button
-                    type="button"
-                    onClick={() => field('hours', (shopForm.hours ?? DEFAULT_SHOP_HOURS).map((x, j) => j === i ? { ...x, open: !x.open } : x))}
-                    className={`w-10 h-5 rounded-full transition-colors shrink-0 ${h.open ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`}
-                  >
-                    <span className={`block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5 ${h.open ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
-                  <span className="text-sm text-gray-700 w-28 shrink-0">{h.day}</span>
-                  {h.open ? (
-                    <input
-                      value={h.time}
-                      onChange={e => field('hours', (shopForm.hours ?? DEFAULT_SHOP_HOURS).map((x, j) => j === i ? { ...x, time: e.target.value } : x))}
-                      placeholder="e.g. 7:00 AM – 6:00 PM"
-                      className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#e5e7eb] text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8] bg-white"
-                    />
-                  ) : (
-                    <span className="text-sm text-red-500 font-medium">Closed</span>
-                  )}
-                </div>
-              ))}
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
+                {DAYS_OF_WEEK.map(({ id, label }) => {
+                  const day = shopForm.businessHours?.[id] ?? { open: false, from: '08:00', to: '18:00' }
+                  return (
+                    <div key={id} className="flex items-center justify-between py-1 border-b border-[#f3f4f6]">
+                      <span className={`text-xs font-medium ${day.open ? 'text-gray-700' : 'text-gray-400'}`}>{label}</span>
+                      <span className={`text-xs ${day.open ? 'text-gray-600' : 'text-gray-400 italic'}`}>
+                        {day.open ? `${fmt12(day.from)} – ${fmt12(day.to)}` : 'Closed'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
