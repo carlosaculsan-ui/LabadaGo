@@ -119,8 +119,8 @@ function SearchInput({ value, onChange, placeholder }) {
 
 function TableWrap({ cols, empty, children }) {
   return (
-    <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-x-auto">
+      <table className="w-full min-w-[600px] text-sm">
         <thead>
           <tr className="border-b border-[#e5e7eb] bg-[#F9FAFB]">
             {cols.map(({ label, align = 'left' }) => (
@@ -709,7 +709,7 @@ function ShopDetailModal({ shop, owner, orderCount, onClose }) {
         {/* Image preview overlay */}
         {previewUrl && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
-            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} onError={() => { setPreviewUrl(null); window.open(previewUrl, '_blank', 'noopener,noreferrer') }} />
             <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -785,8 +785,8 @@ function ShopDetailModal({ shop, owner, orderCount, onClose }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-[#F4F7FB] rounded-xl p-4 space-y-2.5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Shop Contact</p>
-              <Row label="Phone"  value={shop.phone || '—'} />
-              <Row label="Email"  value={shop.email || '—'} />
+              <Row label="Phone"  value={shop.phone  || 'Not provided'} />
+              <Row label="Email"  value={shop.email  || 'Not provided'} />
               <Row label="GCash"  value={shop.gcash || '—'} />
               <Row label="Same-day" value={shop.isSameDay ? 'Yes' : 'No'} />
               <Row label="Featured" value={shop.featured ? 'Yes' : 'No'} />
@@ -991,7 +991,7 @@ function RiderDetailModal({ rider, deliveryCount, onClose }) {
         {/* Image preview overlay */}
         {previewUrl && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
-            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} onError={() => { setPreviewUrl(null); window.open(previewUrl, '_blank', 'noopener,noreferrer') }} />
             <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
