@@ -160,8 +160,15 @@ function FilterPills({ options, active, onChange }) {
   )
 }
 
-function TR({ children }) {
-  return <tr className="border-b border-[#e5e7eb] last:border-0 hover:bg-[#F9FAFB]">{children}</tr>
+function TR({ children, onClick, className }) {
+  return (
+    <tr
+      className={`border-b border-[#e5e7eb] last:border-0 hover:bg-[#F9FAFB] ${className ?? ''}`}
+      onClick={onClick}
+    >
+      {children}
+    </tr>
+  )
 }
 
 function TD({ children, align = 'left', className = '' }) {
@@ -182,7 +189,7 @@ function initials(name) {
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
-function OverviewTab({ orders, users, shops }) {
+function OverviewTab({ orders, users, shops, onNavigate }) {
   const pendingShops  = shops.filter(s => !s.approved && s.status !== 'suspended')
   const pendingRiders = users.filter(u => u.role === 'rider' && !u.status)
 
@@ -204,13 +211,13 @@ function OverviewTab({ orders, users, shops }) {
             {pendingShops.map(s => (
               <div key={s.id} className="flex items-center justify-between text-sm">
                 <span className="text-amber-700">Shop awaiting approval: <strong>{s.name}</strong></span>
-                <span className="text-amber-500 text-xs">Go to Shops tab →</span>
+                <button onClick={() => onNavigate('Shops')} className="text-amber-500 text-xs font-semibold hover:underline">Go to Shops tab →</button>
               </div>
             ))}
             {pendingRiders.map(r => (
               <div key={r.id} className="flex items-center justify-between text-sm">
                 <span className="text-amber-700">Rider pending review: <strong>{r.fullName ?? r.email}</strong></span>
-                <span className="text-amber-500 text-xs">Go to Riders tab →</span>
+                <button onClick={() => onNavigate('Riders')} className="text-amber-500 text-xs font-semibold hover:underline">Go to Riders tab →</button>
               </div>
             ))}
           </div>
@@ -218,13 +225,18 @@ function OverviewTab({ orders, users, shops }) {
       )}
 
       <div>
-        <p className="font-heading font-semibold text-gray-700 mb-3">Recent Orders</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-heading font-semibold text-gray-700">Recent Orders</p>
+          <button onClick={() => onNavigate('Orders')} className="text-xs font-semibold text-[#1B6CA8] hover:underline">
+            View all orders →
+          </button>
+        </div>
         <TableWrap
           cols={[{ label: 'Ref' }, { label: 'Shop' }, { label: 'Status' }, { label: 'Amount', align: 'right' }, { label: 'Date', align: 'right' }]}
           empty={recentOrders.length === 0 ? 'No orders yet' : null}
         >
           {recentOrders.map(o => (
-            <TR key={o.id}>
+            <TR key={o.id} onClick={() => onNavigate('Orders')} className="cursor-pointer hover:bg-gray-50 transition-colors">
               <TD><span className="font-mono text-xs text-gray-500">LBG-{o.id.substring(0, 8).toUpperCase()}</span></TD>
               <TD><span className="text-gray-800">{o.shopName ?? '—'}</span></TD>
               <TD>
@@ -1241,7 +1253,7 @@ export default function AdminDashboard() {
 
         {/* Tab content */}
         <main className="flex-1 p-8 space-y-6">
-          {activeTab === 'Overview'  && <OverviewTab  orders={orders} users={users} shops={shops} />}
+          {activeTab === 'Overview'  && <OverviewTab  orders={orders} users={users} shops={shops} onNavigate={setActiveTab} />}
           {activeTab === 'Users'     && <UsersTab     users={users} />}
           {activeTab === 'Orders'    && <OrdersTab    orders={orders} />}
           {activeTab === 'Shops'     && <ShopsTab     shops={shops} users={users} orders={orders} />}
