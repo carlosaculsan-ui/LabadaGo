@@ -1136,10 +1136,11 @@ function RidersTab({ users, orders }) {
       </FilterBar>
 
       <TableWrap
-        cols={[{ label: 'Rider' }, { label: 'Phone' }, { label: 'Available', align: 'center' }, { label: 'Deliveries', align: 'center' }, { label: 'Status', align: 'center' }, { label: 'Actions', align: 'right' }]}
+        cols={[{ label: 'Rider' }, { label: 'Phone' }, { label: 'Availability', align: 'center' }, { label: 'Deliveries', align: 'center' }, { label: 'Status', align: 'center' }, { label: 'Actions', align: 'right' }]}
         empty={displayed.length === 0 ? 'No riders found' : null}
       >
         {displayed.map(r => {
+          const isPending   = !r.status
           const isSuspended = r.status === 'suspended'
           return (
             <TR key={r.id}>
@@ -1163,8 +1164,12 @@ function RidersTab({ users, orders }) {
               </TD>
               <TD align="center"><span className="font-medium text-gray-700">{completedByRider[r.id] ?? 0}</span></TD>
               <TD align="center">
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${isSuspended ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
-                  {isSuspended ? 'Suspended' : 'Active'}
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                  isSuspended ? 'bg-red-100 text-red-600'
+                  : isPending  ? 'bg-amber-100 text-amber-700'
+                  :              'bg-green-100 text-green-700'
+                }`}>
+                  {isSuspended ? 'Suspended' : isPending ? 'Pending' : 'Active'}
                 </span>
               </TD>
               <TD align="right">
@@ -1175,12 +1180,21 @@ function RidersTab({ users, orders }) {
                   >
                     Details
                   </button>
-                  <button disabled={busy === r.id}
-                    onClick={() => setConfirm({ uid: r.id, status: isSuspended ? 'active' : 'suspended', label: isSuspended ? 'Activate' : 'Suspend', danger: !isSuspended, message: isSuspended ? `Reactivate rider ${r.fullName ?? r.email}?` : `Suspend rider ${r.fullName ?? r.email}?` })}
-                    className={['text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors', isSuspended ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
-                  >
-                    {isSuspended ? 'Activate' : 'Suspend'}
-                  </button>
+                  {isPending ? (
+                    <button disabled={busy === r.id}
+                      onClick={() => setConfirm({ uid: r.id, status: 'active', label: 'Approve', danger: false, message: `Approve rider ${r.fullName ?? r.email}? They will be able to receive delivery assignments.` })}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#1B6CA8]/40 bg-[#E8F4FD] text-[#1B6CA8] hover:bg-[#DBEAFE] transition-colors disabled:opacity-50"
+                    >
+                      Approve
+                    </button>
+                  ) : (
+                    <button disabled={busy === r.id}
+                      onClick={() => setConfirm({ uid: r.id, status: isSuspended ? 'active' : 'suspended', label: isSuspended ? 'Activate' : 'Suspend', danger: !isSuspended, message: isSuspended ? `Reactivate rider ${r.fullName ?? r.email}?` : `Suspend rider ${r.fullName ?? r.email}?` })}
+                      className={['text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50', isSuspended ? 'border-green-300 text-green-700 hover:bg-green-50' : 'border-red-300 text-red-600 hover:bg-red-50'].join(' ')}
+                    >
+                      {isSuspended ? 'Activate' : 'Suspend'}
+                    </button>
+                  )}
                 </div>
               </TD>
             </TR>
