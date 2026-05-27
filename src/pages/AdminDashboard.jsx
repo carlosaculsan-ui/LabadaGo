@@ -1480,8 +1480,10 @@ export default function AdminDashboard() {
   const navigate        = useNavigate()
   const { user, userProfile } = useAuth()
   const menuRef         = useRef(null)
+  const notifRef        = useRef(null)
   const [activeTab,  setActiveTab]  = useState('Overview')
   const [menuOpen,   setMenuOpen]   = useState(false)
+  const [notifOpen,  setNotifOpen]  = useState(false)
   const [orders,     setOrders]     = useState([])
   const [users,      setUsers]      = useState([])
   const [shops,      setShops]      = useState([])
@@ -1494,13 +1496,14 @@ export default function AdminDashboard() {
   }, [])
 
   useEffect(() => {
-    if (!menuOpen) return
+    if (!menuOpen && !notifOpen) return
     function onClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+      if (menuOpen  && menuRef.current  && !menuRef.current.contains(e.target))  setMenuOpen(false)
+      if (notifOpen && notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [menuOpen])
+  }, [menuOpen, notifOpen])
 
   async function handleLogout() {
     await signOut(auth)
@@ -1509,6 +1512,7 @@ export default function AdminDashboard() {
 
   const activeOrders   = orders.filter(o => ACTIVE_STATUSES.has(o.status))
   const pendingShops   = shops.filter(s => !s.approved && s.status !== 'suspended')
+  const pendingRiders  = users.filter(u => u.role === 'rider' && !u.status)
   const riders         = users.filter(u => u.role === 'rider')
 
   const STATS = [
@@ -1571,16 +1575,77 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center gap-3">
               {/* Bell */}
-              <div className="relative">
-                <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+              <div className="relative" ref={notifRef}>
+                <button onClick={() => setNotifOpen(o => !o)} className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
                   <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                   </svg>
                 </button>
-                {pendingShops.length > 0 && (
+                {(pendingShops.length + pendingRiders.length) > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F5A623] rounded-full text-[9px] font-bold text-[#0A2540] flex items-center justify-center">
-                    {pendingShops.length}
+                    {pendingShops.length + pendingRiders.length}
                   </span>
+                )}
+
+                {notifOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#e5e7eb] overflow-hidden z-50">
+                    <div className="px-4 py-3 border-b border-[#e5e7eb] flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-900">Pending Actions</p>
+                      <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                        {pendingShops.length + pendingRiders.length}
+                      </span>
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto">
+                      {pendingShops.length === 0 && pendingRiders.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">All caught up — nothing pending.</p>
+                      ) : (
+                        <div className="py-1">
+                          {pendingShops.map(s => (
+                            <button key={s.id} onClick={() => { setActiveTab('Shops'); setNotifOpen(false) }}
+                              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                            >
+                              <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                                <svg className="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-800 truncate">{s.name}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">Shop awaiting approval</p>
+                              </div>
+                            </button>
+                          ))}
+                          {pendingRiders.map(r => (
+                            <button key={r.id} onClick={() => { setActiveTab('Riders'); setNotifOpen(false) }}
+                              className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                            >
+                              <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center shrink-0 mt-0.5">
+                                <svg className="w-3.5 h-3.5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-800 truncate">{r.fullName ?? r.email}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">Rider pending review</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {(pendingShops.length > 0 || pendingRiders.length > 0) && (
+                      <div className="px-4 py-3 border-t border-[#e5e7eb] flex gap-4">
+                        {pendingShops.length > 0 && (
+                          <button onClick={() => { setActiveTab('Shops'); setNotifOpen(false) }}
+                            className="text-xs font-semibold text-[#1B6CA8] hover:underline"
+                          >View all shops →</button>
+                        )}
+                        {pendingRiders.length > 0 && (
+                          <button onClick={() => { setActiveTab('Riders'); setNotifOpen(false) }}
+                            className="text-xs font-semibold text-[#1B6CA8] hover:underline"
+                          >View all riders →</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
