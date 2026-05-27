@@ -1790,17 +1790,20 @@ export default function MerchantDashboard() {
   const [activeNav,     setActiveNav]     = useState('dashboard')
   const [activeTab,     setActiveTab]     = useState('All')
   const [menuOpen,      setMenuOpen]      = useState(false)
+  const [notifOpen,     setNotifOpen]     = useState(false)
   const [shopForm,      setShopForm]      = useState(null)
   const [isSaving,      setIsSaving]      = useState(false)
   const [saveSuccess,   setSaveSuccess]   = useState(false)
   const [photoUploading,setPhotoUploading]= useState(false)
   const [photoError,    setPhotoError]    = useState('')
   const menuRef         = useRef(null)
+  const notifRef        = useRef(null)
   const shopFormLoaded  = useRef(false)
 
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -2057,8 +2060,11 @@ export default function MerchantDashboard() {
             </div>
             <div className="flex items-center gap-3">
               {/* Bell */}
-              <div className="relative">
-                <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+              <div className="relative" ref={notifRef}>
+                <button
+                  onClick={() => setNotifOpen(o => !o)}
+                  className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors"
+                >
                   <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                   </svg>
@@ -2067,6 +2073,52 @@ export default function MerchantDashboard() {
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F5A623] rounded-full text-[9px] font-bold text-[#0A2540] flex items-center justify-center">
                     {pendingOrders.length}
                   </span>
+                )}
+
+                {notifOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-[#e5e7eb] overflow-hidden z-50">
+                    <div className="px-4 py-3 border-b border-[#e5e7eb] flex items-center justify-between">
+                      <p className="text-sm font-bold text-gray-900">Notifications</p>
+                      {pendingOrders.length > 0 && (
+                        <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                          {pendingOrders.length} pending
+                        </span>
+                      )}
+                    </div>
+                    {pendingOrders.length === 0 ? (
+                      <div className="px-4 py-6 text-center">
+                        <p className="text-sm text-gray-400">No new notifications</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="max-h-64 overflow-y-auto divide-y divide-[#f3f4f6]">
+                          {pendingOrders.map(order => (
+                            <div key={order.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="text-[12px] font-bold text-gray-900">New order from {order.customerName}</p>
+                                  <p className="text-[11px] text-gray-500 mt-0.5">
+                                    LBG-{order.id.substring(0, 8).toUpperCase()} · {order.serviceType ?? '—'} · {order.estimatedWeight} kg
+                                  </p>
+                                </div>
+                                <span className="text-[10px] text-amber-600 font-semibold whitespace-nowrap bg-amber-50 px-1.5 py-0.5 rounded-full shrink-0">
+                                  Pending
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="px-4 py-2.5 border-t border-[#e5e7eb]">
+                          <button
+                            onClick={() => { setNotifOpen(false); setActiveNav('orders') }}
+                            className="w-full text-xs font-semibold text-[#1B6CA8] hover:underline text-center py-0.5"
+                          >
+                            View all orders →
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
 
