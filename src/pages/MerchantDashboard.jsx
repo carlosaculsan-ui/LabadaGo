@@ -681,12 +681,29 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
     )
   }
 
+  const [previewService, setPreviewService] = useState(null)
+
   function field(key, value) {
     setShopForm(f => ({ ...f, [key]: value }))
   }
 
-  const condAdd       = shopForm.conditioner ? (shopForm.conditionerPrice ?? 0) : 0
-  const estimatedTotal = (5 * (shopForm.pricePerKg ?? 50)) + (shopForm.pickupFee ?? 49) + (shopForm.deliveryFee ?? 49) + condAdd
+  function setServicePrice(svc, val) {
+    setShopForm(f => {
+      const updated = { ...(f.pricesByService ?? {}) }
+      if (val === '') { delete updated[svc] } else { updated[svc] = +val }
+      return { ...f, pricesByService: updated }
+    })
+  }
+
+  const selectedServices  = shopForm.services ?? []
+  const effectivePreviewSvc = (previewService && selectedServices.includes(previewService))
+    ? previewService
+    : selectedServices[0] ?? null
+  const previewRate   = effectivePreviewSvc
+    ? ((shopForm.pricesByService ?? {})[effectivePreviewSvc] ?? (shopForm.pricePerKg ?? 50))
+    : (shopForm.pricePerKg ?? 50)
+  const condAdd        = shopForm.conditioner ? (shopForm.conditionerPrice ?? 0) : 0
+  const estimatedTotal = (5 * previewRate) + (shopForm.pickupFee ?? 49) + (shopForm.deliveryFee ?? 49) + condAdd
 
   return (
     <div className="space-y-6">
@@ -698,12 +715,32 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
         <div className="w-[240px] shrink-0 space-y-4">
 
           <div className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-4">Price Preview</p>
-            <p className="text-[11px] text-gray-400 mb-3">Estimated for a 5 kg order:</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-3">Price Preview</p>
+            {selectedServices.length > 1 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {selectedServices.map(svc => (
+                  <button
+                    key={svc}
+                    type="button"
+                    onClick={() => setPreviewService(svc)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold transition-colors leading-tight ${
+                      effectivePreviewSvc === svc
+                        ? 'bg-[#1B6CA8] text-white'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {svc}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] text-gray-400 mb-3">
+              Estimated for 5 kg{effectivePreviewSvc ? ` · ${effectivePreviewSvc}` : ''}:
+            </p>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-600">Laundry service</span>
-                <span className="text-xs font-semibold text-gray-800">₱{5 * (shopForm.pricePerKg ?? 50)}</span>
+                <span className="text-xs font-semibold text-gray-800">₱{5 * previewRate}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-600">Pickup fee</span>
@@ -779,36 +816,73 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
             <div className="px-6 py-4 border-b border-[#e5e7eb]">
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">Pricing</h3>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Price per kg</p>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
-                    <input type="number" min={1} value={shopForm.pricePerKg ?? 50}
-                      onChange={e => field('pricePerKg', +e.target.value)}
-                      className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+            <div className="p-6 space-y-5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-1">Default rate</p>
+                <p className="text-[11px] text-gray-400 mb-2">Applies to any service without a custom rate</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Per kg</p>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                      <input type="number" min={1} value={shopForm.pricePerKg ?? 50}
+                        onChange={e => field('pricePerKg', +e.target.value)}
+                        className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Pickup fee</p>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
-                    <input type="number" min={0} value={shopForm.pickupFee ?? 49}
-                      onChange={e => field('pickupFee', +e.target.value)}
-                      className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Pickup fee</p>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                      <input type="number" min={0} value={shopForm.pickupFee ?? 49}
+                        onChange={e => field('pickupFee', +e.target.value)}
+                        className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Delivery fee</p>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
-                    <input type="number" min={0} value={shopForm.deliveryFee ?? 49}
-                      onChange={e => field('deliveryFee', +e.target.value)}
-                      className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Delivery fee</p>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                      <input type="number" min={0} value={shopForm.deliveryFee ?? 49}
+                        onChange={e => field('deliveryFee', +e.target.value)}
+                        className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15" />
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {selectedServices.length > 0 && (
+                <div className="border-t border-[#e5e7eb] pt-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-1">Per-service rates</p>
+                  <p className="text-[11px] text-gray-400 mb-4">Set a custom rate per kg for each service. Leave blank to use the default above.</p>
+                  <div className="space-y-3">
+                    {selectedServices.map(svc => {
+                      const custom = (shopForm.pricesByService ?? {})[svc]
+                      return (
+                        <div key={svc} className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-gray-700 w-36 shrink-0">{svc}</span>
+                          <div className="relative w-28">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-400">₱</span>
+                            <input
+                              type="number"
+                              min={1}
+                              placeholder={String(shopForm.pricePerKg ?? 50)}
+                              value={custom ?? ''}
+                              onChange={e => setServicePrice(svc, e.target.value)}
+                              className="w-full pl-7 border border-[#e5e7eb] rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
+                            />
+                          </div>
+                          <span className="text-xs text-gray-400">/kg</span>
+                          {custom != null
+                            ? <span className="text-[10px] font-semibold bg-[#E8F4FD] text-[#1B6CA8] px-2 py-0.5 rounded-full">Custom</span>
+                            : <span className="text-[10px] text-gray-400">Uses default</span>
+                          }
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -2013,6 +2087,7 @@ export default function MerchantDashboard() {
               servicePricing:   data.servicePricing   ?? [],
               amenities:        data.amenities        ?? [],
               serviceRadius:    data.serviceRadius    ?? 10,
+              pricesByService:  data.pricesByService  ?? {},
               image:            data.image            ?? null,
             })
           }
