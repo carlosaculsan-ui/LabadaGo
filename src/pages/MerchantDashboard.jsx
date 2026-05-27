@@ -342,9 +342,26 @@ function OrderCard({ order }) {
             {order.detergent}
           </span>
         </div>
+        {order.pickupAddress?.street && (
+          <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1 leading-snug">
+            <svg className="w-3 h-3 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/>
+            </svg>
+            <span className="truncate max-w-[200px]">{order.pickupAddress.street}</span>
+          </p>
+        )}
+        {order.pickupTime && (
+          <p className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1">
+            <svg className="w-3 h-3 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="9"/><path strokeLinecap="round" d="M12 7v5l3 3"/>
+            </svg>
+            {order.pickupTime}{order.pickupDate ? ` · ${new Date(order.pickupDate).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}` : ''}
+          </p>
+        )}
         <button
           onClick={() => setShowDetails(true)}
-          className="text-xs text-[#1B6CA8] hover:underline font-medium"
+          className="text-xs text-[#1B6CA8] hover:underline font-medium mt-1"
         >
           View details
         </button>
