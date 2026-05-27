@@ -1135,10 +1135,10 @@ export default function AdminDashboard() {
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {TABS.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-left ${
                 activeTab === tab
                   ? 'bg-white text-[#0A2540] font-semibold shadow-sm'
-                  : 'text-white/50 hover:text-white hover:bg-white/8'
+                  : 'text-white/50 hover:text-white hover:bg-white/8 transition-colors duration-100'
               }`}
             >
               {TAB_ICONS[tab]}
