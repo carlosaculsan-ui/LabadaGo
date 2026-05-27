@@ -1395,6 +1395,7 @@ function SettingsTab() {
   const [loading, setLoading] = useState(true)
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
+  const [saveErr, setSaveErr] = useState(false)
 
   useEffect(() => {
     getDoc(doc(db, 'settings', 'platform'))
@@ -1403,9 +1404,17 @@ function SettingsTab() {
   }, [])
 
   async function handleSave() {
-    setSaving(true); setSaved(false)
-    try { await setDoc(doc(db, 'settings', 'platform'), form, { merge: true }); setSaved(true); setTimeout(() => setSaved(false), 3000) }
-    finally { setSaving(false) }
+    setSaving(true); setSaved(false); setSaveErr(false)
+    try {
+      await setDoc(doc(db, 'settings', 'platform'), form, { merge: true })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      setSaveErr(true)
+      setTimeout(() => setSaveErr(false), 4000)
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) return <div className="text-gray-400 text-sm py-10 text-center">Loading settings…</div>
@@ -1451,10 +1460,15 @@ function SettingsTab() {
       </div>
 
       <div className="flex items-center gap-4">
-        <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 rounded-xl bg-[#0A2540] text-white text-sm font-semibold hover:bg-[#0d3058] transition-colors disabled:opacity-60">
-          {saving ? 'Saving…' : 'Save Settings'}
+        <button onClick={handleSave} disabled={saving}
+          className={[
+            'px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60',
+            saved ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-[#0A2540] text-white hover:bg-[#0d3058]',
+          ].join(' ')}
+        >
+          {saving ? 'Saving…' : saved ? '✓ Settings saved' : 'Save Settings'}
         </button>
-        {saved && <span className="text-sm text-green-600 font-medium">Saved successfully</span>}
+        {saveErr && <span className="text-sm text-red-500 font-medium">Save failed — please try again.</span>}
       </div>
     </div>
   )
