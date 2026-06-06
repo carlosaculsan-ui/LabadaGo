@@ -459,13 +459,18 @@ export default function SignUp() {
         >
         <div className="w-full bg-[#0c2d54] border border-white/30 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] p-8">
 
+          <div className="mb-6">
+            <h2 className="text-white font-heading font-bold text-xl">Create your account</h2>
+            <p className="text-white/50 text-xs mt-0.5">Fill in your details to get started</p>
+          </div>
+
           <div className="space-y-4">
             {/* Row 1: Full name | Mobile number */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <FloatingInput
                   id="fullname"
-                  label="Full name"
+                  label="Full name *"
                   value={fullName}
                   error={fieldErrors.fullName}
                   onChange={e => { setFullName(e.target.value); setFieldErrors(f => ({ ...f, fullName: '' })) }}
@@ -498,7 +503,7 @@ export default function SignUp() {
                         mobile ? 'top-1.5 text-xs text-white' : 'top-[18px] text-sm text-white/50 peer-focus:top-1.5 peer-focus:text-xs peer-focus:text-white',
                       ].join(' ')}
                     >
-                      Mobile number
+                      Mobile number *
                     </label>
                   </div>
                 </div>
@@ -510,7 +515,7 @@ export default function SignUp() {
             <div>
               <FloatingInput
                 id="email"
-                label="Email address"
+                label="Email address *"
                 type="email"
                 value={email}
                 error={fieldErrors.email}
@@ -526,7 +531,7 @@ export default function SignUp() {
               <div>
                 <PasswordInput
                   id="password"
-                  label="Password"
+                  label="Password *"
                   value={password}
                   error={fieldErrors.password}
                   onChange={e => { setPassword(e.target.value); setFieldErrors(f => ({ ...f, password: '' })) }}
@@ -536,7 +541,7 @@ export default function SignUp() {
               <div>
                 <PasswordInput
                   id="confirm-password"
-                  label="Confirm password"
+                  label="Confirm password *"
                   value={confirmPassword}
                   error={fieldErrors.confirmPassword}
                   onChange={e => { setConfirmPassword(e.target.value); setFieldErrors(f => ({ ...f, confirmPassword: '' })) }}
