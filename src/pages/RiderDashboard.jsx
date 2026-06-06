@@ -945,7 +945,7 @@ function EarningsTab({ orders }) {
 
 // ─── ProfileTab ───────────────────────────────────────────────────────────────
 
-function ProfileTab({ user, userProfile, refreshProfile }) {
+function ProfileTab({ user, userProfile, refreshProfile, application }) {
   const formLoaded = useRef(false)
 
   const [form, setForm] = useState({
@@ -972,14 +972,6 @@ function ProfileTab({ user, userProfile, refreshProfile }) {
   const [pwSaving,    setPwSaving]    = useState(false)
   const [pwError,     setPwError]     = useState('')
   const [pwSuccess,   setPwSuccess]   = useState(false)
-  const [application, setApplication] = useState(null)
-
-  useEffect(() => {
-    getDoc(doc(db, 'applications', user.uid)).then(snap => {
-      if (snap.exists()) setApplication(snap.data())
-    })
-  }, [user.uid])
-
   useEffect(() => {
     if (userProfile && !formLoaded.current) {
       formLoaded.current = true
@@ -1501,7 +1493,15 @@ export default function RiderDashboard() {
   const [menuOpen,        setMenuOpen]        = useState(false)
   const [sidebarOpen,     setSidebarOpen]     = useState(false)
   const [mapOrder,        setMapOrder]        = useState(null)
+  const [application,     setApplication]     = useState(null)
   const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!user?.uid) return
+    getDoc(doc(db, 'applications', user.uid)).then(snap => {
+      if (snap.exists()) setApplication(snap.data())
+    })
+  }, [user?.uid])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -1632,6 +1632,27 @@ export default function RiderDashboard() {
               {isAvailable ? 'Available' : 'Off duty'}
             </span>
           </button>
+          {application && (
+            <button
+              onClick={() => setActiveNav('profile')}
+              className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 w-full text-left hover:opacity-80 transition-opacity"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                application.status === 'approved' ? 'bg-emerald-400' :
+                application.status === 'rejected' ? 'bg-red-400'     : 'bg-amber-400'
+              }`} />
+              <span className="text-[11px] text-white/50 leading-tight">
+                Application:{' '}
+                <span className={`font-semibold ${
+                  application.status === 'approved' ? 'text-emerald-400' :
+                  application.status === 'rejected' ? 'text-red-400'     : 'text-amber-400'
+                }`}>
+                  {application.status === 'approved' ? 'Approved' :
+                   application.status === 'rejected' ? 'Rejected' : 'Under Review'}
+                </span>
+              </span>
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
@@ -1998,6 +2019,7 @@ export default function RiderDashboard() {
               user={user}
               userProfile={userProfile}
               refreshProfile={refreshProfile}
+              application={application}
             />
           )}
 
