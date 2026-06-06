@@ -370,6 +370,7 @@ export default function SignUp() {
         isActive: true,
       })
 
+      localStorage.setItem('labadago_show_welcome', fullName)
       navigate('/browse', { replace: true })
     } catch (err) {
       setError(err.message)
@@ -393,6 +394,7 @@ export default function SignUp() {
           createdAt: serverTimestamp(),
           isActive: true,
         })
+        localStorage.setItem('labadago_show_welcome', user.displayName ?? 'there')
       }
       navigate('/browse', { replace: true })
     } catch (err) {

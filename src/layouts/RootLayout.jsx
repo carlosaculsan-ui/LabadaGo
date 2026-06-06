@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from '../components/Navbar'
+import WelcomeModal from '../components/WelcomeModal'
 
 const FOOTER_LINKS = {
   Company:  ['About us', 'Careers', 'Press'],
@@ -18,6 +19,7 @@ export default function RootLayout() {
   return (
     <>
       <Navbar />
+      <WelcomeModal />
       <main className="pt-[88px]">
         <Outlet />
       </main>
