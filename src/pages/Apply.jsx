@@ -321,34 +321,24 @@ export default function Apply() {
             {step === 0 && (
               <>
                 {!isMerchant && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
-                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-widest mb-2">Before you start</p>
-                    <p className="text-sm text-emerald-700 mb-3">Have the following ready before you reach Step 2:</p>
-                    <ul className="space-y-1.5">
-                      {[
-                        "Driver's License (front side — photo or scan)",
-                        "Any valid PH government ID",
-                        "Your vehicle's plate number",
-                      ].map(item => (
-                        <li key={item} className="flex items-start gap-2 text-sm text-emerald-700">
-                          <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                          {item}
-                        </li>
-                      ))}
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3.5">
+                    <p className="text-xs font-bold text-emerald-700 mb-1.5">Before you start</p>
+                    <p className="text-xs text-emerald-600 mb-1.5">Have these ready — you'll need to upload them in Step 2:</p>
+                    <ul className="space-y-1 text-xs text-emerald-600">
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />Driver's License (front side)</li>
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />Valid Government ID (any PH government ID)</li>
                     </ul>
                   </div>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label="First name *">
-                    <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Juan" className={inputCls} />
+                    <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Enter first name" className={inputCls} />
                   </Field>
                   <Field label="Middle initial">
-                    <input value={middleInitial} onChange={e => setMiddleInitial(e.target.value)} placeholder="D." maxLength={4} className={inputCls} />
+                    <input value={middleInitial} onChange={e => setMiddleInitial(e.target.value)} placeholder="Enter initial" maxLength={4} className={inputCls} />
                   </Field>
                   <Field label="Last name *">
-                    <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Dela Cruz" className={inputCls} />
+                    <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Enter last name" className={inputCls} />
                   </Field>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -356,18 +346,12 @@ export default function Apply() {
                     <input type="number" value={age} onChange={e => setAge(e.target.value)} placeholder="e.g. 25" min={18} max={80} className={inputCls} />
                   </Field>
                   <Field label="Sex *">
-                    <div className="flex gap-4 px-1 pt-2">
+                    <div className="flex gap-2">
                       {['Male', 'Female'].map(opt => (
-                        <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio" name="sex" value={opt} checked={sex === opt}
-                            onChange={() => setSex(opt)} className="hidden"
-                          />
-                          <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${sex === opt ? (isMerchant ? 'border-[#1B6CA8]' : 'border-emerald-500') : 'border-gray-300'}`}>
-                            {sex === opt && <span className={`w-2 h-2 rounded-full ${isMerchant ? 'bg-[#1B6CA8]' : 'bg-emerald-500'}`} />}
-                          </span>
-                          <span className="text-sm text-gray-700">{opt}</span>
-                        </label>
+                        <button key={opt} type="button" onClick={() => setSex(opt)}
+                          className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${sex === opt ? (isMerchant ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-emerald-500 bg-emerald-50 text-emerald-700') : 'border-[#e5e7eb] text-gray-600 hover:border-gray-300'}`}>
+                          {opt}
+                        </button>
                       ))}
                     </div>
                   </Field>
@@ -598,13 +582,13 @@ export default function Apply() {
                   <input type="tel" value={contact} onChange={e => setContact(e.target.value)} placeholder="e.g. 09171234567" className={inputCls} />
                 </Field>
                 <FileInput
-                  label="Driver's License"
+                  label="Driver's License *"
                   hint="Front side — required for verification"
                   accept=".pdf,.jpg,.jpeg,.png"
                   value={license} onChange={setLicense} isMerchant={false}
                 />
                 <FileInput
-                  label="Valid Government ID"
+                  label="Valid Government ID *"
                   hint="Any valid PH government ID"
                   accept=".pdf,.jpg,.jpeg,.png"
                   value={validId} onChange={setValidId} isMerchant={false}

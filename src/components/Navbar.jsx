@@ -247,11 +247,6 @@ export default function Navbar() {
             <a href="/#nearby-shops" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">Nearby shops</a>
             <a href="/#how-it-works" className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">How it works</a>
             <a href="/#testimonials"  className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">Reviews</a>
-            {(!role || role === 'customer') && (
-              <Link to="/partner" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
-                Partner with us
-              </Link>
-            )}
           </nav>
 
           {/* Auth area */}
@@ -413,9 +408,6 @@ export default function Navbar() {
             <a href="/#nearby-shops" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">Nearby shops</a>
             <a href="/#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">How it works</a>
             <a href="/#testimonials"  onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">Reviews</a>
-            {(!role || role === 'customer') && (
-              <Link to="/partner" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors">Partner with us</Link>
-            )}
           </div>
 
           {/* User links */}

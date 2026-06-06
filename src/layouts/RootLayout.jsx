@@ -1,30 +1,12 @@
-import { Outlet, useLocation, Link } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import WelcomeModal from '../components/WelcomeModal'
 
 const FOOTER_LINKS = {
-  Company: [
-    { label: 'About us', href: '#' },
-    { label: 'Careers',  href: '#' },
-    { label: 'Press',    href: '#' },
-  ],
-  Services: [
-    { label: 'Wash & fold',     href: '/browse?service=Wash+%26+Fold' },
-    { label: 'Dry cleaning',    href: '/browse?service=Dry+Cleaning' },
-    { label: 'Comforters',      href: '/browse?service=Comforters' },
-    { label: 'Towels & linens', href: '/browse?service=Towels+%26+Linens' },
-  ],
-  Partners: [
-    { label: 'Become a rider', href: '/apply/rider' },
-    { label: 'Open a shop',    href: '/apply/merchant' },
-    { label: 'Partner page',   href: '/partner' },
-  ],
-  Support: [
-    { label: 'Help center', href: '#' },
-    { label: 'Contact',     href: '#' },
-    { label: 'FAQs',        href: '#' },
-  ],
+  Company:  ['About us', 'Careers', 'Press'],
+  Services: ['Wash & fold', 'Dry cleaning', 'Comforters', 'Towels & linens'],
+  Support:  ['Help center', 'Contact', 'FAQs'],
 }
 
 export default function RootLayout() {
@@ -52,7 +34,7 @@ export default function RootLayout() {
               Pickup, wash, and delivery — connecting you with verified local laundry shops across the Philippines.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-6 md:flex md:gap-12 md:shrink-0">
+          <div className="grid grid-cols-3 gap-6 md:flex md:gap-12 md:shrink-0">
             {Object.entries(FOOTER_LINKS).map(([heading, links]) => (
               <div key={heading}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40 mb-4">
@@ -60,16 +42,10 @@ export default function RootLayout() {
                 </p>
                 <ul className="space-y-2.5">
                   {links.map(link => (
-                    <li key={link.label}>
-                      {link.href.startsWith('/') ? (
-                        <Link to={link.href} className="text-sm text-[#8DB8D8] hover:text-white transition-colors">
-                          {link.label}
-                        </Link>
-                      ) : (
-                        <a href={link.href} className="text-sm text-[#8DB8D8] hover:text-white transition-colors">
-                          {link.label}
-                        </a>
-                      )}
+                    <li key={link}>
+                      <a href="#" className="text-sm text-[#8DB8D8] hover:text-white transition-colors">
+                        {link}
+                      </a>
                     </li>
                   ))}
                 </ul>
