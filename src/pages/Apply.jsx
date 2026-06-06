@@ -230,7 +230,12 @@ export default function Apply() {
           license: licenseUrl, validId: validIdUrl,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
-        await updateDoc(userRef, { role: 'rider', fullName, mobile: mobile.trim() })
+        await updateDoc(userRef, {
+          role: 'rider', fullName, mobile: mobile.trim(),
+          phone: mobile.trim(), vehicleType: vehicle, plateNumber: plate.trim(),
+          ...(licenseUrl ? { licenseURL: licenseUrl } : {}),
+          ...(validIdUrl ? { govIdURL:   validIdUrl } : {}),
+        })
       }
 
       await refreshProfile()

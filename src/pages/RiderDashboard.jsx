@@ -1366,17 +1366,20 @@ function ProfileTab({ user, userProfile, refreshProfile }) {
                 <h3 className="font-heading font-semibold text-[15px] text-gray-900">Change Password</h3>
               </div>
               <div className="p-6 space-y-4">
-                {['current', 'next', 'confirm'].map((key, i) => (
+                {[
+                  { key: 'current', label: 'Current password',    autoComplete: 'current-password', placeholder: 'Enter current password'  },
+                  { key: 'next',    label: 'New password',         autoComplete: 'new-password',     placeholder: 'Enter new password'      },
+                  { key: 'confirm', label: 'Confirm new password', autoComplete: 'new-password',     placeholder: 'Confirm new password'    },
+                ].map(({ key, label, autoComplete, placeholder }) => (
                   <div key={key}>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">
-                      {i === 0 ? 'Current password' : i === 1 ? 'New password' : 'Confirm new password'}
-                    </p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">{label}</p>
                     <input
                       type="password"
+                      autoComplete={autoComplete}
                       value={pwForm[key]}
                       onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))}
                       className="w-full border border-[#e5e7eb] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-2 focus:ring-[#1B6CA8]/15"
-                      placeholder="••••••••"
+                      placeholder={placeholder}
                     />
                   </div>
                 ))}
@@ -1598,7 +1601,7 @@ export default function RiderDashboard() {
 
             <div className="flex items-center gap-3">
               <div className="relative">
-                <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+                <button onClick={() => setActiveNav('deliveries')} className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
                   <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                   </svg>
