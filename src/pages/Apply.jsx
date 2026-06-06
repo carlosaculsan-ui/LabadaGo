@@ -320,6 +320,26 @@ export default function Apply() {
             {/* ── Step 1: Personal Info ── */}
             {step === 0 && (
               <>
+                {!isMerchant && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
+                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-widest mb-2">Before you start</p>
+                    <p className="text-sm text-emerald-700 mb-3">Have the following ready before you reach Step 2:</p>
+                    <ul className="space-y-1.5">
+                      {[
+                        "Driver's License (front side — photo or scan)",
+                        "Any valid PH government ID",
+                        "Your vehicle's plate number",
+                      ].map(item => (
+                        <li key={item} className="flex items-start gap-2 text-sm text-emerald-700">
+                          <svg className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label="First name *">
                     <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Juan" className={inputCls} />
