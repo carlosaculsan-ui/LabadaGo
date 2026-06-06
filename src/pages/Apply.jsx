@@ -49,8 +49,8 @@ function Field({ label, children, hint }) {
 }
 
 function FileInput({ label, hint, accept, value, onChange, isMerchant }) {
-  const filled  = isMerchant ? 'border-[#1B6CA8] bg-[#E8F4FD]' : 'border-emerald-500 bg-emerald-50'
-  const iconCls = isMerchant ? 'text-[#1B6CA8]' : 'text-emerald-600'
+  const filled  = 'border-[#1B6CA8] bg-[#E8F4FD]'
+  const iconCls = 'text-[#1B6CA8]'
   return (
     <Field label={label} hint={hint}>
       <label className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${value ? filled : 'border-gray-200 hover:border-gray-300 bg-gray-50'}`}>
@@ -90,9 +90,9 @@ export default function Apply() {
   const { user, refreshProfile } = useAuth()
   const isMerchant     = type === 'merchant'
   const steps          = isMerchant ? MERCHANT_STEPS : RIDER_STEPS
-  const accentBg       = isMerchant ? 'bg-[#1B6CA8] hover:bg-[#155a8a]' : 'bg-emerald-600 hover:bg-emerald-700'
-  const accentText     = isMerchant ? 'text-[#1B6CA8]' : 'text-emerald-600'
-  const accentLight    = isMerchant ? 'bg-[#E8F4FD]'   : 'bg-emerald-50'
+  const accentBg       = 'bg-[#1B6CA8] hover:bg-[#155a8a]'
+  const accentText     = 'text-[#1B6CA8]'
+  const accentLight    = 'bg-[#E8F4FD]'
 
   const [step,       setStep]       = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -252,7 +252,7 @@ export default function Apply() {
       {/* Left sidebar — step tracker */}
       <aside className="hidden md:flex w-72 shrink-0 bg-[#0A3358] min-h-screen px-8 py-12 flex-col">
         <div className="mb-10">
-          <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isMerchant ? 'text-[#F5A623]' : 'text-emerald-400'}`}>
+          <p className={`text-xs font-bold uppercase tracking-widest mb-1 ${isMerchant ? 'text-[#F5A623]' : 'text-white/70'}`}>
             {isMerchant ? 'Merchant Application' : 'Rider Application'}
           </p>
           <h1 className="font-heading font-bold text-white text-xl leading-snug">
@@ -269,7 +269,7 @@ export default function Apply() {
                 {/* Line + circle column */}
                 <div className="flex flex-col items-center">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border-2 transition-all ${
-                    done    ? `${isMerchant ? 'bg-[#1B6CA8] border-[#1B6CA8]' : 'bg-emerald-500 border-emerald-500'} text-white` :
+                    done    ? 'bg-[#1B6CA8] border-[#1B6CA8] text-white' :
                     current ? 'bg-white border-white text-[#0A3358]' :
                     'bg-transparent border-white/20 text-white/30'
                   }`}>
@@ -280,7 +280,7 @@ export default function Apply() {
                     ) : (i + 1)}
                   </div>
                   {i < steps.length - 1 && (
-                    <div className={`w-px flex-1 my-1 ${done ? (isMerchant ? 'bg-[#1B6CA8]' : 'bg-emerald-500') : 'bg-white/10'}`} style={{ minHeight: 80 }} />
+                    <div className={`w-px flex-1 my-1 ${done ? 'bg-[#1B6CA8]' : 'bg-white/10'}`} style={{ minHeight: 80 }} />
                   )}
                 </div>
 
@@ -321,12 +321,12 @@ export default function Apply() {
             {step === 0 && (
               <>
                 {!isMerchant && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3.5">
-                    <p className="text-xs font-bold text-emerald-700 mb-1.5">Before you start</p>
-                    <p className="text-xs text-emerald-600 mb-1.5">Have these ready — you'll need to upload them in Step 2:</p>
-                    <ul className="space-y-1 text-xs text-emerald-600">
-                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />Driver's License (front side)</li>
-                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />Valid Government ID (any PH government ID)</li>
+                  <div className="bg-[#E8F4FD] border border-[#1B6CA8]/20 rounded-xl px-4 py-3.5">
+                    <p className="text-xs font-bold text-[#1B6CA8] mb-1.5">Before you start</p>
+                    <p className="text-xs text-[#1B6CA8]/80 mb-1.5">Have these ready — you'll need to upload them in Step 2:</p>
+                    <ul className="space-y-1 text-xs text-[#1B6CA8]/80">
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Driver's License (front side)</li>
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Valid Government ID (any PH government ID)</li>
                     </ul>
                   </div>
                 )}
@@ -349,7 +349,7 @@ export default function Apply() {
                     <div className="flex gap-2">
                       {['Male', 'Female'].map(opt => (
                         <button key={opt} type="button" onClick={() => setSex(opt)}
-                          className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${sex === opt ? (isMerchant ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-emerald-500 bg-emerald-50 text-emerald-700') : 'border-[#e5e7eb] text-gray-600 hover:border-gray-300'}`}>
+                          className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${sex === opt ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-[#e5e7eb] text-gray-600 hover:border-gray-300'}`}>
                           {opt}
                         </button>
                       ))}
@@ -569,7 +569,7 @@ export default function Apply() {
                   <div className="flex gap-2">
                     {VEHICLES.map(v => (
                       <button key={v} type="button" onClick={() => setVehicle(v)}
-                        className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${vehicle === v ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-[#e5e7eb] text-gray-600 hover:border-emerald-300'}`}>
+                        className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${vehicle === v ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
                         {v}
                       </button>
                     ))}
