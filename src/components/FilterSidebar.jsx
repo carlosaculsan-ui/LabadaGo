@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 const SERVICE_TYPES = ['Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
 const DETERGENTS = ['Any', 'Ariel', 'Tide', 'Breeze', 'Hypoallergenic']
 
@@ -11,33 +9,18 @@ function SectionLabel({ children }) {
   )
 }
 
-export default function FilterSidebar({ onFilterChange, services, onServicesChange }) {
-  const [maxDistance, setMaxDistance] = useState(5)
-  const [detergent, setDetergent] = useState('Any')
-  const [maxPrice, setMaxPrice] = useState(120)
-  const [rating, setRating] = useState(null)
-  const [openNow, setOpenNow] = useState(false)
-  const [sameDay, setSameDay] = useState(false)
-
-  function notify(patch) {
-    onFilterChange?.({
-      maxDistance, services, detergent, maxPrice, rating, openNow, sameDay,
-      ...patch,
-    })
-  }
+export default function FilterSidebar({ filters, onFilterChange }) {
+  const { maxDistance, services, detergent, maxPrice, rating, openNow, sameDay } = filters
 
   function toggleService(svc) {
     const next = services.includes(svc)
       ? services.filter(s => s !== svc)
       : [...services, svc]
-    onServicesChange?.(next)
-    notify({ services: next })
+    onFilterChange({ services: next })
   }
 
   function toggleRating(r) {
-    const next = rating === r ? null : r
-    setRating(next)
-    notify({ rating: next })
+    onFilterChange({ rating: rating === r ? null : r })
   }
 
   return (
@@ -48,11 +31,7 @@ export default function FilterSidebar({ onFilterChange, services, onServicesChan
           <SectionLabel>Distance</SectionLabel>
           <input
             type="range" min={0} max={5} step={0.5} value={maxDistance}
-            onChange={e => {
-              const v = parseFloat(e.target.value)
-              setMaxDistance(v)
-              notify({ maxDistance: v })
-            }}
+            onChange={e => onFilterChange({ maxDistance: parseFloat(e.target.value) })}
             className="w-full accent-[#1B6CA8]"
           />
           <div className="flex justify-between text-xs text-gray-600 mt-1">
@@ -87,7 +66,7 @@ export default function FilterSidebar({ onFilterChange, services, onServicesChan
                   type="radio"
                   name="detergent"
                   checked={detergent === d}
-                  onChange={() => { setDetergent(d); notify({ detergent: d }) }}
+                  onChange={() => onFilterChange({ detergent: d })}
                   className="accent-[#1B6CA8] w-4 h-4"
                 />
                 <span className="text-sm text-gray-700">{d}</span>
@@ -100,11 +79,7 @@ export default function FilterSidebar({ onFilterChange, services, onServicesChan
           <SectionLabel>Price per kilo</SectionLabel>
           <input
             type="range" min={30} max={120} step={5} value={maxPrice}
-            onChange={e => {
-              const v = parseInt(e.target.value, 10)
-              setMaxPrice(v)
-              notify({ maxPrice: v })
-            }}
+            onChange={e => onFilterChange({ maxPrice: parseInt(e.target.value, 10) })}
             className="w-full accent-[#1B6CA8]"
           />
           <div className="flex justify-between text-xs text-gray-600 mt-1">
@@ -137,7 +112,7 @@ export default function FilterSidebar({ onFilterChange, services, onServicesChan
               <input
                 type="checkbox"
                 checked={openNow}
-                onChange={() => { const next = !openNow; setOpenNow(next); notify({ openNow: next }) }}
+                onChange={() => onFilterChange({ openNow: !openNow })}
                 className="accent-[#1B6CA8] w-4 h-4"
               />
               <span className="text-sm text-gray-700">Open now</span>
@@ -146,7 +121,7 @@ export default function FilterSidebar({ onFilterChange, services, onServicesChan
               <input
                 type="checkbox"
                 checked={sameDay}
-                onChange={() => { const next = !sameDay; setSameDay(next); notify({ sameDay: next }) }}
+                onChange={() => onFilterChange({ sameDay: !sameDay })}
                 className="accent-[#1B6CA8] w-4 h-4"
               />
               <span className="text-sm text-gray-700">Same-day</span>
