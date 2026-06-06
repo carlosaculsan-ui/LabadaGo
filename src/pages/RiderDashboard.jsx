@@ -6,7 +6,7 @@ import L from 'leaflet'
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet'
 import {
   collection, query, where, onSnapshot,
-  updateDoc, doc, serverTimestamp,
+  updateDoc, doc, getDoc, serverTimestamp,
 } from 'firebase/firestore'
 import {
   signOut, updatePassword,
@@ -968,10 +968,17 @@ function ProfileTab({ user, userProfile, refreshProfile }) {
   const [docUploading, setDocUploading] = useState({ govId: false, license: false })
   const [docError,     setDocError]     = useState('')
 
-  const [pwForm,    setPwForm]    = useState({ current: '', next: '', confirm: '' })
-  const [pwSaving,  setPwSaving]  = useState(false)
-  const [pwError,   setPwError]   = useState('')
-  const [pwSuccess, setPwSuccess] = useState(false)
+  const [pwForm,      setPwForm]      = useState({ current: '', next: '', confirm: '' })
+  const [pwSaving,    setPwSaving]    = useState(false)
+  const [pwError,     setPwError]     = useState('')
+  const [pwSuccess,   setPwSuccess]   = useState(false)
+  const [application, setApplication] = useState(null)
+
+  useEffect(() => {
+    getDoc(doc(db, 'applications', user.uid)).then(snap => {
+      if (snap.exists()) setApplication(snap.data())
+    })
+  }, [user.uid])
 
   useEffect(() => {
     if (userProfile && !formLoaded.current) {
@@ -1399,6 +1406,76 @@ function ProfileTab({ user, userProfile, refreshProfile }) {
                 >
                   {pwSaving ? 'Updating…' : 'Update password'}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Application status */}
+          {application && (
+            <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between">
+                <h3 className="font-heading font-semibold text-[15px] text-gray-900">My Application</h3>
+                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                  application.status === 'approved' ? 'bg-green-100 text-green-700' :
+                  application.status === 'rejected' ? 'bg-red-100 text-red-500'    :
+                  'bg-amber-100 text-amber-700'
+                }`}>
+                  {application.status === 'approved' ? 'Approved' :
+                   application.status === 'rejected' ? 'Rejected' : 'Under Review'}
+                </span>
+              </div>
+              <div className="p-6 space-y-5">
+                {/* Step tracker */}
+                <div className="flex items-center">
+                  {[
+                    { label: 'Submitted',    active: true                                                          },
+                    { label: 'Under Review', active: application.status !== 'pending'                             },
+                    { label: application.status === 'rejected' ? 'Rejected' : 'Approved',
+                      active: application.status === 'approved' || application.status === 'rejected',
+                      rejected: application.status === 'rejected' },
+                  ].map((s, i, arr) => (
+                    <div key={s.label} className="flex items-center flex-1 last:flex-none">
+                      <div className="flex flex-col items-center gap-1 shrink-0">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                          s.active ? (s.rejected ? 'bg-red-400' : 'bg-[#1B6CA8]') : 'bg-gray-200'
+                        }`}>
+                          {s.active ? (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              {s.rejected
+                                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                : <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>}
+                            </svg>
+                          ) : (
+                            <span className="text-[9px] font-bold text-gray-400">{i + 1}</span>
+                          )}
+                        </div>
+                        <span className={`text-[10px] font-medium whitespace-nowrap ${s.active ? 'text-gray-700' : 'text-gray-300'}`}>
+                          {s.label}
+                        </span>
+                      </div>
+                      {i < arr.length - 1 && (
+                        <div className={`flex-1 h-0.5 mx-2 mb-3 ${s.active ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {/* Meta */}
+                <div className="space-y-1.5 text-sm border-t border-[#f3f4f6] pt-4">
+                  {application.appliedAt && (
+                    <div className="flex gap-4">
+                      <span className="text-gray-500 w-24 shrink-0">Submitted</span>
+                      <span className="text-gray-800 font-medium">{fmtDate(application.appliedAt)}</span>
+                    </div>
+                  )}
+                  {application.vehicle && (
+                    <div className="flex gap-4">
+                      <span className="text-gray-500 w-24 shrink-0">Vehicle</span>
+                      <span className="text-gray-800 font-medium">
+                        {application.vehicle}{application.plate ? ` · ${application.plate}` : ''}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

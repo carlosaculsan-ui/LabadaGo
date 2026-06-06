@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -49,24 +49,44 @@ function Field({ label, children, hint }) {
 }
 
 function FileInput({ label, hint, accept, value, onChange, isMerchant }) {
+  const [previewUrl, setPreviewUrl] = useState(null)
+
+  useEffect(() => {
+    if (!value) { setPreviewUrl(null); return }
+    const url = URL.createObjectURL(value)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [value])
+
+  const isImage = value?.type?.startsWith('image/')
+
   return (
     <Field label={label} hint={hint}>
       {value ? (
-        <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-[#1B6CA8] bg-[#E8F4FD]">
-          <svg className="w-5 h-5 shrink-0 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-          <p className="text-sm font-medium truncate text-gray-800 flex-1">{value.name}</p>
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            title="Remove file"
-            className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        <div className="rounded-xl overflow-hidden border-2 border-[#1B6CA8]">
+          {isImage && previewUrl && (
+            <a href={previewUrl} target="_blank" rel="noreferrer">
+              <img src={previewUrl} alt="Preview" className="w-full h-36 object-cover hover:opacity-95 transition-opacity" />
+            </a>
+          )}
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-[#E8F4FD]">
+            <svg className="w-4 h-4 shrink-0 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-          </button>
+            <p className="text-xs font-medium truncate text-[#1B6CA8] flex-1">{value.name}</p>
+            {!isImage && previewUrl && (
+              <a href={previewUrl} target="_blank" rel="noreferrer"
+                className="text-xs font-semibold text-[#1B6CA8] hover:underline shrink-0">
+                View
+              </a>
+            )}
+            <button type="button" onClick={() => onChange(null)} title="Remove file"
+              className="shrink-0 text-[#1B6CA8]/50 hover:text-red-500 transition-colors ml-1">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       ) : (
         <label className="flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors border-gray-200 hover:border-gray-300 bg-gray-50">
@@ -338,10 +358,11 @@ export default function Apply() {
                 {!isMerchant && (
                   <div className="bg-[#E8F4FD] border border-[#1B6CA8]/20 rounded-xl px-4 py-3.5">
                     <p className="text-xs font-bold text-[#1B6CA8] mb-1.5">Before you start</p>
-                    <p className="text-xs text-[#1B6CA8]/80 mb-1.5">Have these ready — you'll need to upload them in Step 2:</p>
+                    <p className="text-xs text-[#1B6CA8]/80 mb-1.5">Have these ready before filling out the form:</p>
                     <ul className="space-y-1 text-xs text-[#1B6CA8]/80">
-                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Driver's License (front side)</li>
-                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Valid Government ID (any PH government ID)</li>
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Driver's License — front side, clear photo</li>
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Valid Government ID — any PH government ID</li>
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Vehicle plate number — motorcycle or car only</li>
                     </ul>
                   </div>
                 )}
