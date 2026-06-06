@@ -41,7 +41,7 @@ export default function ShopCard({
     if (isMock) {
       setShowDemo(true)
     } else {
-      navigate(`/checkout?shopId=${id}&shop=${encodeURIComponent(name)}`)
+      onSelect?.()
     }
   }
 

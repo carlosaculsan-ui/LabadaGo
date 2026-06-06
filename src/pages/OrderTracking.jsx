@@ -69,10 +69,17 @@ export default function OrderTracking() {
 
   const orderId = searchParams.get('id')
 
-  const [order,    setOrder]    = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState('')
+  const [order,      setOrder]      = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [manualId,   setManualId]   = useState('')
+
+  function handleLookup() {
+    const id = manualId.trim()
+    if (!id) return
+    navigate(`/order-tracking?id=${id}`, { replace: true })
+  }
 
   useEffect(() => {
     if (orderId) {
@@ -141,16 +148,20 @@ export default function OrderTracking() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
-        <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
-          <p className="font-heading font-bold text-gray-900 text-lg mb-2">Something went wrong</p>
-          <p className="text-sm text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
-          >
-            Go home
-          </button>
+      <div className="min-h-screen bg-[#F4F7FA]">
+        <div className="max-w-lg mx-auto px-4 pt-10 pb-16">
+          <h1 className="font-heading font-bold text-2xl text-gray-900 mb-1">Track your order</h1>
+          <p className="text-sm text-gray-500 mb-8">Enter your order ID to see real-time status.</p>
+          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6 text-center">
+            <p className="font-heading font-bold text-gray-900 text-base mb-2">Something went wrong</p>
+            <p className="text-sm text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
+            >
+              Go home
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -158,18 +169,44 @@ export default function OrderTracking() {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA] flex items-center justify-center">
-        <div className="bg-white rounded-xl border border-[#e5e7eb] p-10 text-center max-w-sm">
-          <p className="font-heading font-bold text-gray-900 text-lg mb-2">No active order</p>
-          <p className="text-sm text-gray-600 mb-6">
-            You don't have an active order to track right now.
-          </p>
-          <button
-            onClick={() => navigate('/browse')}
-            className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
-          >
-            Browse shops
-          </button>
+      <div className="min-h-screen bg-[#F4F7FA]">
+        <div className="max-w-lg mx-auto px-4 pt-10 pb-16">
+          <h1 className="font-heading font-bold text-2xl text-gray-900 mb-1">Track your order</h1>
+          <p className="text-sm text-gray-500 mb-8">Enter your order ID to see real-time status.</p>
+
+          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6 mb-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-3">Order ID</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualId}
+                onChange={e => setManualId(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLookup()}
+                placeholder="Paste your order ID here"
+                className="flex-1 px-4 py-2.5 rounded-lg border border-[#e5e7eb] text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8] transition-all"
+              />
+              <button
+                onClick={handleLookup}
+                className="px-4 py-2.5 bg-[#1B6CA8] text-white text-sm font-semibold rounded-lg hover:bg-[#155a8a] transition-colors shrink-0"
+              >
+                Track
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">You can find your order ID in your booking confirmation.</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6 text-center">
+            <p className="font-heading font-bold text-gray-900 text-base mb-2">No active order found</p>
+            <p className="text-sm text-gray-600 mb-5">
+              You don't have an active order to track right now.
+            </p>
+            <button
+              onClick={() => navigate('/browse')}
+              className="bg-[#1B6CA8] text-white text-sm font-semibold px-6 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors"
+            >
+              Browse shops
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -186,6 +223,7 @@ export default function OrderTracking() {
   return (
     <div className="min-h-screen bg-[#F4F7FA]">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
+        <h1 className="font-heading font-bold text-2xl text-gray-900 mb-6">Track your order</h1>
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
 
           {/* ── Left column ───────────────────────────────────────────────── */}
