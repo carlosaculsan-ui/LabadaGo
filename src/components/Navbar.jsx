@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
@@ -26,6 +26,7 @@ export default function Navbar() {
   const searchRef     = useRef(null)
   const mobileMenuRef = useRef(null)
   const navigate      = useNavigate()
+  const { pathname }  = useLocation()
   const { user, userProfile, role } = useAuth()
 
   function handleUseLocation() {
@@ -42,13 +43,18 @@ export default function Navbar() {
     }
   }
 
+  useEffect(() => {
+    setSearch('')
+    setShowSuggestions(false)
+  }, [pathname])
+
   async function fetchShops() {
     if (shopsFetched) return
     setShopsFetched(true)
     try {
       const snap = await getDocs(collection(db, 'shops'))
       const real = snap.docs.map(d => ({ id: d.id, name: d.data().name, address: d.data().address }))
-      setAllShops(real.length > 0 ? real : MOCK_SHOPS)
+      setAllShops([...real, ...MOCK_SHOPS])
     } catch {
       setAllShops(MOCK_SHOPS)
     }

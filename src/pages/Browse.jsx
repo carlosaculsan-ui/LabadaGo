@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import FilterSidebar from '../components/FilterSidebar'
@@ -49,10 +49,12 @@ function ShopSkeleton() {
 
 export default function Browse() {
   const location = useLocation()
+  const navigate  = useNavigate()
   const [shops, setShops] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState(() =>
-    new URLSearchParams(location.search).get('search') ?? ''
+  const searchQuery = useMemo(
+    () => new URLSearchParams(location.search).get('search') ?? '',
+    [location.search]
   )
   const [selectedShop, setSelectedShop] = useState(null)
   const [sortBy, setSortBy] = useState('all')
@@ -69,7 +71,7 @@ export default function Browse() {
 
   function resetFilters() {
     setFilters(DEFAULT_FILTERS)
-    setSearchQuery('')
+    navigate('/browse', { replace: true })
   }
 
   const hasActiveFilters =
