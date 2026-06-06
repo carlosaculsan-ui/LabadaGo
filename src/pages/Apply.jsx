@@ -129,7 +129,6 @@ export default function Apply() {
   // Step 2 — Rider
   const [vehicle, setVehicle] = useState('Motorcycle')
   const [plate,   setPlate]   = useState('')
-  const [contact, setContact] = useState('')
   const [license, setLicense] = useState(null)
   const [validId, setValidId] = useState(null)
 
@@ -154,8 +153,7 @@ export default function Apply() {
         if (!shopFrontPhoto)     { setError('Please upload a shop front photo.');   return false }
         if (!services.length)    { setError('Select at least one service.');        return false }
       } else {
-        if (!plate.trim())   { setError('Plate number is required.');   return false }
-        if (!contact.trim()) { setError('Contact number is required.'); return false }
+        if (vehicle !== 'Bicycle' && !plate.trim()) { setError('Plate number is required.'); return false }
       }
     }
     return true
@@ -228,7 +226,7 @@ export default function Apply() {
           firstName: firstName.trim(), middleInitial: middleInitial.trim(), lastName: lastName.trim(),
           fullName, age: parseInt(age, 10), sex,
           mobile: mobile.trim(), address: address.trim(),
-          vehicle, plate: plate.trim(), contact: contact.trim(),
+          vehicle, plate: plate.trim(),
           license: licenseUrl, validId: validIdUrl,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
@@ -575,12 +573,11 @@ export default function Apply() {
                     ))}
                   </div>
                 </Field>
-                <Field label="Plate number *">
-                  <input value={plate} onChange={e => setPlate(e.target.value)} placeholder="e.g. ABC 1234" className={inputCls} />
-                </Field>
-                <Field label="Contact number *">
-                  <input type="tel" value={contact} onChange={e => setContact(e.target.value)} placeholder="e.g. 09171234567" className={inputCls} />
-                </Field>
+                {vehicle !== 'Bicycle' && (
+                  <Field label="Plate number *">
+                    <input value={plate} onChange={e => setPlate(e.target.value)} placeholder="e.g. ABC 1234" className={inputCls} />
+                  </Field>
+                )}
                 <FileInput
                   label="Driver's License *"
                   hint="Front side — required for verification"
@@ -635,8 +632,7 @@ export default function Apply() {
                   <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-4">Vehicle Details</p>
                     <ReviewRow label="Vehicle"          value={vehicle} />
-                    <ReviewRow label="Plate No."        value={plate} />
-                    <ReviewRow label="Contact"          value={contact} />
+                    <ReviewRow label="Plate No."        value={plate || '—'} />
                     <ReviewRow label="Driver's License" value={license ? `${license.name} ✓` : 'Not uploaded'} />
                     <ReviewRow label="Valid ID"         value={validId  ? `${validId.name} ✓`  : 'Not uploaded'} />
                   </div>

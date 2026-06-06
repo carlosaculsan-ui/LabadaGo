@@ -157,7 +157,7 @@ export default function MapPicker({ label = 'Pickup address', address, onAddress
       </div>
 
       <p className="text-[11px] text-gray-400">
-        {position ? 'Drag the map or click again to adjust.' : 'Click anywhere on the map to drop a pin.'}
+        {position ? 'Pin placed. Click the map or select a new result below to adjust.' : 'Search and select a result below, or click directly on the map to drop a pin.'}
       </p>
 
       {/* Editable address field + suggestions */}
@@ -167,7 +167,7 @@ export default function MapPicker({ label = 'Pickup address', address, onAddress
           value={address}
           onChange={handleAddressInput}
           onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-          placeholder="Type an address or click the map"
+          placeholder="Search for an address, then select a result"
           className={inputCls}
         />
         {(geocoding || searching) && (
