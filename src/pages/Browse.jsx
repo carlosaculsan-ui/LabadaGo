@@ -4,7 +4,6 @@ import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import FilterSidebar from '../components/FilterSidebar'
 import ShopCard from '../components/ShopCard'
-import ShopDrawer from '../components/ShopDrawer'
 import { MOCK_SHOPS, CARD_COLORS } from '../data/mockShops'
 
 const CHIPS = ['All', 'Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Linens']
@@ -56,7 +55,6 @@ export default function Browse() {
     () => new URLSearchParams(location.search).get('search') ?? '',
     [location.search]
   )
-  const [selectedShop, setSelectedShop] = useState(null)
   const [sortBy, setSortBy] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState(() => {
@@ -238,7 +236,7 @@ export default function Browse() {
           ) : displayed.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3 md:gap-5">
               {displayed.map(shop => (
-                <ShopCard key={shop.id} {...shop} onSelect={() => setSelectedShop(shop)} />
+                <ShopCard key={shop.id} {...shop} />
               ))}
             </div>
           ) : (
@@ -259,7 +257,6 @@ export default function Browse() {
         </div>
       </div>
 
-      <ShopDrawer shop={selectedShop} onClose={() => setSelectedShop(null)} />
     </>
   )
 }

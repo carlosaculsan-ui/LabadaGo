@@ -197,7 +197,7 @@ export default function Navbar() {
                       <button
                         key={shop.id}
                         onMouseDown={() => {
-                          navigate(`/browse?search=${encodeURIComponent(shop.name)}`)
+                          navigate(`/shop/${shop.id}`)
                           setSearch('')
                           setShowSuggestions(false)
                         }}

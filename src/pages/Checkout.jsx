@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
 import { MOCK_SHOPS } from '../data/mockShops'
@@ -146,6 +146,10 @@ export default function Checkout() {
   const shopName = searchParams.get('shop') || "Ate Linda's Lavanderia"
   const shopId   = searchParams.get('shopId') || null
 
+  const defaultAddr  = userProfile?.addresses?.find(a => a.isDefault)
+  const didPrefill   = useRef(false)
+  const [prefilledLabel, setPrefilledLabel] = useState(null)
+
   // Address
   const [street,        setStreet]        = useState('')
   const [landmark,      setLandmark]      = useState('')
@@ -191,6 +195,15 @@ export default function Checkout() {
       }
     })
   }, [shopId, shopName])
+
+  useEffect(() => {
+    if (didPrefill.current || !defaultAddr) return
+    didPrefill.current = true
+    const parts = [defaultAddr.line1, defaultAddr.barangay, defaultAddr.city].filter(Boolean)
+    setStreet(parts.join(', '))
+    if (defaultAddr.notes) setLandmark(defaultAddr.notes)
+    setPrefilledLabel(defaultAddr.label)
+  }, [defaultAddr])
 
   // Derived prices
   const detergentPrice   = DETERGENTS.find(d => d.id === detergent)?.price ?? 0
@@ -329,7 +342,9 @@ export default function Checkout() {
                       <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-xs font-medium">Address set</span>
+                      <span className="text-xs font-medium">
+                        {prefilledLabel ? `Pre-filled from your saved ${prefilledLabel} address` : 'Address set'}
+                      </span>
                     </div>
                   )}
                   <input

@@ -19,6 +19,7 @@ import SeedPage from './pages/SeedPage'
 import MyOrders from './pages/MyOrders'
 import Partner from './pages/Partner'
 import Apply from './pages/Apply'
+import ShopDetail from './pages/ShopDetail'
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'browse', element: <Browse /> },
+      { path: 'shop/:id', element: <ShopDetail /> },
       { path: 'partner', element: <Partner /> },
       {
         element: <ProtectedRoute />,
