@@ -176,9 +176,8 @@ export default function Browse() {
         {/* Desktop sidebar */}
         <div className="hidden md:block">
           <FilterSidebar
-            services={filters.services}
-            onServicesChange={services => setFilters(f => ({ ...f, services }))}
-            onFilterChange={setFilters}
+            filters={filters}
+            onFilterChange={patch => setFilters(f => ({ ...f, ...patch }))}
           />
         </div>
 

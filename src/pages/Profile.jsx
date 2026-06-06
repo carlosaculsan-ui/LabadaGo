@@ -24,9 +24,10 @@ export default function Profile() {
     userProfile?.fullName || user?.displayName || ''
   )
   const [mobile,   setMobile]   = useState(userProfile?.mobile ?? '')
-  const [saving,   setSaving]   = useState(false)
-  const [saveMsg,  setSaveMsg]  = useState('')
-  const [resetMsg, setResetMsg] = useState('')
+  const [saving,       setSaving]       = useState(false)
+  const [saveMsg,      setSaveMsg]      = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetMsg,     setResetMsg]     = useState('')
 
   const initials = (userProfile?.fullName || user?.displayName || user?.email || '?')
     .split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
@@ -47,11 +48,14 @@ export default function Profile() {
 
   async function handlePasswordReset() {
     setResetMsg('')
+    setResetLoading(true)
     try {
       await sendPasswordResetEmail(auth, user.email)
       setResetMsg('Reset link sent to your email.')
     } catch {
       setResetMsg('Failed to send reset email.')
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -162,9 +166,10 @@ export default function Profile() {
           <div className="flex items-center gap-4">
             <button
               onClick={handlePasswordReset}
-              className="border border-white/30 text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-white/10 transition-colors"
+              disabled={resetLoading}
+              className="border border-white/30 text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send reset link
+              {resetLoading ? 'Sending…' : 'Send reset link'}
             </button>
             {resetMsg && (
               <p className={`text-xs ${resetMsg.includes('Failed') ? 'text-red-400' : 'text-green-400'}`}>

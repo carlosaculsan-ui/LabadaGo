@@ -297,7 +297,7 @@ export default function Home() {
             {/* Pricing comparison hook */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-7 md:mb-10">
               <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2">
-                <span className="text-[#F5A623] font-bold text-sm">From ₱50/kg</span>
+                <span className="text-[#F5A623] font-bold text-sm">From ₱48/kg</span>
                 <span className="text-white/50 text-xs">· door-to-door</span>
               </div>
               <span className="text-white/30 text-xs font-semibold uppercase tracking-wider">vs.</span>
@@ -607,7 +607,7 @@ export default function Home() {
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1B6CA8] mb-4">Join the network</p>
             <h2 className="font-heading font-extrabold text-[2.8rem] leading-tight tracking-tight text-gray-900 mb-4">
-              Grow with<br /><span className="text-[#1B6CA8]">Labada</span><span className="text-[#F5A623]">Go</span>
+              Grow with{' '}<br /><span className="text-[#1B6CA8]">Labada</span><span className="text-[#F5A623]">Go</span>
             </h2>
             <p className="text-[15px] text-gray-500 leading-relaxed mb-8 max-w-sm">
               Whether you run a laundry shop or want flexible delivery work, there&apos;s a place for you in our network.

@@ -16,14 +16,13 @@ const RIDER_PERKS = [
   'No vehicle requirements beyond a bike or motorcycle',
 ]
 
-function PerkList({ perks, color }) {
-  const isMerchant = color === 'blue'
+function PerkList({ perks }) {
   return (
     <ul className="space-y-3">
       {perks.map(p => (
         <li key={p} className="flex items-start gap-3 text-sm text-gray-700">
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isMerchant ? 'bg-[#E8F4FD]' : 'bg-emerald-50'}`}>
-            <svg className={`w-3 h-3 ${isMerchant ? 'text-[#1B6CA8]' : 'text-emerald-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-[#E8F4FD]">
+            <svg className="w-3 h-3 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -81,7 +80,7 @@ export default function Partner() {
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623] mb-4">Join the network</p>
             <h1 className="font-heading font-bold text-[3.2rem] leading-[1.05] tracking-tight text-white mb-5">
-              Grow with<br /><span className="text-white">Labada</span><span className="text-[#F5A623]">Go</span>
+              Grow with{' '}<br /><span className="text-white">Labada</span><span className="text-[#F5A623]">Go</span>
             </h1>
             <p className="text-white/65 text-[1.05rem] leading-relaxed max-w-md">
               Whether you run a laundry shop or want flexible delivery work, there&apos;s a place for you here. Join our growing network of merchants and riders across the Philippines.
@@ -166,25 +165,25 @@ export default function Partner() {
 
               <div className="p-8 flex flex-col flex-1">
                 <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <div className="w-9 h-9 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600">For delivery riders</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#1B6CA8]">For delivery riders</span>
                 </div>
                 <h3 className="font-heading font-bold text-xl text-gray-900 mb-2">Earn on your own schedule</h3>
                 <p className="text-sm text-gray-500 leading-relaxed mb-6">
                   Turn your motorcycle or bike into income. Pick up and deliver laundry orders in your area — work when you want, earn what you deserve.
                 </p>
-                <PerkList perks={RIDER_PERKS} color="green" />
+                <PerkList perks={RIDER_PERKS} />
                 <div className="mt-8">
                   {role === 'rider' ? (
-                    <button onClick={() => navigate('/rider')} className="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-sm hover:bg-emerald-700 transition-colors">
+                    <button onClick={() => navigate('/rider')} className="w-full bg-[#1B6CA8] text-white font-bold py-3.5 rounded-xl text-sm hover:bg-[#155a8a] transition-colors">
                       Go to my dashboard →
                     </button>
                   ) : (
-                    <button onClick={() => handleApply('rider')} className="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-sm hover:bg-emerald-700 transition-colors">
+                    <button onClick={() => handleApply('rider')} className="w-full bg-[#1B6CA8] text-white font-bold py-3.5 rounded-xl text-sm hover:bg-[#155a8a] transition-colors">
                       Apply as Rider →
                     </button>
                   )}

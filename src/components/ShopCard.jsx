@@ -66,8 +66,8 @@ export default function ShopCard({
             </div>
           )}
           {isMock && (
-            <div className="absolute top-0 left-0 right-0 bg-amber-400/90 text-amber-900 text-[11px] font-semibold text-center py-1.5 tracking-wide">
-              Demo listing
+            <div className="absolute top-2.5 left-2.5 bg-black/50 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
+              Demo
             </div>
           )}
           <span
