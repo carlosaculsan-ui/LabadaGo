@@ -49,27 +49,37 @@ function Field({ label, children, hint }) {
 }
 
 function FileInput({ label, hint, accept, value, onChange, isMerchant }) {
-  const filled  = 'border-[#1B6CA8] bg-[#E8F4FD]'
-  const iconCls = 'text-[#1B6CA8]'
   return (
     <Field label={label} hint={hint}>
-      <label className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${value ? filled : 'border-gray-200 hover:border-gray-300 bg-gray-50'}`}>
-        <input type="file" accept={accept} className="hidden" onChange={e => onChange(e.target.files?.[0] ?? null)} />
-        <svg className={`w-5 h-5 shrink-0 ${value ? iconCls : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-        <div className="min-w-0 flex-1">
-          <p className={`text-sm font-medium truncate ${value ? 'text-gray-800' : 'text-gray-700'}`}>
-            {value ? value.name : 'Click to upload'}
-          </p>
-          {!value && <p className="text-xs text-gray-600 mt-0.5">PDF, JPG or PNG · max 10 MB</p>}
-        </div>
-        {value && (
-          <svg className={`w-4 h-4 shrink-0 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      {value ? (
+        <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-[#1B6CA8] bg-[#E8F4FD]">
+          <svg className="w-5 h-5 shrink-0 text-[#1B6CA8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-        )}
-      </label>
+          <p className="text-sm font-medium truncate text-gray-800 flex-1">{value.name}</p>
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            title="Remove file"
+            className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      ) : (
+        <label className="flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors border-gray-200 hover:border-gray-300 bg-gray-50">
+          <input type="file" accept={accept} className="hidden" onChange={e => onChange(e.target.files?.[0] ?? null)} />
+          <svg className="w-5 h-5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-gray-700">Click to upload</p>
+            <p className="text-xs text-gray-600 mt-0.5">PDF, JPG or PNG · max 10 MB</p>
+          </div>
+        </label>
+      )}
     </Field>
   )
 }
@@ -127,10 +137,11 @@ export default function Apply() {
   const [bizPermit,      setBizPermit]      = useState(null)
 
   // Step 2 — Rider
-  const [vehicle, setVehicle] = useState('Motorcycle')
-  const [plate,   setPlate]   = useState('')
-  const [license, setLicense] = useState(null)
-  const [validId, setValidId] = useState(null)
+  const [vehicle,      setVehicle]      = useState('Motorcycle')
+  const [plate,        setPlate]        = useState('')
+  const [vehicleModel, setVehicleModel] = useState('')
+  const [license,      setLicense]      = useState(null)
+  const [validId,      setValidId]      = useState(null)
 
   function toggleService(svc) {
     setServices(prev => prev.includes(svc) ? prev.filter(s => s !== svc) : [...prev, svc])
@@ -226,13 +237,14 @@ export default function Apply() {
           firstName: firstName.trim(), middleInitial: middleInitial.trim(), lastName: lastName.trim(),
           fullName, age: parseInt(age, 10), sex,
           mobile: mobile.trim(), address: address.trim(),
-          vehicle, plate: plate.trim(),
+          vehicle, plate: plate.trim(), vehicleModel: vehicleModel.trim(),
           license: licenseUrl, validId: validIdUrl,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
         await updateDoc(userRef, {
           role: 'rider', fullName, mobile: mobile.trim(),
           phone: mobile.trim(), vehicleType: vehicle, plateNumber: plate.trim(),
+          vehicleModel: vehicleModel.trim(),
           ...(licenseUrl ? { licenseURL: licenseUrl } : {}),
           ...(validIdUrl ? { govIdURL:   validIdUrl } : {}),
         })
@@ -583,6 +595,9 @@ export default function Apply() {
                     <input value={plate} onChange={e => setPlate(e.target.value)} placeholder="e.g. ABC 1234" className={inputCls} />
                   </Field>
                 )}
+                <Field label="Model & color">
+                  <input value={vehicleModel} onChange={e => setVehicleModel(e.target.value)} placeholder="e.g. Honda Click · Red" className={inputCls} />
+                </Field>
                 <FileInput
                   label="Driver's License *"
                   hint="Front side — required for verification"
@@ -638,6 +653,7 @@ export default function Apply() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-4">Vehicle Details</p>
                     <ReviewRow label="Vehicle"          value={vehicle} />
                     <ReviewRow label="Plate No."        value={plate || '—'} />
+                    <ReviewRow label="Model & Color"    value={vehicleModel || '—'} />
                     <ReviewRow label="Driver's License" value={license ? `${license.name} ✓` : 'Not uploaded'} />
                     <ReviewRow label="Valid ID"         value={validId  ? `${validId.name} ✓`  : 'Not uploaded'} />
                   </div>

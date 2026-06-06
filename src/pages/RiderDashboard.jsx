@@ -1504,7 +1504,7 @@ export default function RiderDashboard() {
     { label: "Today's deliveries", value: completedToday.length                },
     { label: 'This week',          value: completedWeek.length                 },
     { label: "Today's earnings",   value: `₱${earningsToday.toLocaleString()}` },
-    { label: 'Rating',             value: userProfile?.rating ? `${userProfile.rating.toFixed(1)} ★` : '—' },
+    { label: 'Rating',             value: userProfile?.rating ? `${userProfile.rating.toFixed(1)} ★` : 'New' },
   ]
 
   const STAT_STYLES = [
