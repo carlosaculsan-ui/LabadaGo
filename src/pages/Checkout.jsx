@@ -276,8 +276,10 @@ export default function Checkout() {
       if (!pickupTime) newErrors.pickupTime = 'Please select a pickup time.'
       if (Object.keys(newErrors).length) { setErrors(newErrors); return }
       setErrors({})
+      setStep(2)
+    } else if (step === 2) {
+      setStep(3)
     }
-    setStep(s => s + 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -664,40 +666,44 @@ export default function Checkout() {
                 </p>
               </div>
 
-              {Object.values(errors).length > 0 && (
-                <div className="mb-3 space-y-1.5">
-                  {Object.values(errors).map((msg, i) => (
-                    <div key={i} className="px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
-                      {msg}
+              {step === 3 && (
+                <>
+                  {Object.values(errors).length > 0 && (
+                    <div className="mb-3 space-y-1.5">
+                      {Object.values(errors).map((msg, i) => (
+                        <div key={i} className="px-4 py-2 bg-red-50 border border-red-200 rounded-full text-xs text-red-600 text-center">
+                          {msg}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              <button
-                onClick={handleConfirm}
-                disabled={submitting}
-                className="w-full bg-[#1B6CA8] text-white font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {submitting ? (
-                  <>
-                    <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                    Confirming...
-                  </>
-                ) : 'Confirm booking'}
-              </button>
-
-              {/* Payment method echo — shows which method is active */}
-              <div className="flex items-center justify-center gap-3 mt-4">
-                {PAYMENT_METHODS.map(pm => (
-                  <div
-                    key={pm.id}
-                    className={`transition-opacity ${payment === pm.id ? 'opacity-100' : 'opacity-20'}`}
+                  <button
+                    onClick={handleConfirm}
+                    disabled={submitting}
+                    className="w-full bg-[#1B6CA8] text-white font-semibold py-3 rounded-lg hover:bg-[#155a8a] transition-colors text-sm disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    <img src={pm.image} alt={pm.label} className="w-8 h-8 rounded-lg object-contain" />
+                    {submitting ? (
+                      <>
+                        <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                        Confirming...
+                      </>
+                    ) : 'Confirm booking'}
+                  </button>
+
+                  {/* Payment method echo — shows which method is active */}
+                  <div className="flex items-center justify-center gap-3 mt-4">
+                    {PAYMENT_METHODS.map(pm => (
+                      <div
+                        key={pm.id}
+                        className={`transition-opacity ${payment === pm.id ? 'opacity-100' : 'opacity-20'}`}
+                      >
+                        <img src={pm.image} alt={pm.label} className="w-8 h-8 rounded-lg object-contain" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
 
             </div>
           </div>
