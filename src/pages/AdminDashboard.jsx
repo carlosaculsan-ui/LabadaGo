@@ -118,12 +118,41 @@ function SearchInput({ value, onChange, placeholder }) {
   )
 }
 
-function TableWrap({ cols, empty, children }) {
+function HeaderCheckbox({ checked, indeterminate, onChange }) {
+  const ref = useRef(null)
+  useEffect(() => { if (ref.current) ref.current.indeterminate = indeterminate }, [indeterminate])
+  return (
+    <input ref={ref} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)}
+      className="w-4 h-4 accent-[#1B6CA8] cursor-pointer" />
+  )
+}
+
+function BulkBar({ count, onClear, actions }) {
+  if (!count) return null
+  return (
+    <div className="flex items-center gap-3 bg-[#0A2540] text-white rounded-xl px-4 py-2.5 mb-4 text-sm">
+      <span className="font-semibold shrink-0">{count} selected</span>
+      <div className="flex flex-1 items-center gap-2 flex-wrap">
+        {actions.map(({ label, onClick, danger, disabled }) => (
+          <button key={label} onClick={onClick} disabled={disabled}
+            className={['text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40',
+              danger ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-white/15 hover:bg-white/25 text-white'
+            ].join(' ')}
+          >{label}</button>
+        ))}
+      </div>
+      <button onClick={onClear} className="text-white/50 hover:text-white text-xs shrink-0">Clear</button>
+    </div>
+  )
+}
+
+function TableWrap({ cols, empty, children, checkboxCol }) {
   return (
     <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-x-auto">
       <table className="w-full min-w-[600px] text-sm">
         <thead>
           <tr className="border-b border-[#e5e7eb] bg-[#F9FAFB]">
+            {checkboxCol !== undefined && <th className="px-4 py-3 w-10">{checkboxCol}</th>}
             {cols.map(({ label, align = 'left' }) => (
               <th key={label} className={`text-${align} px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide`}>{label}</th>
             ))}
@@ -131,7 +160,7 @@ function TableWrap({ cols, empty, children }) {
         </thead>
         <tbody>
           {empty
-            ? <tr><td colSpan={cols.length} className="text-center py-10 text-gray-400 text-sm">{empty}</td></tr>
+            ? <tr><td colSpan={cols.length + (checkboxCol !== undefined ? 1 : 0)} className="text-center py-10 text-gray-400 text-sm">{empty}</td></tr>
             : children
           }
         </tbody>
@@ -379,6 +408,7 @@ function UsersTab({ users }) {
   const [confirm,      setConfirm]      = useState(null)
   const [busy,         setBusy]         = useState(null)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [selectedIds,  setSelectedIds]  = useState(new Set())
 
   const displayed = useMemo(() => {
     const q = search.toLowerCase()
@@ -388,6 +418,43 @@ function UsersTab({ users }) {
       return true
     })
   }, [users, search, roleFilter])
+
+  useEffect(() => setSelectedIds(new Set()), [displayed])
+
+  function toggleId(id) { setSelectedIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s }) }
+  function toggleAll() { setSelectedIds(displayed.every(u => selectedIds.has(u.id)) && displayed.length > 0 ? new Set() : new Set(displayed.map(u => u.id))) }
+
+  async function bulkSuspend() {
+    await Promise.all(
+      displayed.filter(u => selectedIds.has(u.id) && u.role !== 'admin' && u.status !== 'suspended')
+               .map(u => updateDoc(doc(db, 'users', u.id), { status: 'suspended' }))
+    )
+    setSelectedIds(new Set())
+  }
+
+  async function bulkActivate() {
+    await Promise.all(
+      displayed.filter(u => selectedIds.has(u.id) && u.status === 'suspended')
+               .map(u => updateDoc(doc(db, 'users', u.id), { status: 'active' }))
+    )
+    setSelectedIds(new Set())
+  }
+
+  function exportUsersCSV() {
+    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const subset = displayed.filter(u => selectedIds.has(u.id))
+    const rows_data = subset.length > 0 ? subset : displayed
+    const rows = [
+      ['Name', 'Email', 'Role', 'Status', 'Joined'].map(esc).join(','),
+      ...rows_data.map(u => [u.fullName ?? '', u.email ?? '', u.role ?? 'customer', u.status === 'suspended' ? 'Suspended' : 'Active', fmtDate(u.createdAt)].map(esc).join(',')),
+    ]
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = subset.length > 0 ? 'users-selected.csv' : 'users.csv'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   async function handleStatus(uid, newStatus) {
     setBusy(uid)
@@ -425,16 +492,42 @@ function UsersTab({ users }) {
         {displayed.length !== users.length && (
           <span className="text-xs text-gray-400">showing {displayed.length}</span>
         )}
+        <button onClick={exportUsersCSV}
+          className="ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </button>
       </FilterBar>
+
+      <BulkBar
+        count={displayed.filter(u => selectedIds.has(u.id)).length}
+        onClear={() => setSelectedIds(new Set())}
+        actions={[
+          { label: 'Suspend selected', onClick: bulkSuspend, danger: true },
+          { label: 'Activate selected', onClick: bulkActivate },
+          { label: 'Export selected', onClick: exportUsersCSV },
+        ]}
+      />
 
       <TableWrap
         cols={[{ label: 'User' }, { label: 'Role' }, { label: 'Joined' }, { label: 'Status' }, { label: 'Actions', align: 'right' }]}
         empty={displayed.length === 0 ? 'No users found' : null}
+        checkboxCol={
+          <HeaderCheckbox
+            checked={displayed.length > 0 && displayed.every(u => selectedIds.has(u.id))}
+            indeterminate={displayed.some(u => selectedIds.has(u.id)) && !displayed.every(u => selectedIds.has(u.id))}
+            onChange={toggleAll}
+          />
+        }
       >
         {displayed.map(u => {
           const isSuspended = u.status === 'suspended'
           return (
             <TR key={u.id}>
+              <TD className="w-10"><input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleId(u.id)} className="w-4 h-4 accent-[#1B6CA8] cursor-pointer" /></TD>
               <TD>
                 <div className="flex items-center gap-3">
                   {u.photoURL
@@ -636,6 +729,7 @@ function OrdersTab({ orders, users }) {
   const [dateFilter,    setDateFilter]    = useState('All Time')
   const [busy,          setBusy]          = useState(null)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [selectedIds,   setSelectedIds]   = useState(new Set())
 
   const displayed = useMemo(() => {
     const q   = search.toLowerCase()
@@ -664,6 +758,11 @@ function OrdersTab({ orders, users }) {
     }).sort((a, b) => (b.createdAt?.toDate?.()?.getTime() ?? 0) - (a.createdAt?.toDate?.()?.getTime() ?? 0))
   }, [orders, statusFilter, dateFilter, search])
 
+  useEffect(() => setSelectedIds(new Set()), [displayed])
+
+  function toggleId(id) { setSelectedIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s }) }
+  function toggleAll() { setSelectedIds(displayed.every(o => selectedIds.has(o.id)) && displayed.length > 0 ? new Set() : new Set(displayed.map(o => o.id))) }
+
   async function handleStatus(id, status) {
     setBusy(id)
     try { await updateDoc(doc(db, 'orders', id), { status }) }
@@ -672,11 +771,12 @@ function OrdersTab({ orders, users }) {
 
   const [exporting, setExporting] = useState(false)
 
-  function exportCSV() {
+  function exportCSV(subset, filename) {
+    const rows_data = subset ?? displayed
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
     const rows = [
       ['Ref', 'Shop', 'Customer', 'Service', 'Status', 'Amount', 'Date'].map(esc).join(','),
-      ...displayed.map(o => [
+      ...rows_data.map(o => [
         `LBG-${o.id.substring(0, 8).toUpperCase()}`,
         o.shopName ?? '',
         o.customerName ?? '',
@@ -689,7 +789,7 @@ function OrdersTab({ orders, users }) {
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href = url; a.download = 'orders.csv'
+    a.href = url; a.download = filename ?? 'orders.csv'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -733,12 +833,28 @@ function OrdersTab({ orders, users }) {
         <FilterPills options={['All Time', 'This Month', 'This Week', 'Today']} active={dateFilter} onChange={setDateFilter} />
       </div>
 
+      <BulkBar
+        count={displayed.filter(o => selectedIds.has(o.id)).length}
+        onClear={() => setSelectedIds(new Set())}
+        actions={[
+          { label: 'Export selected', onClick: () => exportCSV(displayed.filter(o => selectedIds.has(o.id)), 'orders-selected.csv') },
+        ]}
+      />
+
       <TableWrap
         cols={[{ label: 'Ref' }, { label: 'Shop' }, { label: 'Customer' }, { label: 'Service' }, { label: 'Status' }, { label: 'Amount', align: 'right' }, { label: 'Date', align: 'right' }]}
         empty={displayed.length === 0 ? 'No orders found' : null}
+        checkboxCol={
+          <HeaderCheckbox
+            checked={displayed.length > 0 && displayed.every(o => selectedIds.has(o.id))}
+            indeterminate={displayed.some(o => selectedIds.has(o.id)) && !displayed.every(o => selectedIds.has(o.id))}
+            onChange={toggleAll}
+          />
+        }
       >
         {displayed.map(o => (
           <TR key={o.id} onClick={() => setSelectedOrder(o)} className="cursor-pointer">
+            <TD className="w-10"><input type="checkbox" checked={selectedIds.has(o.id)} onChange={() => toggleId(o.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-[#1B6CA8] cursor-pointer" /></TD>
             <TD><span className="font-mono text-xs text-gray-500">LBG-{o.id.substring(0, 8).toUpperCase()}</span></TD>
             <TD><span className="text-gray-800">{o.shopName ?? '—'}</span></TD>
             <TD><span className="text-gray-600 text-xs">{o.customerName ?? '—'}</span></TD>
@@ -988,6 +1104,7 @@ function ShopsTab({ shops, users, orders, initialOpenId }) {
   const [busy,         setBusy]         = useState(null)
   const [search,       setSearch]       = useState('')
   const [detailShop,   setDetailShop]   = useState(null)
+  const [selectedIds,  setSelectedIds]  = useState(new Set())
   const handledShopRef = useRef(null)
 
   useEffect(() => {
@@ -1006,6 +1123,43 @@ function ShopsTab({ shops, users, orders, initialOpenId }) {
     const q = search.toLowerCase()
     return shops.filter(s => !q || s.name?.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q))
   }, [shops, search])
+
+  useEffect(() => setSelectedIds(new Set()), [displayed])
+
+  function toggleId(id) { setSelectedIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s }) }
+  function toggleAll() { setSelectedIds(displayed.every(s => selectedIds.has(s.id)) && displayed.length > 0 ? new Set() : new Set(displayed.map(s => s.id))) }
+
+  async function bulkApprove() {
+    await Promise.all(
+      displayed.filter(s => selectedIds.has(s.id) && !s.approved)
+               .map(s => updateDoc(doc(db, 'shops', s.id), { approved: true }))
+    )
+    setSelectedIds(new Set())
+  }
+
+  async function bulkSuspend() {
+    await Promise.all(
+      displayed.filter(s => selectedIds.has(s.id) && s.status !== 'suspended')
+               .map(s => updateDoc(doc(db, 'shops', s.id), { status: 'suspended' }))
+    )
+    setSelectedIds(new Set())
+  }
+
+  function exportShopsCSV() {
+    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const subset = displayed.filter(s => selectedIds.has(s.id))
+    const rows_data = subset.length > 0 ? subset : displayed
+    const rows = [
+      ['Name', 'Address', 'Rating', 'Orders', 'Approved', 'Status'].map(esc).join(','),
+      ...rows_data.map(s => [s.name ?? '', s.address ?? '', s.rating ?? '', shopOrderCount[s.id] ?? 0, s.approved ? 'Yes' : 'No', s.status ?? 'active'].map(esc).join(',')),
+    ]
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = subset.length > 0 ? 'shops-selected.csv' : 'shops.csv'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   async function setField(shopId, field, value) {
     setBusy(shopId + field)
@@ -1040,17 +1194,43 @@ function ShopsTab({ shops, users, orders, initialOpenId }) {
 
       <FilterBar count={displayed.length} noun="shop">
         <SearchInput value={search} onChange={setSearch} placeholder="Search shops…" />
+        <button onClick={exportShopsCSV}
+          className="ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </button>
       </FilterBar>
+
+      <BulkBar
+        count={displayed.filter(s => selectedIds.has(s.id)).length}
+        onClear={() => setSelectedIds(new Set())}
+        actions={[
+          { label: 'Approve selected', onClick: bulkApprove },
+          { label: 'Suspend selected', onClick: bulkSuspend, danger: true },
+          { label: 'Export selected', onClick: exportShopsCSV },
+        ]}
+      />
 
       <TableWrap
         cols={[{ label: 'Shop' }, { label: 'Owner' }, { label: 'Rating', align: 'center' }, { label: 'Orders', align: 'center' }, { label: 'Featured', align: 'center' }, { label: 'Approved', align: 'center' }, { label: 'Actions', align: 'right' }]}
         empty={displayed.length === 0 ? 'No shops found' : null}
+        checkboxCol={
+          <HeaderCheckbox
+            checked={displayed.length > 0 && displayed.every(s => selectedIds.has(s.id))}
+            indeterminate={displayed.some(s => selectedIds.has(s.id)) && !displayed.every(s => selectedIds.has(s.id))}
+            onChange={toggleAll}
+          />
+        }
       >
         {displayed.map(s => {
           const isSuspended = s.status === 'suspended'
           const owner = users.find(u => u.id === s.id)
           return (
             <TR key={s.id}>
+              <TD className="w-10"><input type="checkbox" checked={selectedIds.has(s.id)} onChange={() => toggleId(s.id)} className="w-4 h-4 accent-[#1B6CA8] cursor-pointer" /></TD>
               <TD>
                 <p className="font-medium text-gray-900">{s.name}</p>
                 <p className="text-xs text-gray-400 truncate max-w-[220px]">{s.address}</p>
@@ -1267,6 +1447,7 @@ function RidersTab({ users, orders, initialOpenId }) {
   const [busy,         setBusy]         = useState(null)
   const [search,       setSearch]       = useState('')
   const [detailRider,  setDetailRider]  = useState(null)
+  const [selectedIds,  setSelectedIds]  = useState(new Set())
   const handledRiderRef = useRef(null)
 
   useEffect(() => {
@@ -1287,6 +1468,43 @@ function RidersTab({ users, orders, initialOpenId }) {
     const q = search.toLowerCase()
     return riders.filter(r => !q || r.fullName?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q))
   }, [riders, search])
+
+  useEffect(() => setSelectedIds(new Set()), [displayed])
+
+  function toggleId(id) { setSelectedIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s }) }
+  function toggleAll() { setSelectedIds(displayed.every(r => selectedIds.has(r.id)) && displayed.length > 0 ? new Set() : new Set(displayed.map(r => r.id))) }
+
+  async function bulkApprove() {
+    await Promise.all(
+      displayed.filter(r => selectedIds.has(r.id) && !r.status)
+               .map(r => updateDoc(doc(db, 'users', r.id), { status: 'active' }))
+    )
+    setSelectedIds(new Set())
+  }
+
+  async function bulkSuspend() {
+    await Promise.all(
+      displayed.filter(r => selectedIds.has(r.id) && r.status !== 'suspended')
+               .map(r => updateDoc(doc(db, 'users', r.id), { status: 'suspended' }))
+    )
+    setSelectedIds(new Set())
+  }
+
+  function exportRidersCSV() {
+    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const subset = displayed.filter(r => selectedIds.has(r.id))
+    const rows_data = subset.length > 0 ? subset : displayed
+    const rows = [
+      ['Name', 'Email', 'Phone', 'Deliveries', 'Status'].map(esc).join(','),
+      ...rows_data.map(r => [r.fullName ?? '', r.email ?? '', r.mobile ?? '', completedByRider[r.id] ?? 0, r.status === 'suspended' ? 'Suspended' : !r.status ? 'Pending' : 'Active'].map(esc).join(',')),
+    ]
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = subset.length > 0 ? 'riders-selected.csv' : 'riders.csv'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   async function handleStatus(uid, newStatus) {
     setBusy(uid); try { await updateDoc(doc(db, 'users', uid), { status: newStatus }) } finally { setBusy(null); setConfirm(null) }
@@ -1319,17 +1537,43 @@ function RidersTab({ users, orders, initialOpenId }) {
 
       <FilterBar count={displayed.length} noun="rider">
         <SearchInput value={search} onChange={setSearch} placeholder="Search riders…" />
+        <button onClick={exportRidersCSV}
+          className="ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export CSV
+        </button>
       </FilterBar>
+
+      <BulkBar
+        count={displayed.filter(r => selectedIds.has(r.id)).length}
+        onClear={() => setSelectedIds(new Set())}
+        actions={[
+          { label: 'Approve selected', onClick: bulkApprove },
+          { label: 'Suspend selected', onClick: bulkSuspend, danger: true },
+          { label: 'Export selected', onClick: exportRidersCSV },
+        ]}
+      />
 
       <TableWrap
         cols={[{ label: 'Rider' }, { label: 'Phone' }, { label: 'Availability', align: 'center' }, { label: 'Deliveries', align: 'center' }, { label: 'Status', align: 'center' }, { label: 'Actions', align: 'right' }]}
         empty={displayed.length === 0 ? 'No riders found' : null}
+        checkboxCol={
+          <HeaderCheckbox
+            checked={displayed.length > 0 && displayed.every(r => selectedIds.has(r.id))}
+            indeterminate={displayed.some(r => selectedIds.has(r.id)) && !displayed.every(r => selectedIds.has(r.id))}
+            onChange={toggleAll}
+          />
+        }
       >
         {displayed.map(r => {
           const isPending   = !r.status
           const isSuspended = r.status === 'suspended'
           return (
             <TR key={r.id}>
+              <TD className="w-10"><input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleId(r.id)} className="w-4 h-4 accent-[#1B6CA8] cursor-pointer" /></TD>
               <TD>
                 <div className="flex items-center gap-3">
                   {r.photoURL
