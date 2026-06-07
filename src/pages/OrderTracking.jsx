@@ -546,18 +546,18 @@ export default function OrderTracking() {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center text-center py-3 gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-700">No rider assigned yet</p>
-                    <p className="text-xs text-gray-500 mt-1 leading-relaxed max-w-[180px]">
+                    <p className="text-xs text-gray-500 mt-0.5 leading-snug">
                       {['PENDING', 'ACCEPTED'].includes(order.status)
-                        ? 'A rider will be assigned once the shop confirms your pickup.'
-                        : 'Your rider details will appear here shortly.'}
+                        ? 'Assigned once the shop confirms your pickup'
+                        : 'Details will appear here shortly'}
                     </p>
                   </div>
                 </div>
