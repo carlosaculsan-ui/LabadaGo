@@ -758,7 +758,7 @@ function OrdersTab({ orders, users }) {
 
 // ─── Shops Tab ────────────────────────────────────────────────────────────────
 
-function ShopDetailModal({ shop, owner, orderCount, onClose }) {
+function ShopDetailModal({ shop, owner, orderCount, onClose, onApprove, onSuspendToggle, busy }) {
   const [app,        setApp]        = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
 
@@ -788,7 +788,7 @@ function ShopDetailModal({ shop, owner, orderCount, onClose }) {
 
         {/* Hero */}
         <div className="relative h-44 bg-gradient-to-br from-[#DBEAFE] to-[#93C5FD] shrink-0 overflow-hidden rounded-t-2xl">
-          {shop.image && <img src={shop.image} alt={shop.name} className="w-full h-full object-cover" />}
+          {shop.image && <img src={shop.image} alt={shop.name} className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display = 'none' }} />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -933,6 +933,39 @@ function ShopDetailModal({ shop, owner, orderCount, onClose }) {
             </div>
           )}
 
+          {/* Approval actions */}
+          <div className="border-t border-[#e5e7eb] pt-5 flex items-center justify-end gap-3">
+            {!shop.approved && shop.status !== 'suspended' && (
+              <button
+                disabled={!!busy}
+                onClick={() => onApprove(shop)}
+                className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-[#1B6CA8] text-white hover:bg-[#155a8a] transition-colors disabled:opacity-50"
+              >
+                Approve shop
+              </button>
+            )}
+            {shop.status === 'suspended'
+              ? (
+                <button
+                  disabled={!!busy}
+                  onClick={() => onSuspendToggle(shop)}
+                  className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-green-300 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
+                >
+                  Restore shop
+                </button>
+              )
+              : (
+                <button
+                  disabled={!!busy}
+                  onClick={() => onSuspendToggle(shop)}
+                  className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-red-300 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  Suspend
+                </button>
+              )
+            }
+          </div>
+
         </div>
       </div>
     </div>
@@ -975,7 +1008,26 @@ function ShopsTab({ shops, users, orders }) {
     <div>
       <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">Shops</h2>
       {confirm && <ConfirmModal message={confirm.message} confirmLabel={confirm.label} danger={confirm.danger} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
-      {detailShop && <ShopDetailModal shop={detailShop} owner={users.find(u => u.id === detailShop.id)} orderCount={shopOrderCount[detailShop.id] ?? 0} onClose={() => setDetailShop(null)} />}
+      {detailShop && (
+        <ShopDetailModal
+          shop={detailShop}
+          owner={users.find(u => u.id === detailShop.id)}
+          orderCount={shopOrderCount[detailShop.id] ?? 0}
+          onClose={() => setDetailShop(null)}
+          busy={busy?.startsWith(detailShop.id)}
+          onApprove={s => { setDetailShop(null); setField(s.id, 'approved', true) }}
+          onSuspendToggle={s => {
+            const isSuspended = s.status === 'suspended'
+            setDetailShop(null)
+            setConfirm({
+              message:   isSuspended ? `Restore shop "${s.name}"?` : `Suspend "${s.name}"? It will be hidden from Browse.`,
+              label:     isSuspended ? 'Restore' : 'Suspend',
+              danger:    !isSuspended,
+              onConfirm: () => setField(s.id, 'status', isSuspended ? 'active' : 'suspended'),
+            })
+          }}
+        />
+      )}
 
       <FilterBar count={displayed.length} noun="shop">
         <SearchInput value={search} onChange={setSearch} placeholder="Search shops…" />
@@ -992,7 +1044,7 @@ function ShopsTab({ shops, users, orders }) {
             <TR key={s.id}>
               <TD>
                 <p className="font-medium text-gray-900">{s.name}</p>
-                <p className="text-xs text-gray-400">{s.address}</p>
+                <p className="text-xs text-gray-400 truncate max-w-[220px]">{s.address}</p>
               </TD>
               <TD><span className="text-gray-500 text-xs">{owner?.email ?? '—'}</span></TD>
               <TD align="center"><span className="text-gray-800">{s.rating ? `${s.rating}★` : '—'}</span></TD>
