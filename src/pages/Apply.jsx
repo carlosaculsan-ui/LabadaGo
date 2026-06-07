@@ -355,7 +355,17 @@ export default function Apply() {
             {/* ── Step 1: Personal Info ── */}
             {step === 0 && (
               <>
-                {!isMerchant && (
+                {isMerchant ? (
+                  <div className="bg-[#E8F4FD] border border-[#1B6CA8]/20 rounded-xl px-4 py-3.5">
+                    <p className="text-xs font-bold text-[#1B6CA8] mb-1.5">Before you start</p>
+                    <p className="text-xs text-[#1B6CA8]/80 mb-1.5">Have these ready before filling out the form:</p>
+                    <ul className="space-y-1 text-xs text-[#1B6CA8]/80">
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Business Permit or DTI Certificate — PDF, JPG or PNG</li>
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />Shop front photo — clear exterior shot</li>
+                      <li className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-[#1B6CA8] shrink-0" />GCash number — for receiving customer payments</li>
+                    </ul>
+                  </div>
+                ) : (
                   <div className="bg-[#E8F4FD] border border-[#1B6CA8]/20 rounded-xl px-4 py-3.5">
                     <p className="text-xs font-bold text-[#1B6CA8] mb-1.5">Before you start</p>
                     <p className="text-xs text-[#1B6CA8]/80 mb-1.5">Have these ready before filling out the form:</p>
@@ -411,6 +421,12 @@ export default function Apply() {
             {/* ── Step 2: Merchant — Shop & Documents ── */}
             {step === 1 && isMerchant && (
               <>
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                  <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-amber-700">This step covers shop info, hours, services, and documents — takes about 5 minutes.</p>
+                </div>
                 <Field label="Shop name *">
                   <input value={shopName} onChange={e => setShopName(e.target.value)} placeholder="e.g. Sunshine Laundry" className={inputCls} />
                 </Field>
