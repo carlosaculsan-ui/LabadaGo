@@ -1372,10 +1372,8 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
 
 // ─── OrdersTab ────────────────────────────────────────────────────────────────
 
-function OrdersTab({ orders }) {
-  const [tab,        setTab]        = useState('All')
-  const [search,     setSearch]     = useState('')
-  const [dateFilter, setDateFilter] = useState('all')
+function OrdersTab({ orders, tab, setTab, dateFilter, setDateFilter }) {
+  const [search, setSearch] = useState('')
 
   const now = new Date()
 
@@ -2080,6 +2078,8 @@ export default function MerchantDashboard() {
   const [shopMeta,      setShopMeta]      = useState({})
   const [activeNav,     setActiveNav]     = useState('dashboard')
   const [activeTab,     setActiveTab]     = useState('All')
+  const [ordersTab,     setOrdersTab]     = useState('All')
+  const [ordersDate,    setOrdersDate]    = useState('all')
   const [menuOpen,      setMenuOpen]      = useState(false)
   const [notifOpen,     setNotifOpen]     = useState(false)
   const [sidebarOpen,   setSidebarOpen]   = useState(false)
@@ -2229,10 +2229,10 @@ export default function MerchantDashboard() {
   const completedToday = orders.filter(o => o.status === 'COMPLETED' && isToday(o.createdAt))
 
   const STATS = [
-    { label: "Today's orders",   value: todayOrders.length    },
-    { label: 'Pending approval', value: pendingOrders.length  },
-    { label: 'In progress',      value: inProgress.length     },
-    { label: 'Completed today',  value: completedToday.length },
+    { label: "Today's orders",   value: todayOrders.length,    tab: 'All',         date: 'today' },
+    { label: 'Pending approval', value: pendingOrders.length,  tab: 'Pending',     date: 'all'   },
+    { label: 'In progress',      value: inProgress.length,     tab: 'In Progress', date: 'all'   },
+    { label: 'Completed today',  value: completedToday.length, tab: 'Completed',   date: 'today' },
   ]
 
   const completedOrders = orders.filter(o => o.status === 'COMPLETED')
@@ -2512,16 +2512,18 @@ export default function MerchantDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {STATS.map((stat, i) => (
-              <div
+              <button
                 key={stat.label}
-                className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4 transition-all duration-200 hover:bg-white/[0.16] hover:border-white/30 hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
+                type="button"
+                onClick={() => { setOrdersTab(stat.tab); setOrdersDate(stat.date); setActiveNav('orders') }}
+                className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4 transition-all duration-200 hover:bg-white/[0.16] hover:border-white/30 hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 text-left cursor-pointer"
               >
                 <div className={`w-2 h-2 rounded-full ${STAT_STYLES[i].accent} mb-3`} />
                 <p className="font-heading font-bold text-[2.2rem] text-white leading-none">
                   {stat.value}
                 </p>
                 <p className="text-[11px] text-white/65 mt-2">{stat.label}</p>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -2634,7 +2636,11 @@ export default function MerchantDashboard() {
 
           {/* ── Orders tab ────────────────────────────────────────────── */}
           {activeNav === 'orders' && (
-            <OrdersTab orders={orders} />
+            <OrdersTab
+              orders={orders}
+              tab={ordersTab}       setTab={setOrdersTab}
+              dateFilter={ordersDate} setDateFilter={setOrdersDate}
+            />
           )}
 
           {/* ── My Shop Profile tab ───────────────────────────────────── */}
