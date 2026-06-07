@@ -165,11 +165,27 @@ export default function Apply() {
   }, [shopFrontPhoto])
 
   // Step 2 — Rider
-  const [vehicle,      setVehicle]      = useState('Motorcycle')
-  const [plate,        setPlate]        = useState('')
-  const [vehicleModel, setVehicleModel] = useState('')
-  const [license,      setLicense]      = useState(null)
-  const [validId,      setValidId]      = useState(null)
+  const [vehicle,       setVehicle]       = useState('Motorcycle')
+  const [plate,         setPlate]         = useState('')
+  const [vehicleModel,  setVehicleModel]  = useState('')
+  const [license,       setLicense]       = useState(null)
+  const [validId,       setValidId]       = useState(null)
+  const [licensePreview, setLicensePreview] = useState(null)
+  const [validIdPreview,  setValidIdPreview]  = useState(null)
+
+  useEffect(() => {
+    if (!license) { setLicensePreview(null); return }
+    const url = URL.createObjectURL(license)
+    setLicensePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [license])
+
+  useEffect(() => {
+    if (!validId) { setValidIdPreview(null); return }
+    const url = URL.createObjectURL(validId)
+    setValidIdPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [validId])
 
   function toggleService(svc) {
     setServices(prev => prev.includes(svc) ? prev.filter(s => s !== svc) : [...prev, svc])
@@ -404,7 +420,7 @@ export default function Apply() {
                   <Field label="Sex *">
                     <div className="flex gap-2">
                       {['Male', 'Female'].map(opt => (
-                        <button key={opt} type="button" onClick={() => setSex(opt)}
+                        <button key={opt} type="button" onClick={() => { setSex(opt); setError('') }}
                           className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${sex === opt ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-[#e5e7eb] text-gray-600 hover:border-gray-300'}`}>
                           {opt}
                         </button>
@@ -476,7 +492,7 @@ export default function Apply() {
                         </svg>
                         <div>
                           <p className="text-sm text-gray-700 font-medium">Upload shop front photo</p>
-                          <p className="text-xs text-gray-600 mt-0.5">JPG or PNG · recommended 800×600px</p>
+                          <p className="text-xs text-gray-600 mt-0.5">Use a clear exterior shot with visible signage · JPG or PNG</p>
                         </div>
                       </div>
                     )}
@@ -681,9 +697,8 @@ export default function Apply() {
                     {photoPreview && (
                       <img src={photoPreview} alt="Shop front" className="w-full h-36 object-cover rounded-xl mb-2" />
                     )}
-                    <ReviewRow label="Shop Name"       value={shopName} />
-                    <ReviewRow label="Shop Address"    value={shopAddress} />
-                    <ReviewRow label="Front Photo"     value={shopFrontPhoto ? `${shopFrontPhoto.name} ✓` : 'Not uploaded'} />
+                    <ReviewRow label="Shop Name"    value={shopName} />
+                    <ReviewRow label="Shop Address" value={shopAddress} />
                     <ReviewRow label="Services"        value={services.join(', ')} />
                     <ReviewRow label="Price"           value={pricePerKg ? `₱${pricePerKg}/kg` : '₱65/kg (default)'} />
                     <ReviewRow label="GCash"           value={gcash || '—'} />
@@ -701,8 +716,24 @@ export default function Apply() {
                     <ReviewRow label="Vehicle"          value={vehicle} />
                     <ReviewRow label="Plate No."        value={plate || '—'} />
                     <ReviewRow label="Model & Color"    value={vehicleModel || '—'} />
-                    <ReviewRow label="Driver's License" value={license ? `${license.name} ✓` : 'Not uploaded'} />
-                    <ReviewRow label="Valid ID"         value={validId  ? `${validId.name} ✓`  : 'Not uploaded'} />
+                    {license ? (
+                      <div className="py-1">
+                        <p className="text-xs text-gray-600 mb-1.5">Driver's License</p>
+                        {license.type?.startsWith('image/') && licensePreview
+                          ? <img src={licensePreview} alt="Driver's License" className="w-full h-28 object-cover rounded-xl" />
+                          : <p className="text-sm font-medium text-gray-800">{license.name} ✓</p>
+                        }
+                      </div>
+                    ) : <ReviewRow label="Driver's License" value="Not uploaded" />}
+                    {validId ? (
+                      <div className="py-1">
+                        <p className="text-xs text-gray-600 mb-1.5">Valid Government ID</p>
+                        {validId.type?.startsWith('image/') && validIdPreview
+                          ? <img src={validIdPreview} alt="Valid ID" className="w-full h-28 object-cover rounded-xl" />
+                          : <p className="text-sm font-medium text-gray-800">{validId.name} ✓</p>
+                        }
+                      </div>
+                    ) : <ReviewRow label="Valid ID" value="Not uploaded" />}
                   </div>
                 )}
 
