@@ -995,7 +995,27 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
 
   return (
     <div className="space-y-6">
-      <h2 className="font-heading font-bold text-[17px] text-gray-900">My Shop Profile</h2>
+      <div className="sticky top-0 z-10 bg-[#F4F7FA] py-3 -mt-3 flex items-center justify-between border-b border-[#e5e7eb]/70">
+        <h2 className="font-heading font-bold text-[17px] text-gray-900">My Shop Profile</h2>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving}
+            className="bg-[#1B6CA8] text-white font-semibold text-sm py-2 px-5 rounded-xl hover:bg-[#155a8a] transition-colors disabled:opacity-60"
+          >
+            {isSaving ? 'Saving…' : 'Save changes'}
+          </button>
+          {saveSuccess && (
+            <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+              </svg>
+              Saved!
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="flex gap-6 items-start">
 
@@ -1342,26 +1362,6 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Save */}
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={isSaving}
-              className="bg-[#1B6CA8] text-white font-semibold text-sm py-2.5 px-7 rounded-xl hover:bg-[#155a8a] transition-colors disabled:opacity-60"
-            >
-              {isSaving ? 'Saving…' : 'Save changes'}
-            </button>
-            {saveSuccess && (
-              <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
-                </svg>
-                Saved!
-              </div>
-            )}
           </div>
 
         </div>
@@ -2237,7 +2237,7 @@ export default function MerchantDashboard() {
     try {
       await updateDoc(doc(db, 'shops', String(shopId)), { ...shopForm, updatedAt: serverTimestamp() })
       setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 2500)
+      setTimeout(() => setSaveSuccess(false), 4000)
     } finally {
       setIsSaving(false)
     }

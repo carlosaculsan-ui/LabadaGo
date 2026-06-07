@@ -19,6 +19,7 @@ const SERVICES    = ['Wash & Fold', 'Dry Cleaning', 'Comforters', 'Towels & Line
 const VEHICLES    = ['Motorcycle', 'Bicycle', 'Car']
 const CARD_COLORS = ['bg-[#DBEAFE]', 'bg-[#D1FAE5]', 'bg-[#FEE2E2]', 'bg-[#EDE9FE]', 'bg-[#FEF3C7]', 'bg-[#CCFBF1]']
 const AMENITY_OPTIONS = ['Free pickup', 'Free delivery', 'Folding included', 'Fabric conditioner', 'Ironing available', 'Same-day service', 'Stain treatment', 'Hang drying']
+const DETERGENTS      = ['Any', 'Ariel', 'Tide', 'Breeze', 'Hypoallergenic']
 const DEFAULT_HOURS = [
   { day: 'Monday–Friday', open: true,  time: '7:00 AM – 6:00 PM' },
   { day: 'Saturday',       open: true,  time: '7:00 AM – 4:00 PM' },
@@ -164,6 +165,7 @@ export default function Apply() {
         if (d.gcash)          setGcash(d.gcash)
         if (d.services)       setServices(d.services)
         if (d.amenities)      setAmenities(d.amenities)
+        if (d.detergents)     setDetergents(d.detergents)
         if (d.turnaround)     setTurnaround(d.turnaround)
         if (d.machines)       setMachines(d.machines)
         if (d.maxKg)          setMaxKg(d.maxKg)
@@ -188,14 +190,14 @@ export default function Apply() {
     const data = {
       step, firstName, middleInitial, lastName, age, sex, mobile, address,
       ...(isMerchant
-        ? { shopName, shopAddress, about, shopPhone, shopEmail, hours, servicePricing, pricePerKg, gcash, services, amenities, turnaround, machines, maxKg, serviceRadius }
+        ? { shopName, shopAddress, about, shopPhone, shopEmail, hours, servicePricing, pricePerKg, gcash, services, amenities, detergents, turnaround, machines, maxKg, serviceRadius }
         : { vehicle, plate, vehicleModel }
       ),
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   }, [STORAGE_KEY, step, firstName, middleInitial, lastName, age, sex, mobile, address,
       shopName, shopAddress, about, shopPhone, shopEmail, hours, servicePricing, pricePerKg,
-      gcash, services, amenities, turnaround, machines, maxKg, serviceRadius,
+      gcash, services, amenities, detergents, turnaround, machines, maxKg, serviceRadius,
       vehicle, plate, vehicleModel])
 
   // Step 1 — Personal Info
@@ -223,6 +225,7 @@ export default function Apply() {
   const [hours,          setHours]          = useState(DEFAULT_HOURS)
   const [servicePricing, setServicePricing] = useState([{ name: '', price: '', desc: '' }])
   const [amenities,      setAmenities]      = useState([])
+  const [detergents,     setDetergents]     = useState(['Any'])
   const [bizPermit,      setBizPermit]      = useState(null)
   const [turnaround,     setTurnaround]     = useState('')
   const [machines,       setMachines]       = useState('')
@@ -310,6 +313,31 @@ export default function Apply() {
         const builtHours = hours.map(h => ({ day: h.day, time: h.open ? h.time.trim() || 'Closed' : 'Closed' }))
         const builtPricing = servicePricing.filter(s => s.name.trim()).map(s => ({ name: s.name.trim(), price: s.price.trim(), desc: s.desc.trim() }))
 
+        function parseHHMM(str) {
+          const m = String(str ?? '').trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+          if (!m) return null
+          let h = parseInt(m[1])
+          const min = m[2]
+          const p = m[3].toUpperCase()
+          if (p === 'PM' && h !== 12) h += 12
+          if (p === 'AM' && h === 12) h = 0
+          return `${String(h).padStart(2, '0')}:${min}`
+        }
+        function hoursEntry(entry) {
+          if (!entry?.open || !entry.time) return { open: false, from: '08:00', to: '18:00' }
+          const parts = entry.time.split(/\s*[–\-—]\s*/)
+          return { open: true, from: parseHHMM(parts[0]) ?? '08:00', to: parseHHMM(parts[1]) ?? '18:00' }
+        }
+        const wd  = hoursEntry(hours[0])
+        const sat = hoursEntry(hours[1])
+        const sun = hoursEntry(hours[2])
+        const businessHours = {
+          monday: { ...wd }, tuesday: { ...wd }, wednesday: { ...wd },
+          thursday: { ...wd }, friday: { ...wd },
+          saturday: { ...sat },
+          sunday:   { ...sun },
+        }
+
         await setDoc(shopRef, {
           name:           shopName.trim(),
           address:        shopAddress.trim(),
@@ -321,6 +349,7 @@ export default function Apply() {
           phone:          shopPhone.trim(),
           email:          shopEmail.trim(),
           hours:          builtHours,
+          businessHours,
           servicePricing: builtPricing,
           amenities,
           services,
@@ -328,7 +357,7 @@ export default function Apply() {
           machines:       machines    ? parseInt(machines, 10)    : null,
           maxKg:          maxKg       ? parseInt(maxKg, 10)       : null,
           serviceRadius:  serviceRadius ? parseInt(serviceRadius, 10) : null,
-          detergents:     ['Any'],
+          detergents,
           rating:         5.0,
           reviewCount:    0,
           distanceKm:     +(Math.random() * 4 + 0.5).toFixed(1),
@@ -770,6 +799,19 @@ export default function Apply() {
                             </svg>
                           )}
                         </span>
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+
+                {/* Accepted Detergents */}
+                <Field label="Accepted detergents" hint="Which brands do you accept? Customers see this when placing orders">
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {DETERGENTS.map(opt => (
+                      <label key={opt} className={`flex items-center px-3 py-2 rounded-xl border cursor-pointer transition-colors text-sm ${detergents.includes(opt) ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8] font-medium' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
+                        <input type="checkbox" className="sr-only" checked={detergents.includes(opt)}
+                          onChange={() => setDetergents(prev => prev.includes(opt) ? prev.filter(d => d !== opt) : [...prev, opt])} />
                         {opt}
                       </label>
                     ))}
