@@ -129,6 +129,10 @@ export default function Apply() {
   const [submitting, setSubmitting] = useState(false)
   const [success,    setSuccess]    = useState(false)
   const [error,      setError]      = useState('')
+  const [errorField, setErrorField] = useState('')
+
+  function setFieldError(field, msg) { setErrorField(field); setError(msg) }
+  function clearError()              { setError(''); setErrorField('') }
 
   // Step 1 — Personal Info
   const [firstName,     setFirstName]     = useState('')
@@ -192,32 +196,32 @@ export default function Apply() {
   }
 
   function validate() {
-    setError('')
+    clearError()
     if (step === 0) {
-      if (!firstName.trim()) { setError('First name is required.');    return false }
-      if (!lastName.trim())  { setError('Last name is required.');     return false }
-      if (!age)              { setError('Age is required.');           return false }
-      if (!sex)              { setError('Please select your sex.');    return false }
-      if (!mobile.trim())    { setError('Mobile number is required.'); return false }
-      if (!address.trim())   { setError('Home address is required.');  return false }
+      if (!firstName.trim()) { setFieldError('firstName', 'First name is required.');    return false }
+      if (!lastName.trim())  { setFieldError('lastName',  'Last name is required.');     return false }
+      if (!age)              { setFieldError('age',        'Age is required.');           return false }
+      if (!sex)              { setFieldError('sex',        'Please select your sex.');    return false }
+      if (!mobile.trim())    { setFieldError('mobile',     'Mobile number is required.'); return false }
+      if (!address.trim())   { setFieldError('address',    'Home address is required.');  return false }
     }
     if (step === 1) {
       if (isMerchant) {
-        if (!shopName.trim())    { setError('Shop name is required.');            return false }
-        if (!shopAddress.trim()) { setError('Shop address is required.');         return false }
-        if (!shopFrontPhoto)     { setError('Please upload a shop front photo.'); return false }
+        if (!shopName.trim())    { setFieldError('shopName',    'Shop name is required.');            return false }
+        if (!shopAddress.trim()) { setFieldError('shopAddress', 'Shop address is required.');         return false }
+        if (!shopFrontPhoto)     { setFieldError('shopPhoto',   'Please upload a shop front photo.'); return false }
       } else {
-        if (vehicle !== 'Bicycle' && !plate.trim()) { setError('Plate number is required.'); return false }
+        if (vehicle !== 'Bicycle' && !plate.trim()) { setFieldError('plate', 'Plate number is required.'); return false }
       }
     }
     if (step === 2 && isMerchant) {
-      if (!services.length) { setError('Select at least one service.'); return false }
+      if (!services.length) { setFieldError('services', 'Select at least one service.'); return false }
     }
     return true
   }
 
   function next()  { if (validate()) setStep(s => s + 1) }
-  function back()  { setError(''); setStep(s => s - 1) }
+  function back()  { clearError(); setStep(s => s - 1) }
 
   async function handleSubmit() {
     setError('')
@@ -404,28 +408,38 @@ export default function Apply() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label="First name *">
-                    <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Enter first name" className={inputCls} />
+                    <input value={firstName} onChange={e => { setFirstName(e.target.value); clearError() }} placeholder="Enter first name" className={`${inputCls} ${errorField === 'firstName' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/25' : ''}`} />
+                    {errorField === 'firstName' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                   </Field>
                   <Field label="Middle initial">
                     <input value={middleInitial} onChange={e => setMiddleInitial(e.target.value)} placeholder="Enter initial" maxLength={4} className={inputCls} />
                   </Field>
                   <Field label="Last name *">
-                    <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Enter last name" className={inputCls} />
+                    <input value={lastName} onChange={e => { setLastName(e.target.value); clearError() }} placeholder="Enter last name" className={`${inputCls} ${errorField === 'lastName' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/25' : ''}`} />
+                    {errorField === 'lastName' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                   </Field>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Age *">
-                    <input type="number" value={age} onChange={e => setAge(e.target.value)} placeholder="e.g. 25" min={18} max={80} className={inputCls} />
+                    <input type="number" value={age} onChange={e => { setAge(e.target.value); clearError() }} placeholder="e.g. 25" min={18} max={80} className={`${inputCls} ${errorField === 'age' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/25' : ''}`} />
+                    {errorField === 'age' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                   </Field>
                   <Field label="Sex *">
                     <div className="flex gap-2">
                       {['Male', 'Female'].map(opt => (
-                        <button key={opt} type="button" onClick={() => { setSex(opt); setError('') }}
-                          className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${sex === opt ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-[#e5e7eb] text-gray-600 hover:border-gray-300'}`}>
+                        <label key={opt}
+                          className={`flex-1 flex items-center justify-center py-2.5 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${sex === opt ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-[#e5e7eb] text-gray-600 hover:border-gray-300'}`}>
+                          <input
+                            type="radio" name="sex" value={opt}
+                            checked={sex === opt}
+                            onChange={() => { setSex(opt); clearError() }}
+                            className="sr-only"
+                          />
                           {opt}
-                        </button>
+                        </label>
                       ))}
                     </div>
+                    {errorField === 'sex' && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
                   </Field>
                 </div>
                 <Field label="Email address">
@@ -433,14 +447,16 @@ export default function Apply() {
                   <p className="text-[11px] text-gray-600 mt-1">Pre-filled from your account — cannot be changed here.</p>
                 </Field>
                 <Field label="Mobile number *">
-                  <input type="tel" value={mobile} onChange={e => setMobile(e.target.value)} placeholder="e.g. 09171234567" className={inputCls} />
+                  <input type="tel" value={mobile} onChange={e => { setMobile(e.target.value); clearError() }} placeholder="e.g. 09171234567" className={`${inputCls} ${errorField === 'mobile' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/25' : ''}`} />
+                  {errorField === 'mobile' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                 </Field>
                 <MapPicker
                   label="Home address *"
                   address={address}
-                  onAddressChange={setAddress}
+                  onAddressChange={v => { setAddress(v); clearError() }}
                   onCoordsChange={setHomeCoords}
                 />
+                {errorField === 'address' && <p className="text-xs text-red-500 -mt-2">{error}</p>}
               </>
             )}
 
@@ -448,14 +464,16 @@ export default function Apply() {
             {step === 1 && isMerchant && (
               <>
                 <Field label="Shop name *">
-                  <input value={shopName} onChange={e => setShopName(e.target.value)} placeholder="e.g. Sunshine Laundry" className={inputCls} />
+                  <input value={shopName} onChange={e => { setShopName(e.target.value); clearError() }} placeholder="e.g. Sunshine Laundry" className={`${inputCls} ${errorField === 'shopName' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/25' : ''}`} />
+                  {errorField === 'shopName' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                 </Field>
                 <MapPicker
                   label="Shop address *"
                   address={shopAddress}
-                  onAddressChange={setShopAddress}
+                  onAddressChange={v => { setShopAddress(v); clearError() }}
                   onCoordsChange={setShopCoords}
                 />
+                {errorField === 'shopAddress' && <p className="text-xs text-red-500 -mt-2">{error}</p>}
                 <Field label="Shop front photo *" hint="This will be your shop's cover photo on LabadaGo">
                   <label className="block cursor-pointer">
                     <input
@@ -497,6 +515,7 @@ export default function Apply() {
                       </div>
                     )}
                   </label>
+                  {errorField === 'shopPhoto' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                 </Field>
                 <Field label="About your shop" hint="Shown on your shop profile — what makes your shop special?">
                   <textarea value={about} onChange={e => setAbout(e.target.value)} rows={3} placeholder="e.g. Family-owned laundry shop with over 10 years of experience…" className={`${inputCls} resize-none`} />
@@ -559,6 +578,7 @@ export default function Apply() {
                       </label>
                     ))}
                   </div>
+                  {errorField === 'services' && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
                 </Field>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Starting price (₱/kg)" hint="Defaults to ₱65">
@@ -655,7 +675,8 @@ export default function Apply() {
                 </Field>
                 {vehicle !== 'Bicycle' && (
                   <Field label="Plate number *">
-                    <input value={plate} onChange={e => setPlate(e.target.value)} placeholder="e.g. ABC 1234" className={inputCls} />
+                    <input value={plate} onChange={e => { setPlate(e.target.value); clearError() }} placeholder="e.g. ABC 1234" className={`${inputCls} ${errorField === 'plate' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/25' : ''}`} />
+                    {errorField === 'plate' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                   </Field>
                 )}
                 <Field label="Model & color">
@@ -743,7 +764,7 @@ export default function Apply() {
               </div>
             )}
 
-            {error && (
+            {error && !errorField && (
               <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-3">{error}</p>
             )}
           </div>
