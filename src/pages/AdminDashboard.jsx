@@ -190,6 +190,9 @@ function initials(name) {
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({ orders, users, shops, onNavigate }) {
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [busy,          setBusy]          = useState(null)
+
   const pendingShops  = shops.filter(s => !s.approved && s.status !== 'suspended')
   const pendingRiders = users.filter(u => u.role === 'rider' && !u.status)
 
@@ -197,9 +200,28 @@ function OverviewTab({ orders, users, shops, onNavigate }) {
     .sort((a, b) => (b.createdAt?.toDate?.()?.getTime() ?? 0) - (a.createdAt?.toDate?.()?.getTime() ?? 0))
     .slice(0, 10)
 
+  async function handleStatus(id, status) {
+    setBusy(id)
+    try { await updateDoc(doc(db, 'orders', id), { status }) }
+    finally { setBusy(null) }
+  }
+
   return (
     <div className="space-y-8">
       <h2 className="font-heading font-bold text-[17px] text-gray-900">Overview</h2>
+
+      {selectedOrder && (
+        <AdminOrderDetailModal
+          order={selectedOrder}
+          users={users}
+          busy={busy === selectedOrder.id}
+          onClose={() => setSelectedOrder(null)}
+          onStatusChange={(id, status) => {
+            handleStatus(id, status)
+            setSelectedOrder(o => o ? { ...o, status } : o)
+          }}
+        />
+      )}
 
       {(pendingShops.length > 0 || pendingRiders.length > 0) && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
@@ -236,7 +258,7 @@ function OverviewTab({ orders, users, shops, onNavigate }) {
           empty={recentOrders.length === 0 ? 'No orders yet' : null}
         >
           {recentOrders.map(o => (
-            <TR key={o.id} onClick={() => onNavigate('Orders')} className="cursor-pointer hover:bg-gray-50 transition-colors">
+            <TR key={o.id} onClick={() => setSelectedOrder(o)} className="cursor-pointer hover:bg-gray-50 transition-colors">
               <TD><span className="font-mono text-xs text-gray-500">LBG-{o.id.substring(0, 8).toUpperCase()}</span></TD>
               <TD><span className="text-gray-800">{o.shopName ?? '—'}</span></TD>
               <TD>
@@ -587,7 +609,10 @@ function OrdersTab({ orders, users }) {
       if (statusFilter === 'Active'    && !ACTIVE_STATUSES.has(o.status)) return false
       if (statusFilter === 'Completed' && o.status !== 'COMPLETED')       return false
       if (statusFilter === 'Cancelled' && o.status !== 'CANCELLED')       return false
-      if (q && !o.shopName?.toLowerCase().includes(q) && !o.id.toLowerCase().includes(q) && !o.customerName?.toLowerCase().includes(q)) return false
+      if (q) {
+        const ref = `lbg-${o.id.substring(0, 8).toLowerCase()}`
+        if (!o.shopName?.toLowerCase().includes(q) && !ref.includes(q) && !o.customerName?.toLowerCase().includes(q)) return false
+      }
       if (dateFilter !== 'All Time' && o.createdAt?.toDate) {
         const d = o.createdAt.toDate()
         if (dateFilter === 'Today') {
@@ -1511,7 +1536,16 @@ export default function AdminDashboard() {
     navigate('/')
   }
 
-  const activeOrders   = orders.filter(o => ACTIVE_STATUSES.has(o.status))
+  const enrichedOrders = useMemo(() => {
+    const byId = Object.fromEntries(users.map(u => [u.id, u]))
+    return orders.map(o => {
+      if (o.customerName) return o
+      const cu = byId[o.customerId]
+      return { ...o, customerName: cu?.fullName ?? cu?.email ?? '' }
+    })
+  }, [orders, users])
+
+  const activeOrders   = enrichedOrders.filter(o => ACTIVE_STATUSES.has(o.status))
   const pendingShops   = shops.filter(s => !s.approved && s.status !== 'suspended')
   const pendingRiders  = users.filter(u => u.role === 'rider' && !u.status)
   const riders         = users.filter(u => u.role === 'rider')
@@ -1728,12 +1762,12 @@ export default function AdminDashboard() {
 
         {/* Tab content */}
         <main className="flex-1 p-4 md:p-8 space-y-6">
-          {activeTab === 'Overview'  && <OverviewTab  orders={orders} users={users} shops={shops} onNavigate={setActiveTab} />}
+          {activeTab === 'Overview'  && <OverviewTab  orders={enrichedOrders} users={users} shops={shops} onNavigate={setActiveTab} />}
           {activeTab === 'Users'     && <UsersTab     users={users} />}
-          {activeTab === 'Orders'    && <OrdersTab    orders={orders} users={users} />}
-          {activeTab === 'Shops'     && <ShopsTab     shops={shops} users={users} orders={orders} />}
-          {activeTab === 'Riders'    && <RidersTab    users={users} orders={orders} />}
-          {activeTab === 'Analytics' && <AnalyticsTab orders={orders} users={users} />}
+          {activeTab === 'Orders'    && <OrdersTab    orders={enrichedOrders} users={users} />}
+          {activeTab === 'Shops'     && <ShopsTab     shops={shops} users={users} orders={enrichedOrders} />}
+          {activeTab === 'Riders'    && <RidersTab    users={users} orders={enrichedOrders} />}
+          {activeTab === 'Analytics' && <AnalyticsTab orders={enrichedOrders} users={users} />}
           {activeTab === 'Settings'  && <SettingsTab />}
         </main>
       </div>
