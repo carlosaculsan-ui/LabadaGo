@@ -982,11 +982,18 @@ function Row({ label, value }) {
   )
 }
 
-function ShopsTab({ shops, users, orders }) {
+function ShopsTab({ shops, users, orders, initialOpenId }) {
   const [confirm,      setConfirm]      = useState(null)
   const [busy,         setBusy]         = useState(null)
   const [search,       setSearch]       = useState('')
   const [detailShop,   setDetailShop]   = useState(null)
+  const handledShopRef = useRef(null)
+
+  useEffect(() => {
+    if (!initialOpenId || handledShopRef.current === initialOpenId) return
+    const s = shops.find(x => x.id === initialOpenId)
+    if (s) { setDetailShop(s); handledShopRef.current = initialOpenId }
+  }, [initialOpenId, shops])
 
   const shopOrderCount = useMemo(() => {
     const counts = {}
@@ -1254,11 +1261,18 @@ function RiderDetailModal({ rider, deliveryCount, onClose, onApprove, onSuspendT
   )
 }
 
-function RidersTab({ users, orders }) {
+function RidersTab({ users, orders, initialOpenId }) {
   const [confirm,      setConfirm]      = useState(null)
   const [busy,         setBusy]         = useState(null)
   const [search,       setSearch]       = useState('')
   const [detailRider,  setDetailRider]  = useState(null)
+  const handledRiderRef = useRef(null)
+
+  useEffect(() => {
+    if (!initialOpenId || handledRiderRef.current === initialOpenId) return
+    const r = users.find(x => x.id === initialOpenId && x.role === 'rider')
+    if (r) { setDetailRider(r); handledRiderRef.current = initialOpenId }
+  }, [initialOpenId, users])
 
   const riders = useMemo(() => users.filter(u => u.role === 'rider'), [users])
 
@@ -1718,6 +1732,9 @@ export default function AdminDashboard() {
   const [orders,       setOrders]       = useState([])
   const [users,        setUsers]        = useState([])
   const [shops,        setShops]        = useState([])
+  const [seenIds,      setSeenIds]      = useState(new Set())
+  const [openShopId,   setOpenShopId]   = useState(null)
+  const [openRiderId,  setOpenRiderId]  = useState(null)
 
   useEffect(() => {
     const u1 = onSnapshot(collection(db, 'orders'), snap => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
@@ -1834,14 +1851,26 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-3">
               {/* Bell */}
               <div className="relative" ref={notifRef}>
-                <button onClick={() => setNotifOpen(o => !o)} className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors">
+                <button
+                  onClick={() => {
+                    if (!notifOpen) {
+                      setSeenIds(prev => new Set([
+                        ...prev,
+                        ...pendingShops.map(s => s.id),
+                        ...pendingRiders.map(r => r.id),
+                      ]))
+                    }
+                    setNotifOpen(o => !o)
+                  }}
+                  className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/15 transition-colors"
+                >
                   <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                   </svg>
                 </button>
-                {(pendingShops.length + pendingRiders.length) > 0 && (
+                {(pendingShops.filter(s => !seenIds.has(s.id)).length + pendingRiders.filter(r => !seenIds.has(r.id)).length) > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F5A623] rounded-full text-[9px] font-bold text-[#0A2540] flex items-center justify-center">
-                    {pendingShops.length + pendingRiders.length}
+                    {pendingShops.filter(s => !seenIds.has(s.id)).length + pendingRiders.filter(r => !seenIds.has(r.id)).length}
                   </span>
                 )}
 
@@ -1860,7 +1889,7 @@ export default function AdminDashboard() {
                       ) : (
                         <div className="py-1">
                           {pendingShops.map(s => (
-                            <button key={s.id} onClick={() => { setActiveTab('Shops'); setNotifOpen(false) }}
+                            <button key={s.id} onClick={() => { setActiveTab('Shops'); setOpenShopId(s.id); setSeenIds(p => new Set([...p, s.id])); setNotifOpen(false) }}
                               className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                             >
                               <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -1873,7 +1902,7 @@ export default function AdminDashboard() {
                             </button>
                           ))}
                           {pendingRiders.map(r => (
-                            <button key={r.id} onClick={() => { setActiveTab('Riders'); setNotifOpen(false) }}
+                            <button key={r.id} onClick={() => { setActiveTab('Riders'); setOpenRiderId(r.id); setSeenIds(p => new Set([...p, r.id])); setNotifOpen(false) }}
                               className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                             >
                               <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -1970,8 +1999,8 @@ export default function AdminDashboard() {
           {activeTab === 'Overview'  && <OverviewTab  orders={enrichedOrders} users={users} shops={shops} onNavigate={setActiveTab} />}
           {activeTab === 'Users'     && <UsersTab     users={users} />}
           {activeTab === 'Orders'    && <OrdersTab    orders={enrichedOrders} users={users} />}
-          {activeTab === 'Shops'     && <ShopsTab     shops={shops} users={users} orders={enrichedOrders} />}
-          {activeTab === 'Riders'    && <RidersTab    users={users} orders={enrichedOrders} />}
+          {activeTab === 'Shops'     && <ShopsTab     shops={shops} users={users} orders={enrichedOrders} initialOpenId={openShopId} />}
+          {activeTab === 'Riders'    && <RidersTab    users={users} orders={enrichedOrders} initialOpenId={openRiderId} />}
           {activeTab === 'Analytics' && <AnalyticsTab orders={enrichedOrders} users={users} />}
           {activeTab === 'Settings'  && <SettingsTab />}
         </main>
