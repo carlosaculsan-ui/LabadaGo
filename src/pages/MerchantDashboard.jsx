@@ -1951,7 +1951,7 @@ function SettingsTab({ user, userProfile, shopForm, setShopForm, shopId,
 
 // ─── EarningsTab ─────────────────────────────────────────────────────────────
 
-function EarningsTab({ orders }) {
+function EarningsTab({ orders, activeServices }) {
   const [detailFilter, setDetailFilter] = useState('all')
 
   const completed      = orders.filter(o => o.status === 'COMPLETED')
@@ -1968,7 +1968,8 @@ function EarningsTab({ orders }) {
     detailFilter === 'today' ? completed.filter(o => isToday(o.updatedAt ?? o.createdAt)) :
     completed
 
-  const byService = SERVICE_TYPES.map(s => {
+  const serviceList = (activeServices && activeServices.length > 0) ? activeServices : SERVICE_TYPES
+  const byService = serviceList.map(s => {
     const sOrders = detailOrders.filter(o => o.serviceType === s)
     return { service: s, count: sOrders.length, total: sOrders.reduce((sum, o) => sum + (o.finalPrice ?? 0), 0) }
   })
@@ -2068,12 +2069,13 @@ function EarningsTab({ orders }) {
         <button
           onClick={handleExportCSV}
           disabled={detailOrders.length === 0}
+          title={detailOrders.length === 0 ? 'No completed orders to export' : `Export ${detailOrders.length} order${detailOrders.length !== 1 ? 's' : ''} as CSV`}
           className="flex items-center gap-2 text-xs font-semibold text-[#1B6CA8] border border-[#1B6CA8]/30 bg-[#E8F4FD] px-4 py-2 rounded-xl hover:bg-[#DBEAFE] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
           </svg>
-          Export CSV
+          {detailOrders.length === 0 ? 'No data to export' : 'Export CSV'}
         </button>
       </div>
 
@@ -2773,7 +2775,7 @@ export default function MerchantDashboard() {
 
           {/* ── Earnings tab ──────────────────────────────────────────── */}
           {activeNav === 'earnings' && (
-            <EarningsTab orders={orders} />
+            <EarningsTab orders={orders} activeServices={shopForm?.services} />
           )}
 
           {/* ── Settings tab ──────────────────────────────────────────── */}
