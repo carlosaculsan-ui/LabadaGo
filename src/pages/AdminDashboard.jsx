@@ -1600,11 +1600,12 @@ function AnalyticsTab({ orders, users }) {
 // ─── Settings Tab ─────────────────────────────────────────────────────────────
 
 function SettingsTab() {
-  const [form,    setForm]    = useState(SETTINGS_DEFAULT)
-  const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
-  const [saved,   setSaved]   = useState(false)
-  const [saveErr, setSaveErr] = useState(false)
+  const [form,     setForm]     = useState(SETTINGS_DEFAULT)
+  const [loading,  setLoading]  = useState(true)
+  const [saving,   setSaving]   = useState(false)
+  const [saved,    setSaved]    = useState(false)
+  const [saveErr,  setSaveErr]  = useState(false)
+  const [emailErr, setEmailErr] = useState(false)
 
   useEffect(() => {
     getDoc(doc(db, 'settings', 'platform'))
@@ -1613,6 +1614,8 @@ function SettingsTab() {
   }, [])
 
   async function handleSave() {
+    if (!form.supportEmail.trim()) { setEmailErr(true); return }
+    setEmailErr(false)
     setSaving(true); setSaved(false); setSaveErr(false)
     try {
       await setDoc(doc(db, 'settings', 'platform'), form, { merge: true })
@@ -1652,14 +1655,23 @@ function SettingsTab() {
       <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6 space-y-4">
         <p className="font-heading font-semibold text-gray-800 border-b border-[#e5e7eb] pb-3">Platform Settings</p>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Platform Fee (%)</label>
-          <input type="number" min="0" max="100" value={form.platformFee} onChange={e => setForm(f => ({ ...f, platformFee: +e.target.value }))}
-            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e7eb] text-sm outline-none focus:ring-2 focus:ring-[#1B6CA8]/30" />
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Platform Fee</label>
+          <div className="relative">
+            <input type="number" min="0" max="100" value={form.platformFee}
+              onChange={e => {
+                const val = Math.min(100, Math.max(0, +e.target.value || 0))
+                setForm(f => ({ ...f, platformFee: val }))
+              }}
+              className="w-full pr-10 px-4 py-2.5 rounded-xl border border-[#e5e7eb] text-sm outline-none focus:ring-2 focus:ring-[#1B6CA8]/30" />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">%</span>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Support Email</label>
-          <input type="email" value={form.supportEmail} placeholder="support@labadago.com" onChange={e => setForm(f => ({ ...f, supportEmail: e.target.value }))}
-            className="w-full px-4 py-2.5 rounded-xl border border-[#e5e7eb] text-sm outline-none focus:ring-2 focus:ring-[#1B6CA8]/30" />
+          <input type="email" value={form.supportEmail} placeholder="support@labadago.com"
+            onChange={e => { setEmailErr(false); setForm(f => ({ ...f, supportEmail: e.target.value })) }}
+            className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 ${emailErr ? 'border-red-400 focus:ring-red-400/30' : 'border-[#e5e7eb]'}`} />
+          {emailErr && <p className="text-xs text-red-500 mt-1.5">Support email is required.</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Announcement Banner</label>
@@ -1668,16 +1680,25 @@ function SettingsTab() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="space-y-3">
         <button onClick={handleSave} disabled={saving}
-          className={[
-            'px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60',
-            saved ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-[#0A2540] text-white hover:bg-[#0d3058]',
-          ].join(' ')}
+          className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-[#0A2540] text-white hover:bg-[#0d3058] transition-colors disabled:opacity-60"
         >
-          {saving ? 'Saving…' : saved ? '✓ Settings saved' : 'Save Settings'}
+          {saving ? 'Saving…' : 'Save Settings'}
         </button>
-        {saveErr && <span className="text-sm text-red-500 font-medium">Save failed — please try again.</span>}
+        {saved && (
+          <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+            <svg className="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm font-medium text-emerald-700">Settings saved successfully.</span>
+          </div>
+        )}
+        {saveErr && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+            <span className="text-sm font-medium text-red-600">Save failed — please try again.</span>
+          </div>
+        )}
       </div>
     </div>
   )
