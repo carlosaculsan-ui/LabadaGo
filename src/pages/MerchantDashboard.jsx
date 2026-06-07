@@ -2236,11 +2236,15 @@ export default function MerchantDashboard() {
   ]
 
   const completedOrders = orders.filter(o => o.status === 'COMPLETED')
-  const monthEarned = completedOrders
+  const allTimeEarned = completedOrders.reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+  const monthEarned   = completedOrders
     .filter(o => isThisMonth(o.updatedAt ?? o.createdAt))
     .reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
-  const weekEarned = completedOrders
+  const weekEarned    = completedOrders
     .filter(o => isThisWeek(o.updatedAt ?? o.createdAt))
+    .reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
+  const todayEarned   = completedOrders
+    .filter(o => isToday(o.updatedAt ?? o.createdAt))
     .reduce((sum, o) => sum + (o.finalPrice ?? 0), 0)
 
   // ── Tab filtering ─────────────────────────────────────────────────────────
@@ -2326,27 +2330,6 @@ export default function MerchantDashboard() {
               {isOpen ? 'Open for orders' : 'Closed'}
             </span>
           </button>
-          {application && (
-            <button
-              onClick={() => navigate('/merchant/application')}
-              className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 w-full text-left hover:opacity-80 transition-opacity"
-            >
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                application.status === 'approved' ? 'bg-emerald-400' :
-                application.status === 'rejected' ? 'bg-red-400' : 'bg-amber-400'
-              }`} />
-              <span className="text-[11px] text-white/50 leading-tight">
-                Application:{' '}
-                <span className={`font-semibold ${
-                  application.status === 'approved' ? 'text-emerald-400' :
-                  application.status === 'rejected' ? 'text-red-400' : 'text-amber-400'
-                }`}>
-                  {application.status === 'approved' ? 'Approved' :
-                   application.status === 'rejected' ? 'Rejected' : 'Under Review'}
-                </span>
-              </span>
-            </button>
-          )}
         </div>
 
         {/* Nav */}
@@ -2367,6 +2350,30 @@ export default function MerchantDashboard() {
           ))}
         </nav>
 
+        {/* Application status — pinned to sidebar bottom */}
+        {application && (
+          <div className="px-4 py-3 border-t border-white/10 shrink-0">
+            <button
+              onClick={() => navigate('/merchant/application')}
+              className="flex items-center gap-2 w-full text-left hover:opacity-80 transition-opacity"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                application.status === 'approved' ? 'bg-emerald-400' :
+                application.status === 'rejected' ? 'bg-red-400' : 'bg-amber-400'
+              }`} />
+              <span className="text-[11px] text-white/50 leading-tight">
+                Application:{' '}
+                <span className={`font-semibold ${
+                  application.status === 'approved' ? 'text-emerald-400' :
+                  application.status === 'rejected' ? 'text-red-400' : 'text-amber-400'
+                }`}>
+                  {application.status === 'approved' ? 'Approved' :
+                   application.status === 'rejected' ? 'Rejected' : 'Under Review'}
+                </span>
+              </span>
+            </button>
+          </div>
+        )}
 
       </aside>
 
@@ -2581,9 +2588,12 @@ export default function MerchantDashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
                     </svg>
                   </div>
-                  <h2 className="font-heading font-bold text-[15px] text-gray-900">Weight Confirmations</h2>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-heading font-bold text-[15px] text-gray-900">Weight Confirmations</h2>
+                    <p className="text-[11px] text-gray-400 mt-0.5">Confirm actual kg vs. customer estimate before charging</p>
+                  </div>
                   {weightPending.length > 0 && (
-                    <span className="ml-auto bg-amber-100 text-amber-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                    <span className="ml-auto shrink-0 bg-amber-100 text-amber-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
                       {weightPending.length} pending
                     </span>
                   )}
@@ -2609,14 +2619,24 @@ export default function MerchantDashboard() {
                   </div>
                   <h2 className="font-heading font-bold text-[15px] text-gray-900">Earnings</h2>
                 </div>
-                <div className="p-6 space-y-5">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1.5">This month</p>
-                    <p className="font-heading font-bold text-[2rem] text-[#F5A623] leading-none">₱{monthEarned.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1">This week</p>
-                    <p className="font-heading font-bold text-xl text-emerald-600">₱{weekEarned.toFixed(2)}</p>
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#F4F7FA] rounded-xl px-4 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1">All-Time</p>
+                      <p className="font-heading font-bold text-lg text-gray-900 leading-none">₱{allTimeEarned.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-amber-50 rounded-xl px-4 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-600 mb-1">This Month</p>
+                      <p className="font-heading font-bold text-lg text-[#F5A623] leading-none">₱{monthEarned.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-emerald-50 rounded-xl px-4 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-600 mb-1">This Week</p>
+                      <p className="font-heading font-bold text-lg text-emerald-600 leading-none">₱{weekEarned.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-[#E8F4FD] rounded-xl px-4 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#1B6CA8] mb-1">Today</p>
+                      <p className="font-heading font-bold text-lg text-[#1B6CA8] leading-none">₱{todayEarned.toFixed(2)}</p>
+                    </div>
                   </div>
                   <button
                     onClick={() => setActiveNav('earnings')}
