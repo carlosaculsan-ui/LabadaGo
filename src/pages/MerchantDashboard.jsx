@@ -1624,10 +1624,11 @@ function SettingsTab({ user, userProfile, shopForm, setShopForm, shopId,
     if (userProfile && !notifsLoaded.current) {
       notifsLoaded.current = true
       setNotifs({
-        newOrder:       userProfile.notifications?.newOrder       ?? true,
-        orderPickedUp:  userProfile.notifications?.orderPickedUp  ?? true,
-        orderCompleted: userProfile.notifications?.orderCompleted ?? true,
-        newReview:      userProfile.notifications?.newReview      ?? true,
+        newOrder:        userProfile.notifications?.newOrder        ?? true,
+        orderPickedUp:   userProfile.notifications?.orderPickedUp   ?? true,
+        orderCompleted:  userProfile.notifications?.orderCompleted  ?? true,
+        orderCancelled:  userProfile.notifications?.orderCancelled  ?? true,
+        newReview:       userProfile.notifications?.newReview       ?? true,
       })
     }
   }, [userProfile])
@@ -1790,10 +1791,11 @@ function SettingsTab({ user, userProfile, shopForm, setShopForm, shopId,
           </div>
           <div className="p-6 space-y-5">
             {[
-              { key: 'newOrder',       label: 'New order received',  desc: 'When a customer places a new order at your shop'     },
-              { key: 'orderPickedUp',  label: 'Order picked up',     desc: 'When a rider collects laundry from a customer'       },
-              { key: 'orderCompleted', label: 'Order completed',     desc: 'When an order is delivered and marked as complete'   },
-              { key: 'newReview',      label: 'New review',          desc: 'When a customer leaves a review for your shop'       },
+              { key: 'newOrder',        label: 'New order received',  desc: 'When a customer places a new order at your shop'     },
+              { key: 'orderPickedUp',   label: 'Order picked up',     desc: 'When a rider collects laundry from a customer'       },
+              { key: 'orderCompleted',  label: 'Order completed',     desc: 'When an order is delivered and marked as complete'   },
+              { key: 'orderCancelled',  label: 'Order cancelled',     desc: 'When a customer cancels an order at your shop'       },
+              { key: 'newReview',       label: 'New review',          desc: 'When a customer leaves a review for your shop'       },
             ].map(({ key, label, desc }) => (
               <div key={key} className="flex items-center justify-between gap-4">
                 <div>
