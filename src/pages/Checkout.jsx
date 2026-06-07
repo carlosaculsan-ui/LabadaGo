@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { collection, setDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
 import { MOCK_SHOPS } from '../data/mockShops'
@@ -87,30 +88,74 @@ function StepIndicator({ current }) {
   return (
     <div className="flex items-start">
       {STEP_LABELS.map((label, i) => {
-        const num = i + 1
+        const num         = i + 1
         const isCompleted = num < current
         const isActive    = num === current
         return (
           <div key={i} className="flex-1 flex flex-col items-center relative">
             {i > 0 && (
-              <div className={`absolute left-0 right-1/2 top-[15px] h-0.5 ${num <= current ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`} />
+              <motion.div
+                className="absolute left-0 right-1/2 top-[15px] h-0.5"
+                animate={{ backgroundColor: num <= current ? '#1B6CA8' : '#e5e7eb' }}
+                transition={{ duration: 0.4 }}
+              />
             )}
             {i < STEP_LABELS.length - 1 && (
-              <div className={`absolute left-1/2 right-0 top-[15px] h-0.5 ${isCompleted ? 'bg-[#1B6CA8]' : 'bg-gray-200'}`} />
+              <motion.div
+                className="absolute left-1/2 right-0 top-[15px] h-0.5"
+                animate={{ backgroundColor: isCompleted ? '#1B6CA8' : '#e5e7eb' }}
+                transition={{ duration: 0.4 }}
+              />
             )}
-            <div className={[
-              'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold relative z-10 border-2',
-              isCompleted ? 'bg-[#1B6CA8] border-[#1B6CA8] text-white'
-                : isActive ? 'bg-white border-[#1B6CA8] text-[#1B6CA8]'
-                : 'bg-white border-gray-200 text-gray-400',
-            ].join(' ')}>
-              {isCompleted ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : num}
-            </div>
-            <span className={`text-[11px] font-semibold mt-2 text-center leading-tight ${isActive ? 'text-[#1B6CA8]' : isCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
+
+            <motion.div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold relative z-10 border-2"
+              animate={{
+                backgroundColor: isCompleted ? '#1B6CA8' : '#ffffff',
+                borderColor:     isCompleted || isActive ? '#1B6CA8' : '#e5e7eb',
+                scale:           isActive ? 1.1 : 1,
+              }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {isCompleted ? (
+                  <motion.svg
+                    key="check"
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth={2.5}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
+                  >
+                    <motion.path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.25, delay: 0.05 }}
+                    />
+                  </motion.svg>
+                ) : (
+                  <motion.span
+                    key="num"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    style={{ color: isActive ? '#1B6CA8' : '#9ca3af' }}
+                  >
+                    {num}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            <span className={`text-[11px] font-semibold mt-2 text-center leading-tight transition-colors duration-300 ${isActive ? 'text-[#1B6CA8]' : isCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
               {label}
             </span>
           </div>
@@ -522,6 +567,9 @@ export default function Checkout() {
                     <span className="text-sm text-gray-600">kg</span>
                     <span className="text-xs text-gray-400 ml-1">avg. load is 3–5 kg</span>
                   </div>
+                  <p className="text-xs text-gray-400 -mt-4 mb-6">
+                    Just estimate — the shop confirms the exact weight and adjusts the final price before pickup.
+                  </p>
 
                   <div className="mb-4">
                     <FieldLabel>Detergent preference</FieldLabel>
