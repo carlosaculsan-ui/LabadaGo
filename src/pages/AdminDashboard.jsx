@@ -328,9 +328,17 @@ function UserDetailModal({ user, onClose, onSuspend, busy }) {
               <p className="text-[10px] font-semibold text-gray-400 mb-1">Member since</p>
               <p className="text-xs font-semibold text-gray-800">{fmtDate(user.createdAt)}</p>
             </div>
-            <div className="bg-[#F4F7FA] rounded-xl p-3">
-              <p className="text-[10px] font-semibold text-gray-400 mb-1">User ID</p>
-              <p className="text-[11px] font-mono text-gray-600 truncate">{user.id.substring(0, 14)}…</p>
+            <div className="bg-[#F4F7FA] rounded-xl p-3 col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-semibold text-gray-400">User ID</p>
+                <button
+                  onClick={() => navigator.clipboard.writeText(user.id)}
+                  className="text-[10px] font-semibold text-[#1B6CA8] hover:underline"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-[11px] font-mono text-gray-600 break-all">{user.id}</p>
             </div>
           </div>
 
@@ -410,9 +418,12 @@ function UsersTab({ users }) {
         />
       )}
 
-      <FilterBar count={displayed.length} noun="user">
+      <FilterBar count={users.length} noun="user">
         <SearchInput value={search} onChange={setSearch} placeholder="Search by name or email…" />
         <FilterPills options={['All', 'Customer', 'Merchant', 'Rider', 'Admin']} active={roleFilter} onChange={setRoleFilter} />
+        {displayed.length !== users.length && (
+          <span className="text-xs text-gray-400">showing {displayed.length}</span>
+        )}
       </FilterBar>
 
       <TableWrap
