@@ -20,6 +20,7 @@ import MyOrders from './pages/MyOrders'
 import Partner from './pages/Partner'
 import Apply from './pages/Apply'
 import ShopDetail from './pages/ShopDetail'
+import MerchantApplication from './pages/MerchantApplication'
 
 const router = createBrowserRouter([
   {
@@ -56,7 +57,10 @@ const router = createBrowserRouter([
   },
   {
     element: <ProtectedRoute allowedRoles={['merchant']} />,
-    children: [{ path: '/merchant', element: <MerchantDashboard /> }],
+    children: [
+      { path: '/merchant',             element: <MerchantDashboard /> },
+      { path: '/merchant/application', element: <MerchantApplication /> },
+    ],
   },
   {
     element: <ProtectedRoute allowedRoles={['admin']} />,

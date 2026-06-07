@@ -943,12 +943,22 @@ export default function Apply() {
                 You will receive a response within <span className="font-semibold">3–5 business days</span>. We'll notify you via email once a decision has been made.
               </p>
             </div>
-            <button
-              onClick={() => navigate('/')}
-              className="w-full border border-[#e5e7eb] text-gray-600 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              Back to Home
-            </button>
+            <div className="space-y-2">
+              {isMerchant && (
+                <button
+                  onClick={() => navigate('/merchant/application')}
+                  className="w-full bg-[#1B6CA8] hover:bg-[#155a8a] text-white text-sm font-bold py-3 rounded-xl transition-colors"
+                >
+                  Track application status →
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/')}
+                className="w-full border border-[#e5e7eb] text-gray-600 text-sm font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Back to Home
+              </button>
+            </div>
           </div>
         </div>
       )}

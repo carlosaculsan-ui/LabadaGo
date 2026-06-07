@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo'
-import { collection, query, where, onSnapshot, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
 import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -2084,6 +2084,7 @@ export default function MerchantDashboard() {
   const [notifOpen,     setNotifOpen]     = useState(false)
   const [sidebarOpen,   setSidebarOpen]   = useState(false)
   const [shopForm,      setShopForm]      = useState(null)
+  const [application,   setApplication]   = useState(null)
   const [isSaving,      setIsSaving]      = useState(false)
   const [saveSuccess,   setSaveSuccess]   = useState(false)
   const [photoUploading,setPhotoUploading]= useState(false)
@@ -2166,6 +2167,13 @@ export default function MerchantDashboard() {
     )
 
     return unsubscribe
+  }, [shopId])
+
+  useEffect(() => {
+    if (!shopId) return
+    getDoc(doc(db, 'applications', String(shopId))).then(snap => {
+      if (snap.exists()) setApplication(snap.data())
+    })
   }, [shopId])
 
   async function handleToggleOpen() {
@@ -2318,6 +2326,27 @@ export default function MerchantDashboard() {
               {isOpen ? 'Open for orders' : 'Closed'}
             </span>
           </button>
+          {application && (
+            <button
+              onClick={() => navigate('/merchant/application')}
+              className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10 w-full text-left hover:opacity-80 transition-opacity"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                application.status === 'approved' ? 'bg-emerald-400' :
+                application.status === 'rejected' ? 'bg-red-400' : 'bg-amber-400'
+              }`} />
+              <span className="text-[11px] text-white/50 leading-tight">
+                Application:{' '}
+                <span className={`font-semibold ${
+                  application.status === 'approved' ? 'text-emerald-400' :
+                  application.status === 'rejected' ? 'text-red-400' : 'text-amber-400'
+                }`}>
+                  {application.status === 'approved' ? 'Approved' :
+                   application.status === 'rejected' ? 'Rejected' : 'Under Review'}
+                </span>
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Nav */}
