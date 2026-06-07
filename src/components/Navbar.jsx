@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 import Logo from './Logo'
+
+const ACTIVE_ORDER_STATUSES = [
+  'PENDING', 'ACCEPTED', 'PICKUP_EN_ROUTE', 'PICKED_UP',
+  'ARRIVED_AT_SHOP', 'PROCESSING', 'READY_FOR_DELIVERY', 'DELIVERY_EN_ROUTE',
+]
 
 const MOCK_SHOPS = [
   { id: 'mock-1', name: 'Sunshine Laundry',    address: '12 Rizal St, Barangay Sta. Cruz' },
@@ -22,6 +27,7 @@ export default function Navbar() {
   const [allShops,        setAllShops]        = useState([])
   const [shopsFetched,    setShopsFetched]    = useState(false)
   const [mobileMenuOpen,  setMobileMenuOpen]  = useState(false)
+  const [activeOrder,     setActiveOrder]     = useState(null)
   const dropdownRef   = useRef(null)
   const searchRef     = useRef(null)
   const mobileMenuRef = useRef(null)
@@ -96,6 +102,22 @@ export default function Navbar() {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [mobileMenuOpen])
+
+  useEffect(() => {
+    if (!user || (role && role !== 'customer')) {
+      setActiveOrder(null)
+      return
+    }
+    const q = query(collection(db, 'orders'), where('customerId', '==', user.uid))
+    const unsub = onSnapshot(q, snap => {
+      const active = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(o => ACTIVE_ORDER_STATUSES.includes(o.status))
+        .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0))[0] ?? null
+      setActiveOrder(active)
+    }, () => setActiveOrder(null))
+    return () => unsub()
+  }, [user, role])
 
   async function handleSignOut() {
     setDropdownOpen(false)
@@ -249,6 +271,17 @@ export default function Navbar() {
             <a href="/#testimonials"  className="text-sm font-medium text-gray-600 hover:text-[#1B6CA8] transition-colors">Reviews</a>
           </nav>
 
+          {/* Active order pill */}
+          {activeOrder && (
+            <button
+              onClick={() => navigate(`/order-tracking?id=${activeOrder.id}`)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[13px] font-semibold hover:bg-amber-100 transition-colors shrink-0"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              Track order
+            </button>
+          )}
+
           {/* Auth area */}
           {!user ? (
             <Link
@@ -325,7 +358,7 @@ export default function Navbar() {
                         My orders
                       </button>
                       <button
-                        onClick={() => { setDropdownOpen(false); navigate('/order-tracking') }}
+                        onClick={() => { setDropdownOpen(false); navigate(activeOrder ? `/order-tracking?id=${activeOrder.id}` : '/order-tracking') }}
                         className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         Track order
@@ -413,13 +446,22 @@ export default function Navbar() {
           {/* User links */}
           {user ? (
             <div className="border-t border-[#e5e7eb] p-2">
+              {activeOrder && (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); navigate(`/order-tracking?id=${activeOrder.id}`) }}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 mb-1 text-sm font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  Track active order
+                </button>
+              )}
               <button onClick={() => { setMobileMenuOpen(false); navigate('/profile') }} className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">My profile</button>
               {role === 'merchant' && <button onClick={() => { setMobileMenuOpen(false); navigate('/merchant') }} className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">Dashboard</button>}
               {role === 'rider'    && <button onClick={() => { setMobileMenuOpen(false); navigate('/rider') }}    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">My Deliveries</button>}
               {role === 'admin'    && <button onClick={() => { setMobileMenuOpen(false); navigate('/admin') }}    className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors">Admin Panel</button>}
               {(role === 'customer' || !role) && <>
                 <button onClick={() => { setMobileMenuOpen(false); navigate('/my-orders') }}     className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">My orders</button>
-                <button onClick={() => { setMobileMenuOpen(false); navigate('/order-tracking') }} className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">Track order</button>
+                <button onClick={() => { setMobileMenuOpen(false); navigate(activeOrder ? `/order-tracking?id=${activeOrder.id}` : '/order-tracking') }} className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl transition-colors">Track order</button>
               </>}
               <div className="h-px bg-[#e5e7eb] mx-2 my-1" />
               <button onClick={() => { setMobileMenuOpen(false); handleSignOut() }} className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-50 rounded-xl transition-colors">Sign out</button>
