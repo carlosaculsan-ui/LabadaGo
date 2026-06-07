@@ -273,15 +273,105 @@ export default function OrderTracking() {
           {/* ── Left column ───────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 space-y-5">
 
-            {/* Confirmation note — only on the direct post-booking navigation */}
+            {/* In-app receipt — only on the direct post-booking navigation */}
             {justBooked && (
-              <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-5 py-3">
-                <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <p className="text-sm text-green-800">
-                  Booking confirmed! A confirmation has been sent to your registered email.
-                </p>
+              <div className="bg-white rounded-xl border border-green-200 overflow-hidden">
+
+                {/* Green header */}
+                <div className="bg-green-600 px-6 py-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-heading font-bold text-white text-[17px] leading-tight">Booking confirmed!</p>
+                    <p className="text-white/75 text-xs mt-0.5">Order {orderRef} · {order.shopName}</p>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-5">
+
+                  {/* Service + schedule */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1.5">Service</p>
+                      <p className="text-sm font-semibold text-gray-800">{order.serviceType}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{order.estimatedWeight} kg (estimated)</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1.5">Pickup window</p>
+                      <p className="text-sm font-semibold text-gray-800">{fmtDate(order.pickupDate)}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{order.pickupTime}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1.5">Expected delivery</p>
+                      <p className="text-sm font-semibold text-gray-800">{fmtDate(order.deliveryDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-1.5">Payment</p>
+                      <p className="text-sm font-semibold text-gray-800">{fmtPayment(order.paymentMethod)}</p>
+                    </div>
+                  </div>
+
+                  {/* Price breakdown */}
+                  <div className="bg-[#F4F7FA] rounded-xl p-4">
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">{order.estimatedWeight} kg × ₱{order.pricePerKg}</span>
+                        <span className="font-medium text-gray-800">₱{(order.estimatedWeight * (order.pricePerKg ?? 0)).toLocaleString()}</span>
+                      </div>
+                      {order.detergentPrice > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Detergent ({order.detergent})</span>
+                          <span className="font-medium text-gray-800">₱{order.detergentPrice}</span>
+                        </div>
+                      )}
+                      {order.conditionerPrice > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Conditioner ({order.conditioner})</span>
+                          <span className="font-medium text-gray-800">₱{order.conditionerPrice}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Pickup fee</span>
+                        <span className="font-medium text-gray-800">₱{order.pickupFee}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Delivery fee</span>
+                        <span className="font-medium text-gray-800">₱{order.deliveryFee}</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-[#e5e7eb] pt-3 flex justify-between items-baseline">
+                      <span className="font-heading font-bold text-[15px] text-gray-900">Estimated total</span>
+                      <span className="font-heading font-extrabold text-xl text-[#1B6CA8]">₱{order.estimatedPrice?.toLocaleString()}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1.5">Final amount adjusted after the shop weighs your laundry.</p>
+                  </div>
+
+                  {/* What happens next */}
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-3">What happens next</p>
+                    <div className="space-y-3.5">
+                      {[
+                        { n: 1, title: 'Shop confirms your order',   desc: 'The laundry shop will review and accept your booking.' },
+                        { n: 2, title: 'Rider picks up your laundry', desc: `${fmtDate(order.pickupDate)} · ${order.pickupTime} window.` },
+                        { n: 3, title: 'Clean laundry delivered',     desc: `Expected on ${fmtDate(order.deliveryDate)}.` },
+                      ].map(step => (
+                        <div key={step.n} className="flex items-start gap-3">
+                          <div className="w-6 h-6 rounded-full bg-[#1B6CA8] flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-[10px] font-bold text-white">{step.n}</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800">{step.title}</p>
+                            <p className="text-xs text-gray-500 mt-0.5 leading-snug">{step.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
               </div>
             )}
 
