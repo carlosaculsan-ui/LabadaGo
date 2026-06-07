@@ -72,7 +72,7 @@ export default function ShopCard({
                 : 'bg-[#1B6CA8] text-white hover:bg-[#155a8a]',
             ].join(' ')}
           >
-            {isMock ? 'View shop' : 'Book now'}
+            View shop
           </button>
         </div>
       </div>
