@@ -74,8 +74,9 @@ export default function OrderTracking() {
   const [order,      setOrder]      = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')
-  const [cancelling, setCancelling] = useState(false)
-  const [manualId,   setManualId]   = useState('')
+  const [cancelling,         setCancelling]         = useState(false)
+  const [showCancelConfirm,  setShowCancelConfirm]  = useState(false)
+  const [manualId,           setManualId]           = useState('')
 
   function handleLookup() {
     const id = manualId.trim()
@@ -224,6 +225,47 @@ export default function OrderTracking() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FA]">
+
+      {/* ── Cancel confirmation modal ──────────────────────────────────────── */}
+      {showCancelConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowCancelConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+            <h3 className="font-heading font-bold text-gray-900 text-center text-lg mb-1">
+              Cancel this order?
+            </h3>
+            <p className="text-sm text-gray-500 text-center leading-relaxed mb-6">
+              Order <span className="font-semibold text-gray-700">{orderRef}</span> will be cancelled immediately. This action cannot be undone.
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="w-full py-2.5 rounded-xl bg-[#1B6CA8] text-white text-sm font-semibold hover:bg-[#155a8a] transition-colors"
+              >
+                Keep my order
+              </button>
+              <button
+                onClick={() => { setShowCancelConfirm(false); handleCancel() }}
+                disabled={cancelling}
+                className="w-full py-2.5 rounded-xl border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelling ? 'Cancelling…' : 'Yes, cancel order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
         <h1 className="font-heading font-bold text-2xl text-gray-900 mb-6">Track your order</h1>
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
@@ -583,7 +625,7 @@ export default function OrderTracking() {
             {order.status === 'PENDING' && (
               <div className="text-center py-2">
                 <button
-                  onClick={handleCancel}
+                  onClick={() => setShowCancelConfirm(true)}
                   disabled={cancelling}
                   className="text-sm text-[#DC2626] hover:underline underline-offset-2 transition-colors disabled:opacity-50"
                 >
