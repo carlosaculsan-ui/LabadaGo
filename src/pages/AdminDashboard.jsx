@@ -772,19 +772,20 @@ function ShopDetailModal({ shop, owner, orderCount, onClose, onApprove, onSuspen
   if (!shop) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
-        {/* Image preview overlay */}
-        {previewUrl && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
-            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} onError={() => { setPreviewUrl(null); window.open(previewUrl, '_blank', 'noopener,noreferrer') }} />
-            <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
+      {/* Image preview — sibling of the scrollable panel so fixed positioning is never clipped by overflow-y-auto */}
+      {previewUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
+          <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} onError={() => { setPreviewUrl(null); window.open(previewUrl, '_blank', 'noopener,noreferrer') }} />
+          <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
         {/* Hero */}
         <div className="relative h-44 bg-gradient-to-br from-[#DBEAFE] to-[#93C5FD] shrink-0 overflow-hidden rounded-t-2xl">
@@ -1086,7 +1087,7 @@ function ShopsTab({ shops, users, orders }) {
 
 // ─── Riders Tab ───────────────────────────────────────────────────────────────
 
-function RiderDetailModal({ rider, deliveryCount, onClose }) {
+function RiderDetailModal({ rider, deliveryCount, onClose, onApprove, onSuspendToggle, busy }) {
   const [app,        setApp]        = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
 
@@ -1106,19 +1107,20 @@ function RiderDetailModal({ rider, deliveryCount, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
-        {/* Image preview overlay */}
-        {previewUrl && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
-            <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} onError={() => { setPreviewUrl(null); window.open(previewUrl, '_blank', 'noopener,noreferrer') }} />
-            <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        )}
+      {/* Image preview — sibling of the scrollable panel so fixed positioning is never clipped by overflow-y-auto */}
+      {previewUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 px-4" onClick={() => setPreviewUrl(null)}>
+          <img src={previewUrl} alt="Document" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} onError={() => { setPreviewUrl(null); window.open(previewUrl, '_blank', 'noopener,noreferrer') }} />
+          <button onClick={() => setPreviewUrl(null)} className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="relative bg-gradient-to-br from-[#0A3358] to-[#1B6CA8] px-6 pt-6 pb-8 rounded-t-2xl">
@@ -1213,6 +1215,39 @@ function RiderDetailModal({ rider, deliveryCount, onClose }) {
             </div>
           )}
 
+          {/* Approval actions */}
+          <div className="border-t border-[#e5e7eb] pt-5 flex items-center justify-end gap-3">
+            {!rider.status && (
+              <button
+                disabled={!!busy}
+                onClick={() => onApprove(rider)}
+                className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-[#1B6CA8] text-white hover:bg-[#155a8a] transition-colors disabled:opacity-50"
+              >
+                Approve rider
+              </button>
+            )}
+            {isSuspended
+              ? (
+                <button
+                  disabled={!!busy}
+                  onClick={() => onSuspendToggle(rider)}
+                  className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-green-300 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-50"
+                >
+                  Activate rider
+                </button>
+              )
+              : (
+                <button
+                  disabled={!!busy}
+                  onClick={() => onSuspendToggle(rider)}
+                  className="px-5 py-2.5 text-sm font-semibold rounded-xl border border-red-300 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  Suspend
+                </button>
+              )
+            }
+          </div>
+
         </div>
       </div>
     </div>
@@ -1249,7 +1284,23 @@ function RidersTab({ users, orders }) {
     <div>
       <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-5">Riders</h2>
       {confirm && <ConfirmModal message={confirm.message} confirmLabel={confirm.label} danger={confirm.danger} onConfirm={() => handleStatus(confirm.uid, confirm.status)} onCancel={() => setConfirm(null)} />}
-      {detailRider && <RiderDetailModal rider={detailRider} deliveryCount={completedByRider[detailRider.id] ?? 0} onClose={() => setDetailRider(null)} />}
+      {detailRider && (
+        <RiderDetailModal
+          rider={detailRider}
+          deliveryCount={completedByRider[detailRider.id] ?? 0}
+          onClose={() => setDetailRider(null)}
+          busy={busy === detailRider.id}
+          onApprove={r => {
+            setDetailRider(null)
+            setConfirm({ uid: r.id, status: 'active', label: 'Approve', danger: false, message: `Approve rider ${r.fullName ?? r.email}? They will be able to receive delivery assignments.` })
+          }}
+          onSuspendToggle={r => {
+            const isSuspended = r.status === 'suspended'
+            setDetailRider(null)
+            setConfirm({ uid: r.id, status: isSuspended ? 'active' : 'suspended', label: isSuspended ? 'Activate' : 'Suspend', danger: !isSuspended, message: isSuspended ? `Reactivate rider ${r.fullName ?? r.email}?` : `Suspend rider ${r.fullName ?? r.email}?` })
+          }}
+        />
+      )}
 
       <FilterBar count={displayed.length} noun="rider">
         <SearchInput value={search} onChange={setSearch} placeholder="Search riders…" />
