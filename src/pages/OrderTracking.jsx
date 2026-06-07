@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
-import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, serverTimestamp, limit } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -77,11 +77,37 @@ export default function OrderTracking() {
   const [cancelling,         setCancelling]         = useState(false)
   const [showCancelConfirm,  setShowCancelConfirm]  = useState(false)
   const [manualId,           setManualId]           = useState('')
+  const [showRefSearch,      setShowRefSearch]      = useState(false)
+  const [refSearchInput,     setRefSearchInput]     = useState('')
+  const [refSearchError,     setRefSearchError]     = useState('')
 
-  function handleLookup() {
-    const id = manualId.trim()
-    if (!id) return
-    navigate(`/order-tracking?id=${id}`, { replace: true })
+  async function handleLookup(inputOverride) {
+    const raw = (inputOverride ?? manualId).trim().toUpperCase()
+    if (!raw) return
+    if (raw.startsWith('LBG-')) {
+      const snap = await getDocs(query(collection(db, 'orders'), where('orderRef', '==', raw), limit(1)))
+      if (!snap.empty) {
+        navigate(`/order-tracking?id=${snap.docs[0].id}`, { replace: true })
+        return
+      }
+    }
+    navigate(`/order-tracking?id=${(inputOverride ?? manualId).trim()}`, { replace: true })
+  }
+
+  async function handleRefSearch() {
+    const raw = refSearchInput.trim().toUpperCase()
+    if (!raw) return
+    setRefSearchError('')
+    if (raw.startsWith('LBG-')) {
+      const snap = await getDocs(query(collection(db, 'orders'), where('orderRef', '==', raw), limit(1)))
+      if (!snap.empty) {
+        navigate(`/order-tracking?id=${snap.docs[0].id}`, { replace: true })
+        return
+      }
+      setRefSearchError('No order found with that reference.')
+      return
+    }
+    navigate(`/order-tracking?id=${refSearchInput.trim()}`, { replace: true })
   }
 
   useEffect(() => {
@@ -178,24 +204,24 @@ export default function OrderTracking() {
           <p className="text-sm text-gray-500 mb-8">Enter your order ID to see real-time status.</p>
 
           <div className="bg-white rounded-xl border border-[#e5e7eb] p-6 mb-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-3">Order ID</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-3">Order reference</p>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={manualId}
                 onChange={e => setManualId(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleLookup()}
-                placeholder="Paste your order ID here"
+                placeholder="e.g. LBG-A1B2C3D4"
                 className="flex-1 px-4 py-2.5 rounded-lg border border-[#e5e7eb] text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8] transition-all"
               />
               <button
-                onClick={handleLookup}
+                onClick={() => handleLookup()}
                 className="px-4 py-2.5 bg-[#1B6CA8] text-white text-sm font-semibold rounded-lg hover:bg-[#155a8a] transition-colors shrink-0"
               >
                 Track
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">You can find your order ID in your booking confirmation.</p>
+            <p className="text-xs text-gray-400 mt-2">Your order reference starts with <span className="font-medium">LBG-</span> and is shown on your booking receipt.</p>
           </div>
 
           <div className="bg-white rounded-xl border border-[#e5e7eb] p-6 text-center">
@@ -267,7 +293,39 @@ export default function OrderTracking() {
       )}
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
-        <h1 className="font-heading font-bold text-2xl text-gray-900 mb-6">Track your order</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="font-heading font-bold text-2xl text-gray-900">Track your order</h1>
+          <button
+            onClick={() => { setShowRefSearch(v => !v); setRefSearchError('') }}
+            className="text-xs font-semibold text-[#1B6CA8] hover:underline"
+          >
+            {showRefSearch ? 'Cancel' : 'Track a different order'}
+          </button>
+        </div>
+
+        {showRefSearch && (
+          <div className="bg-white rounded-xl border border-[#e5e7eb] p-4 mb-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-2.5">Order reference</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={refSearchInput}
+                onChange={e => { setRefSearchInput(e.target.value); setRefSearchError('') }}
+                onKeyDown={e => e.key === 'Enter' && handleRefSearch()}
+                placeholder="e.g. LBG-A1B2C3D4"
+                className="flex-1 px-4 py-2.5 rounded-lg border border-[#e5e7eb] text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8] transition-all"
+                autoFocus
+              />
+              <button
+                onClick={handleRefSearch}
+                className="px-4 py-2.5 bg-[#1B6CA8] text-white text-sm font-semibold rounded-lg hover:bg-[#155a8a] transition-colors shrink-0"
+              >
+                Go
+              </button>
+            </div>
+            {refSearchError && <p className="text-xs text-red-500 mt-2">{refSearchError}</p>}
+          </div>
+        )}
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
 
           {/* ── Left column ───────────────────────────────────────────────── */}

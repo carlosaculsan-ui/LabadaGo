@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
+import { collection, setDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
 import { MOCK_SHOPS } from '../data/mockShops'
 import { db } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -176,14 +176,18 @@ export default function Checkout() {
   const [errors,     setErrors]     = useState({})
   const [shopImage,  setShopImage]  = useState(null)
   const [step,       setStep]       = useState(1)
-  const [pricePerKg, setPricePerKg] = useState(PRICE_PER_KG)
+  const [pricePerKg,       setPricePerKg]       = useState(PRICE_PER_KG)
+  const [shopRating,       setShopRating]       = useState(null)
+  const [shopReviewCount,  setShopReviewCount]  = useState(null)
 
   useEffect(() => {
     // Try Firestore first, fall back to mock data
     const mockMatch = MOCK_SHOPS.find(s => s.id === shopId || s.name === shopName)
     if (mockMatch) {
-      if (mockMatch.image)      setShopImage(mockMatch.image)
-      if (mockMatch.pricePerKg) setPricePerKg(mockMatch.pricePerKg)
+      if (mockMatch.image)       setShopImage(mockMatch.image)
+      if (mockMatch.pricePerKg)  setPricePerKg(mockMatch.pricePerKg)
+      if (mockMatch.rating)      setShopRating(mockMatch.rating)
+      if (mockMatch.reviewCount) setShopReviewCount(mockMatch.reviewCount)
       return
     }
     if (!shopId) return
@@ -192,6 +196,8 @@ export default function Checkout() {
         const data = snap.data()
         setShopImage(data.image ?? null)
         setPricePerKg(data.pricePerKg ?? PRICE_PER_KG)
+        if (data.rating)      setShopRating(data.rating)
+        if (data.reviewCount) setShopReviewCount(data.reviewCount)
       }
     })
   }, [shopId, shopName])
@@ -260,8 +266,10 @@ export default function Checkout() {
         updatedAt:       serverTimestamp(),
       }
 
-      const newDoc = await addDoc(collection(db, 'orders'), orderObject)
-      navigate(`/order-tracking?id=${newDoc.id}`, { replace: true, state: { justBooked: true } })
+      const newRef    = doc(collection(db, 'orders'))
+      const orderRef  = `LBG-${newRef.id.substring(0, 8).toUpperCase()}`
+      await setDoc(newRef, { ...orderObject, orderRef })
+      navigate(`/order-tracking?id=${newRef.id}`, { replace: true, state: { justBooked: true } })
     } catch (err) {
       setErrors({ submit: err.message })
       setSubmitting(false)
@@ -717,6 +725,18 @@ export default function Checkout() {
                 ? <img src={shopImage} alt={shopName} className="w-20 h-20 mb-4 rounded-xl object-cover" />
                 : <div className="w-20 h-20 mb-4 rounded-xl bg-gray-100" />
               }
+
+              {shopRating && (
+                <div className="flex items-center gap-1.5 mb-4">
+                  {[1,2,3,4,5].map(n => (
+                    <svg key={n} className={`w-3.5 h-3.5 ${n <= Math.round(shopRating) ? 'text-[#F5A623]' : 'text-gray-200'}`} viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="text-xs font-semibold text-gray-700">{shopRating}</span>
+                  {shopReviewCount && <span className="text-xs text-gray-400">· {shopReviewCount} reviews</span>}
+                </div>
+              )}
 
               <div className="space-y-3 mb-1">
                 <SummaryRow label="Shop"        value={shopName}              />
