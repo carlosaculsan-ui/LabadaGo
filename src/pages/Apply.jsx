@@ -453,7 +453,7 @@ export default function Apply() {
                 <MapPicker
                   label="Home address *"
                   address={address}
-                  onAddressChange={v => { setAddress(v); clearError() }}
+                  onAddressChange={setAddress}
                   onCoordsChange={setHomeCoords}
                 />
                 {errorField === 'address' && <p className="text-xs text-red-500 -mt-2">{error}</p>}
@@ -470,7 +470,7 @@ export default function Apply() {
                 <MapPicker
                   label="Shop address *"
                   address={shopAddress}
-                  onAddressChange={v => { setShopAddress(v); clearError() }}
+                  onAddressChange={setShopAddress}
                   onCoordsChange={setShopCoords}
                 />
                 {errorField === 'shopAddress' && <p className="text-xs text-red-500 -mt-2">{error}</p>}
@@ -523,6 +523,12 @@ export default function Apply() {
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Shop phone number">
                     <input type="tel" value={shopPhone} onChange={e => setShopPhone(e.target.value)} placeholder="e.g. 09171234567" className={inputCls} />
+                    {mobile && !shopPhone && (
+                      <button type="button" onClick={() => setShopPhone(mobile)}
+                        className="text-[11px] text-[#1B6CA8] hover:underline mt-1 text-left">
+                        Use my mobile ({mobile})
+                      </button>
+                    )}
                   </Field>
                   <Field label="Shop email">
                     <input type="email" value={shopEmail} onChange={e => setShopEmail(e.target.value)} placeholder="shop@email.com" className={inputCls} />
@@ -566,7 +572,7 @@ export default function Apply() {
                   <div className="grid grid-cols-2 gap-2">
                     {SERVICES.map(svc => (
                       <label key={svc} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors text-sm ${services.includes(svc) ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8] font-medium' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
-                        <input type="checkbox" className="hidden" checked={services.includes(svc)} onChange={() => toggleService(svc)} />
+                        <input type="checkbox" className="sr-only" checked={services.includes(svc)} onChange={() => toggleService(svc)} />
                         <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${services.includes(svc) ? 'bg-[#1B6CA8] border-[#1B6CA8]' : 'border-gray-300'}`}>
                           {services.includes(svc) && (
                             <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -637,7 +643,7 @@ export default function Apply() {
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     {AMENITY_OPTIONS.map(opt => (
                       <label key={opt} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors text-sm ${amenities.includes(opt) ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8] font-medium' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
-                        <input type="checkbox" className="hidden" checked={amenities.includes(opt)} onChange={() => setAmenities(prev => prev.includes(opt) ? prev.filter(a => a !== opt) : [...prev, opt])} />
+                        <input type="checkbox" className="sr-only" checked={amenities.includes(opt)} onChange={() => setAmenities(prev => prev.includes(opt) ? prev.filter(a => a !== opt) : [...prev, opt])} />
                         <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${amenities.includes(opt) ? 'bg-[#1B6CA8] border-[#1B6CA8]' : 'border-gray-300'}`}>
                           {amenities.includes(opt) && (
                             <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
