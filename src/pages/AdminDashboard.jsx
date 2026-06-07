@@ -54,6 +54,7 @@ const SETTINGS_DEFAULT = {
   maintenanceMode:       false,
   allowNewRegistrations: true,
   requireShopApproval:   true,
+  requireRiderApproval:  true,
   platformFee:           10,
   supportEmail:          '',
   announcementBanner:    '',
@@ -1655,6 +1656,7 @@ function SettingsTab() {
           { key: 'maintenanceMode',       label: 'Maintenance Mode',        sub: 'Show a maintenance banner to all users' },
           { key: 'allowNewRegistrations', label: 'Allow New Registrations', sub: 'Let new users sign up on the platform' },
           { key: 'requireShopApproval',   label: 'Require Shop Approval',   sub: 'New shops must be manually approved before going live' },
+          { key: 'requireRiderApproval',  label: 'Require Rider Approval',  sub: 'New riders must be manually approved before receiving assignments' },
         ].map(({ key, label, sub }) => (
           <div key={key} className="flex items-center justify-between gap-4">
             <div>
@@ -1980,8 +1982,8 @@ export default function AdminDashboard() {
             </div>{/* end flex-1 wrapper */}
           </div>
 
-          {/* Stat cards */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {/* Stat cards — hidden on Settings where they add no context */}
+          {activeTab !== 'Settings' && <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {STATS.map((stat, i) => (
               <div key={stat.label}
                 className="bg-white/10 border border-white/15 rounded-2xl px-5 py-4 transition-all duration-200 hover:bg-white/[0.16] hover:border-white/30 hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 cursor-default"
@@ -1991,7 +1993,7 @@ export default function AdminDashboard() {
                 <p className="text-[11px] text-white/65 mt-2">{stat.label}</p>
               </div>
             ))}
-          </div>
+          </div>}
         </div>
 
         {/* Tab content */}
