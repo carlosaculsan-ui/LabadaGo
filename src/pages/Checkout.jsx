@@ -261,7 +261,7 @@ export default function Checkout() {
       }
 
       const newDoc = await addDoc(collection(db, 'orders'), orderObject)
-      navigate(`/order-tracking?id=${newDoc.id}`, { replace: true })
+      navigate(`/order-tracking?id=${newDoc.id}`, { replace: true, state: { justBooked: true } })
     } catch (err) {
       setErrors({ submit: err.message })
       setSubmitting(false)

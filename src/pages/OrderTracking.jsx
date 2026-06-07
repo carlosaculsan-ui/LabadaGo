@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { collection, query, where, getDocs, doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 
@@ -67,7 +67,9 @@ export default function OrderTracking() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
-  const orderId = searchParams.get('id')
+  const orderId    = searchParams.get('id')
+  const location   = useLocation()
+  const justBooked = location.state?.justBooked === true
 
   const [order,      setOrder]      = useState(null)
   const [loading,    setLoading]    = useState(true)
@@ -229,8 +231,8 @@ export default function OrderTracking() {
           {/* ── Left column ───────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 space-y-5">
 
-            {/* Confirmation note */}
-            {order.status === 'PENDING' && (
+            {/* Confirmation note — only on the direct post-booking navigation */}
+            {justBooked && (
               <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-5 py-3">
                 <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -459,18 +461,62 @@ export default function OrderTracking() {
           {/* ── Right column ──────────────────────────────────────────────── */}
           <div className="w-full md:w-96 shrink-0 md:sticky md:top-20 md:self-start space-y-4">
 
-            {/* Live tracking card */}
-            <div className="min-h-[400px] rounded-xl border border-[#e5e7eb] bg-white flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#E8F4FD] flex items-center justify-center mb-5">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="1.75" className="w-8 h-8">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-                  <circle cx="12" cy="9" r="2.5" fill="#1B6CA8" stroke="none"/>
-                </svg>
+            {/* Order status summary card */}
+            <div className="rounded-xl border border-[#e5e7eb] bg-white p-6">
+
+              {/* Current step */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-[#F5A623]/15 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5 text-[#D97706]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">Current status</p>
+                  <p className="font-heading font-bold text-gray-900 text-[15px] leading-tight">{activeStatus?.label}</p>
+                </div>
               </div>
-              <p className="font-heading font-bold text-gray-900 text-[15px] mb-1.5">Live tracking coming soon</p>
-              <p className="text-sm text-gray-500 leading-relaxed max-w-[200px]">
-                Real-time rider location will appear here once your pickup is en route.
-              </p>
+
+              <p className="text-xs text-gray-500 leading-relaxed mb-5">{activeStatus?.desc}</p>
+
+              {/* Progress bar */}
+              <div className="mb-2">
+                <div className="flex justify-between text-[10px] text-gray-400 mb-1.5">
+                  <span>Step {activeIndex + 1} of {ORDER_STATUSES.length}</span>
+                  <span>{Math.round((activeIndex / (ORDER_STATUSES.length - 1)) * 100)}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#1B6CA8] rounded-full transition-all duration-500"
+                    style={{ width: `${(activeIndex / (ORDER_STATUSES.length - 1)) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Next step */}
+              {activeIndex < ORDER_STATUSES.length - 1 && (
+                <div className="mt-4 bg-[#F4F7FA] rounded-xl px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-0.5">Up next</p>
+                  <p className="text-sm font-semibold text-gray-700">{ORDER_STATUSES[activeIndex + 1].label}</p>
+                </div>
+              )}
+
+              {/* Live tracking teaser — only when rider is active */}
+              {['PICKUP_EN_ROUTE', 'DELIVERY_EN_ROUTE'].includes(order.status) && (
+                <div className="mt-4 flex items-center gap-3 border border-dashed border-[#1B6CA8]/40 rounded-xl p-4 bg-[#F0F7FF]">
+                  <div className="w-9 h-9 rounded-xl bg-[#E8F4FD] flex items-center justify-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1B6CA8" strokeWidth="1.75" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                      <circle cx="12" cy="9" r="2.5" fill="#1B6CA8" stroke="none"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#1B6CA8]">Live tracking coming soon</p>
+                    <p className="text-xs text-gray-500 mt-0.5 leading-snug">Real-time rider location will appear here.</p>
+                  </div>
+                </div>
+              )}
+
             </div>
 
             {/* Rider info card */}
