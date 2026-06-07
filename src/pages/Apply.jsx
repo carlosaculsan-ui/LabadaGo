@@ -125,14 +125,78 @@ export default function Apply() {
   const accentText     = 'text-[#1B6CA8]'
   const accentLight    = 'bg-[#E8F4FD]'
 
-  const [step,       setStep]       = useState(0)
-  const [submitting, setSubmitting] = useState(false)
-  const [success,    setSuccess]    = useState(false)
-  const [error,      setError]      = useState('')
-  const [errorField, setErrorField] = useState('')
+  const [step,              setStep]              = useState(0)
+  const [submitting,        setSubmitting]        = useState(false)
+  const [success,           setSuccess]           = useState(false)
+  const [error,             setError]             = useState('')
+  const [errorField,        setErrorField]        = useState('')
+  const [showSavedBanner,   setShowSavedBanner]   = useState(false)
 
   function setFieldError(field, msg) { setErrorField(field); setError(msg) }
   function clearError()              { setError(''); setErrorField('') }
+
+  const STORAGE_KEY = user?.uid ? `labadago_apply_${type}_${user.uid}` : null
+
+  // Restore saved progress on mount
+  useEffect(() => {
+    if (!STORAGE_KEY) return
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) return
+    try {
+      const d = JSON.parse(saved)
+      if (!d.firstName && !d.lastName && !(isMerchant ? d.shopName : d.plate)) return
+      if (d.firstName)     setFirstName(d.firstName)
+      if (d.middleInitial) setMiddleInitial(d.middleInitial)
+      if (d.lastName)      setLastName(d.lastName)
+      if (d.age)           setAge(d.age)
+      if (d.sex)           setSex(d.sex)
+      if (d.mobile)        setMobile(d.mobile)
+      if (d.address)       setAddress(d.address)
+      if (isMerchant) {
+        if (d.shopName)       setShopName(d.shopName)
+        if (d.shopAddress)    setShopAddress(d.shopAddress)
+        if (d.about)          setAbout(d.about)
+        if (d.shopPhone)      setShopPhone(d.shopPhone)
+        if (d.shopEmail)      setShopEmail(d.shopEmail)
+        if (d.hours)          setHours(d.hours)
+        if (d.servicePricing) setServicePricing(d.servicePricing)
+        if (d.pricePerKg)     setPricePerKg(d.pricePerKg)
+        if (d.gcash)          setGcash(d.gcash)
+        if (d.services)       setServices(d.services)
+        if (d.amenities)      setAmenities(d.amenities)
+        if (d.turnaround)     setTurnaround(d.turnaround)
+        if (d.machines)       setMachines(d.machines)
+        if (d.maxKg)          setMaxKg(d.maxKg)
+        if (d.serviceRadius)  setServiceRadius(d.serviceRadius)
+      } else {
+        if (d.vehicle)      setVehicle(d.vehicle)
+        if (d.plate)        setPlate(d.plate)
+        if (d.vehicleModel) setVehicleModel(d.vehicleModel)
+      }
+      if (typeof d.step === 'number') setStep(d.step)
+      setShowSavedBanner(true)
+    } catch {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [STORAGE_KEY])
+
+  // Auto-save on any field change
+  useEffect(() => {
+    if (!STORAGE_KEY) return
+    if (!firstName && !lastName && !(isMerchant ? shopName : plate)) return
+    const data = {
+      step, firstName, middleInitial, lastName, age, sex, mobile, address,
+      ...(isMerchant
+        ? { shopName, shopAddress, about, shopPhone, shopEmail, hours, servicePricing, pricePerKg, gcash, services, amenities, turnaround, machines, maxKg, serviceRadius }
+        : { vehicle, plate, vehicleModel }
+      ),
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  }, [STORAGE_KEY, step, firstName, middleInitial, lastName, age, sex, mobile, address,
+      shopName, shopAddress, about, shopPhone, shopEmail, hours, servicePricing, pricePerKg,
+      gcash, services, amenities, turnaround, machines, maxKg, serviceRadius,
+      vehicle, plate, vehicleModel])
 
   // Step 1 — Personal Info
   const [firstName,     setFirstName]     = useState('')
@@ -160,6 +224,10 @@ export default function Apply() {
   const [servicePricing, setServicePricing] = useState([{ name: '', price: '', desc: '' }])
   const [amenities,      setAmenities]      = useState([])
   const [bizPermit,      setBizPermit]      = useState(null)
+  const [turnaround,     setTurnaround]     = useState('')
+  const [machines,       setMachines]       = useState('')
+  const [maxKg,          setMaxKg]          = useState('')
+  const [serviceRadius,  setServiceRadius]  = useState('')
 
   useEffect(() => {
     if (!shopFrontPhoto) { setPhotoPreview(null); return }
@@ -256,6 +324,10 @@ export default function Apply() {
           servicePricing: builtPricing,
           amenities,
           services,
+          turnaround:     turnaround || null,
+          machines:       machines    ? parseInt(machines, 10)    : null,
+          maxKg:          maxKg       ? parseInt(maxKg, 10)       : null,
+          serviceRadius:  serviceRadius ? parseInt(serviceRadius, 10) : null,
           detergents:     ['Any'],
           rating:         5.0,
           reviewCount:    0,
@@ -275,6 +347,8 @@ export default function Apply() {
           mobile: mobile.trim(), address: address.trim(),
           shopName: shopName.trim(), shopAddress: shopAddress.trim(),
           gcash: gcash.trim(), services, bizPermit: bizPermitUrl,
+          turnaround: turnaround || null, machines: machines || null,
+          maxKg: maxKg || null, serviceRadius: serviceRadius || null,
           appliedAt: serverTimestamp(), userId: user.uid,
         })
         await updateDoc(userRef, { role: 'merchant', shopId: user.uid, fullName, mobile: mobile.trim() })
@@ -301,6 +375,7 @@ export default function Apply() {
       }
 
       await refreshProfile()
+      if (STORAGE_KEY) localStorage.removeItem(STORAGE_KEY)
       setSuccess(true)
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -374,6 +449,20 @@ export default function Apply() {
       {/* Right — form content */}
       <main className="flex-1 px-4 md:px-12 py-6 md:py-12 overflow-y-auto">
         <div className="max-w-[560px]">
+
+          {showSavedBanner && (
+            <div className="flex items-center gap-3 mb-6 bg-[#E8F4FD] border border-[#1B6CA8]/20 rounded-xl px-4 py-3">
+              <svg className="w-4 h-4 text-[#1B6CA8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <p className="text-xs text-[#1B6CA8] flex-1">Progress restored — your previous answers have been loaded.</p>
+              <button type="button" onClick={() => setShowSavedBanner(false)} className="text-[#1B6CA8]/50 hover:text-[#1B6CA8] transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           <h2 className="font-heading font-bold text-2xl text-gray-900 mb-1">
             {steps[step].label}
@@ -549,12 +638,21 @@ export default function Apply() {
                         </button>
                         <span className="text-sm text-gray-700 w-28 shrink-0">{h.day}</span>
                         {h.open ? (
-                          <input
-                            value={h.time}
-                            onChange={e => setHours(prev => prev.map((x, j) => j === i ? { ...x, time: e.target.value } : x))}
-                            placeholder="e.g. 7:00 AM – 6:00 PM"
-                            className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#e5e7eb] text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8]"
-                          />
+                          <>
+                            <input
+                              value={h.time}
+                              onChange={e => setHours(prev => prev.map((x, j) => j === i ? { ...x, time: e.target.value } : x))}
+                              placeholder="e.g. 7:00 AM – 6:00 PM"
+                              className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#e5e7eb] text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#1B6CA8]/30 focus:border-[#1B6CA8]"
+                            />
+                            {i === 1 && hours[0]?.time && (
+                              <button type="button"
+                                onClick={() => setHours(prev => prev.map((x, j) => j === 1 ? { ...x, time: hours[0].time } : x))}
+                                className="text-[11px] font-medium text-[#1B6CA8] hover:underline shrink-0 whitespace-nowrap">
+                                Copy weekdays
+                              </button>
+                            )}
+                          </>
                         ) : (
                           <span className="text-sm text-red-500 font-medium">Closed</span>
                         )}
@@ -568,6 +666,27 @@ export default function Apply() {
             {/* ── Step 3: Merchant — Services & Docs ── */}
             {step === 2 && isMerchant && (
               <>
+                <Field label="Estimated turnaround time" hint="How quickly do you typically complete an order?">
+                  <div className="flex flex-wrap gap-2">
+                    {['Same-day', '1 day', '2 days', '3+ days'].map(opt => (
+                      <label key={opt} className={`flex items-center justify-center px-4 py-2 rounded-xl border text-sm font-medium transition-colors cursor-pointer ${turnaround === opt ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8]' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
+                        <input type="radio" name="turnaround" value={opt} checked={turnaround === opt} onChange={() => setTurnaround(opt)} className="sr-only" />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="Washing machines" hint="Number of units">
+                    <input type="number" value={machines} onChange={e => setMachines(e.target.value)} placeholder="e.g. 5" min={1} className={inputCls} />
+                  </Field>
+                  <Field label="Max daily capacity" hint="Kilograms">
+                    <input type="number" value={maxKg} onChange={e => setMaxKg(e.target.value)} placeholder="e.g. 80" min={1} className={inputCls} />
+                  </Field>
+                  <Field label="Service radius" hint="Kilometers">
+                    <input type="number" value={serviceRadius} onChange={e => setServiceRadius(e.target.value)} placeholder="e.g. 5" min={1} className={inputCls} />
+                  </Field>
+                </div>
                 <Field label="Services offered *">
                   <div className="grid grid-cols-2 gap-2">
                     {SERVICES.map(svc => (
@@ -735,6 +854,10 @@ export default function Apply() {
                     <ReviewRow label="Hours"           value={hours.map(h => `${h.day}: ${h.open ? h.time || '—' : 'Closed'}`).join(' | ')} />
                     <ReviewRow label="Pricing items"   value={servicePricing.filter(s => s.name.trim()).length > 0 ? servicePricing.filter(s => s.name.trim()).map(s => `${s.name} ${s.price}`).join(', ') : '—'} />
                     <ReviewRow label="Amenities"       value={amenities.length > 0 ? amenities.join(', ') : '—'} />
+                    <ReviewRow label="Turnaround"      value={turnaround || '—'} />
+                    <ReviewRow label="Machines"        value={machines || '—'} />
+                    <ReviewRow label="Max daily (kg)"  value={maxKg || '—'} />
+                    <ReviewRow label="Service radius"  value={serviceRadius ? `${serviceRadius} km` : '—'} />
                     <ReviewRow label="Business Permit" value={bizPermit ? `${bizPermit.name} ✓` : 'Not uploaded'} />
                   </div>
                 ) : (
