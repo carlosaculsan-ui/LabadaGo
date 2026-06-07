@@ -886,6 +886,55 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
             </div>
           </div>
 
+          {/* Profile Price List */}
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#e5e7eb]">
+              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Profile Price List</h3>
+              <p className="text-xs text-gray-500 mt-0.5">These rows appear on your public shop profile for customers to see</p>
+            </div>
+            <div className="p-6 space-y-2">
+              {(shopForm.servicePricing ?? []).map((svc, i) => (
+                <div key={i} className="flex gap-2 items-start">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      value={svc.name}
+                      onChange={e => field('servicePricing', (shopForm.servicePricing ?? []).map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                      placeholder="Service name"
+                      className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-1 focus:ring-[#1B6CA8]/15"
+                    />
+                    <input
+                      value={svc.price}
+                      onChange={e => field('servicePricing', (shopForm.servicePricing ?? []).map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
+                      placeholder="₱65/kg"
+                      className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-1 focus:ring-[#1B6CA8]/15"
+                    />
+                    <input
+                      value={svc.desc}
+                      onChange={e => field('servicePricing', (shopForm.servicePricing ?? []).map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
+                      placeholder="Short note (optional)"
+                      className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-1 focus:ring-[#1B6CA8]/15"
+                    />
+                  </div>
+                  <button type="button"
+                    onClick={() => field('servicePricing', (shopForm.servicePricing ?? []).filter((_, j) => j !== i))}
+                    className="mt-2 text-gray-400 hover:text-red-500 transition-colors shrink-0">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              {(shopForm.servicePricing ?? []).length === 0 && (
+                <p className="text-xs text-gray-400 italic py-1">No pricing rows yet. Add one below.</p>
+              )}
+              <button type="button"
+                onClick={() => field('servicePricing', [...(shopForm.servicePricing ?? []), { name: '', price: '', desc: '' }])}
+                className="text-xs font-semibold text-[#1B6CA8] hover:underline mt-1">
+                + Add pricing row
+              </button>
+            </div>
+          </div>
+
           {/* Detergents & Add-ons */}
           <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
             <div className="px-6 py-4 border-b border-[#e5e7eb]">
@@ -971,7 +1020,7 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
 // ─── ShopProfileTab ───────────────────────────────────────────────────────────
 
 function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUploading, photoError,
-                          onSave, onPhotoUpload, isOpen, shopRating, reviewCount }) {
+                          onSave, onPhotoUpload, isOpen, shopRating, reviewCount, onGoToServices }) {
 
   if (!shopForm) {
     return (
@@ -1231,48 +1280,34 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
             </div>
           </div>
 
-          {/* Pricing Details */}
+          {/* Pricing Details — cross-link to Services & Pricing tab */}
           <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#e5e7eb]">
-              <h3 className="font-heading font-semibold text-[15px] text-gray-900">Pricing Details</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Individual service prices shown on your shop profile</p>
-            </div>
-            <div className="p-6 space-y-2">
-              {(shopForm.servicePricing ?? []).map((svc, i) => (
-                <div key={i} className="flex gap-2 items-start">
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input
-                      value={svc.name}
-                      onChange={e => field('servicePricing', (shopForm.servicePricing ?? []).map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-                      placeholder="Service name"
-                      className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-1 focus:ring-[#1B6CA8]/15"
-                    />
-                    <input
-                      value={svc.price}
-                      onChange={e => field('servicePricing', (shopForm.servicePricing ?? []).map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
-                      placeholder="₱65/kg"
-                      className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-1 focus:ring-[#1B6CA8]/15"
-                    />
-                    <input
-                      value={svc.desc}
-                      onChange={e => field('servicePricing', (shopForm.servicePricing ?? []).map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
-                      placeholder="Short note (optional)"
-                      className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1B6CA8] focus:ring-1 focus:ring-[#1B6CA8]/15"
-                    />
-                  </div>
-                  <button type="button" onClick={() => field('servicePricing', (shopForm.servicePricing ?? []).filter((_, j) => j !== i))}
-                    className="mt-2 text-gray-400 hover:text-red-500 transition-colors shrink-0">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-              <button type="button"
-                onClick={() => field('servicePricing', [...(shopForm.servicePricing ?? []), { name: '', price: '', desc: '' }])}
-                className="text-xs font-semibold text-[#1B6CA8] hover:underline mt-1">
-                + Add pricing item
+            <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-semibold text-[15px] text-gray-900">Pricing Details</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Individual service prices shown on your public shop profile</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onGoToServices?.()}
+                className="text-xs font-semibold text-[#1B6CA8] hover:underline shrink-0"
+              >
+                Edit in Services & Pricing →
               </button>
+            </div>
+            <div className="px-6 py-4">
+              {(shopForm.servicePricing ?? []).length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No pricing rows added yet.</p>
+              ) : (
+                <div className="divide-y divide-[#f3f4f6]">
+                  {(shopForm.servicePricing ?? []).map((svc, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 gap-4">
+                      <span className="text-sm text-gray-700 font-medium">{svc.name || '—'}</span>
+                      <span className="text-sm font-semibold text-[#1B6CA8]">{svc.price || '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2721,6 +2756,7 @@ export default function MerchantDashboard() {
               isOpen={isOpen}
               shopRating={shopMeta.rating}
               reviewCount={shopMeta.reviewCount}
+              onGoToServices={() => setActiveNav('services')}
             />
           )}
 
