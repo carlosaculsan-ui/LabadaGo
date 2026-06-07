@@ -1173,8 +1173,8 @@ function RiderDetailModal({ rider, deliveryCount, onClose, onApprove, onSuspendT
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Personal Details</p>
             <Row label="Full Name"  value={rider.fullName || '—'} />
             <Row label="Email"      value={rider.email || '—'} />
-            <Row label="Mobile"     value={rider.mobile || app?.mobile || '—'} />
-            <Row label="Contact"    value={app?.contact || '—'} />
+            <Row label="Mobile"              value={rider.mobile || app?.mobile || '—'} />
+            <Row label="Emergency contact"  value={app?.contact || '—'} />
             <Row label="Age"        value={app?.age ?? '—'} />
             <Row label="Sex"        value={app?.sex || '—'} />
             <Row label="Address"    value={app?.address || '—'} />
@@ -1329,9 +1329,12 @@ function RidersTab({ users, orders }) {
               </TD>
               <TD><span className="text-gray-500 text-xs">{r.mobile ?? '—'}</span></TD>
               <TD align="center">
-                <div className="flex justify-center">
-                  <Toggle checked={!!r.available} disabled={busy === r.id + 'a'} onChange={val => handleAvailable(r.id, val)} />
-                </div>
+                {isPending
+                  ? <span className="text-gray-300 text-sm select-none">—</span>
+                  : <div className="flex justify-center">
+                      <Toggle checked={!!r.available} disabled={busy === r.id + 'a'} onChange={val => handleAvailable(r.id, val)} />
+                    </div>
+                }
               </TD>
               <TD align="center"><span className="font-medium text-gray-700">{completedByRider[r.id] ?? 0}</span></TD>
               <TD align="center">
