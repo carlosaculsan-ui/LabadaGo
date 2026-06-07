@@ -1399,31 +1399,56 @@ function AnalyticsTab({ orders, users }) {
 
   const completedOrders = useMemo(() => filteredOrders.filter(o => o.status === 'COMPLETED'), [filteredOrders])
 
-  // Bar charts always show current year regardless of dateFilter
-  const monthlyRevenue = useMemo(() => {
-    const year = new Date().getFullYear()
-    const data = Array(12).fill(0)
-    orders.filter(o => o.status === 'COMPLETED').forEach(o => {
-      if (!o.createdAt?.toDate) return
+  const chartData = useMemo(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth()
+
+    if (dateFilter === 'This Week') {
+      const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const sow = new Date(now); sow.setDate(now.getDate() - now.getDay()); sow.setHours(0, 0, 0, 0)
+      const revenue = Array(7).fill(0)
+      const signups = Array(7).fill(0)
+      orders.filter(o => o.status === 'COMPLETED' && o.createdAt?.toDate).forEach(o => {
+        const d = o.createdAt.toDate(); if (d >= sow) revenue[d.getDay()] += o.finalPrice ?? o.estimatedPrice ?? 0
+      })
+      users.filter(u => u.createdAt?.toDate).forEach(u => {
+        const d = u.createdAt.toDate(); if (d >= sow) signups[d.getDay()]++
+      })
+      return { labels: DAYS, revenue, signups }
+    }
+
+    if (dateFilter === 'This Month') {
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+      const revenue = Array(daysInMonth).fill(0)
+      const signups = Array(daysInMonth).fill(0)
+      orders.filter(o => o.status === 'COMPLETED' && o.createdAt?.toDate).forEach(o => {
+        const d = o.createdAt.toDate()
+        if (d.getFullYear() === year && d.getMonth() === month) revenue[d.getDate() - 1] += o.finalPrice ?? o.estimatedPrice ?? 0
+      })
+      users.filter(u => u.createdAt?.toDate).forEach(u => {
+        const d = u.createdAt.toDate()
+        if (d.getFullYear() === year && d.getMonth() === month) signups[d.getDate() - 1]++
+      })
+      return { labels: Array.from({ length: daysInMonth }, (_, i) => String(i + 1)), revenue, signups }
+    }
+
+    // 'All Time' or 'This Year' → monthly for current year
+    const revenue = Array(12).fill(0)
+    const signups = Array(12).fill(0)
+    orders.filter(o => o.status === 'COMPLETED' && o.createdAt?.toDate).forEach(o => {
       const d = o.createdAt.toDate()
-      if (d.getFullYear() === year) data[d.getMonth()] += o.finalPrice ?? o.estimatedPrice ?? 0
+      if (d.getFullYear() === year) revenue[d.getMonth()] += o.finalPrice ?? o.estimatedPrice ?? 0
     })
-    return data
-  }, [orders])
-
-  const monthlyNewUsers = useMemo(() => {
-    const year = new Date().getFullYear()
-    const data = Array(12).fill(0)
-    users.forEach(u => {
-      if (!u.createdAt?.toDate) return
+    users.filter(u => u.createdAt?.toDate).forEach(u => {
       const d = u.createdAt.toDate()
-      if (d.getFullYear() === year) data[d.getMonth()]++
+      if (d.getFullYear() === year) signups[d.getMonth()]++
     })
-    return data
-  }, [users])
+    return { labels: MONTHS, revenue, signups }
+  }, [orders, users, dateFilter])
 
-  const maxRev   = Math.max(...monthlyRevenue, 1)
-  const maxUsers = Math.max(...monthlyNewUsers, 1)
+  const maxRev   = Math.max(...chartData.revenue, 1)
+  const maxUsers = Math.max(...chartData.signups, 1)
   const totalRev = completedOrders.reduce((s, o) => s + (o.finalPrice ?? o.estimatedPrice ?? 0), 0)
   const avgOrder = completedOrders.length > 0 ? totalRev / completedOrders.length : 0
   const completion = filteredOrders.length > 0 ? ((completedOrders.length / filteredOrders.length) * 100).toFixed(1) : '0.0'
@@ -1453,6 +1478,18 @@ function AnalyticsTab({ orders, users }) {
     return Object.entries(totals).sort((a, b) => b[1] - a[1])
   }, [completedOrders])
 
+  const _now = new Date()
+  const chartRevTitle = dateFilter === 'This Week'
+    ? 'Revenue — This Week'
+    : dateFilter === 'This Month'
+    ? `Revenue — ${MONTHS[_now.getMonth()]} ${_now.getFullYear()}`
+    : `Monthly Revenue — ${_now.getFullYear()}`
+  const chartUsersTitle = dateFilter === 'This Week'
+    ? 'New Signups — This Week'
+    : dateFilter === 'This Month'
+    ? `New Signups — ${MONTHS[_now.getMonth()]} ${_now.getFullYear()}`
+    : `New User Signups — ${_now.getFullYear()}`
+
   const summaryStats = [
     { label: 'Total Revenue',    value: `₱${totalRev.toLocaleString()}`,             color: 'text-[#F5A623]',   sub: null },
     { label: 'Completed Orders', value: completedOrders.length,                       color: 'text-emerald-600', sub: null },
@@ -1477,25 +1514,24 @@ function AnalyticsTab({ orders, users }) {
         ))}
       </div>
 
-      {/* Monthly Revenue bar chart — always current year */}
+      {/* Revenue bar chart */}
       <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
-        <p className="font-heading font-semibold text-gray-800 mb-6">Monthly Revenue — {new Date().getFullYear()}</p>
-        <div className="flex items-end gap-2">
-          {monthlyRevenue.map((val, i) => (
+        <p className="font-heading font-semibold text-gray-800 mb-6">{chartRevTitle}</p>
+        <div className="flex items-end gap-1.5">
+          {chartData.revenue.map((val, i) => (
             <div key={i} className="flex-1 flex flex-col items-center group">
               <div className="relative w-full flex justify-center items-end" style={{ height: '160px' }}>
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[calc(100%+4px)] text-[10px] font-semibold text-gray-700 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-white border border-[#e5e7eb] rounded-md px-1.5 py-0.5 shadow-sm z-10">
+                  ₱{val.toLocaleString()}
+                </span>
                 <div
-                  className="w-full rounded-t-lg bg-[#0A2540] group-hover:bg-[#1B6CA8] transition-colors relative"
+                  className="w-full rounded-t-lg bg-[#0A2540] group-hover:bg-[#1B6CA8] transition-colors"
                   style={{ height: `${(val / maxRev) * 160}px`, minHeight: val > 0 ? '4px' : '0' }}
-                >
-                  {val > 0 && (
-                    <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-gray-600 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                      ₱{val.toLocaleString()}
-                    </span>
-                  )}
-                </div>
+                />
               </div>
-              <span className="text-[10px] text-gray-400 mt-1.5">{MONTHS[i]}</span>
+              <span className="text-[10px] text-gray-400 mt-1.5">
+                {chartData.labels.length > 12 && i % 5 !== 0 ? '' : chartData.labels[i]}
+              </span>
             </div>
           ))}
         </div>
@@ -1535,25 +1571,24 @@ function AnalyticsTab({ orders, users }) {
         ))}
       </div>
 
-      {/* New User Signups bar chart — always current year */}
+      {/* New User Signups bar chart */}
       <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
-        <p className="font-heading font-semibold text-gray-800 mb-6">New User Signups — {new Date().getFullYear()}</p>
-        <div className="flex items-end gap-2">
-          {monthlyNewUsers.map((val, i) => (
+        <p className="font-heading font-semibold text-gray-800 mb-6">{chartUsersTitle}</p>
+        <div className="flex items-end gap-1.5">
+          {chartData.signups.map((val, i) => (
             <div key={i} className="flex-1 flex flex-col items-center group">
               <div className="relative w-full flex justify-center items-end" style={{ height: '120px' }}>
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[calc(100%+4px)] text-[10px] font-semibold text-gray-700 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-white border border-[#e5e7eb] rounded-md px-1.5 py-0.5 shadow-sm z-10">
+                  {val} user{val !== 1 ? 's' : ''}
+                </span>
                 <div
-                  className="w-full rounded-t-lg bg-emerald-600 group-hover:bg-emerald-500 transition-colors relative"
+                  className="w-full rounded-t-lg bg-emerald-600 group-hover:bg-emerald-500 transition-colors"
                   style={{ height: `${(val / maxUsers) * 120}px`, minHeight: val > 0 ? '4px' : '0' }}
-                >
-                  {val > 0 && (
-                    <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-gray-600 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                      {val} user{val !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
+                />
               </div>
-              <span className="text-[10px] text-gray-400 mt-1.5">{MONTHS[i]}</span>
+              <span className="text-[10px] text-gray-400 mt-1.5">
+                {chartData.labels.length > 12 && i % 5 !== 0 ? '' : chartData.labels[i]}
+              </span>
             </div>
           ))}
         </div>
