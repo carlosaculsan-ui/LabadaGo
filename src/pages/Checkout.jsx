@@ -555,6 +555,92 @@ export default function Checkout() {
                 <SectionCard
                   icon={
                     <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                  }
+                  title="Order review"
+                >
+                  <div className="space-y-5">
+
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2.5">Pickup details</p>
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-4 text-sm">
+                          <span className="text-gray-500 shrink-0">Address</span>
+                          <span className="font-medium text-gray-800 text-right">
+                            {street}{landmark ? `, ${landmark}` : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-start justify-between gap-4 text-sm">
+                          <span className="text-gray-500 shrink-0">Pickup date</span>
+                          <span className="font-medium text-gray-800 text-right">
+                            {pickupDate?.toLocaleDateString('en-PH', { weekday: 'short', month: 'long', day: 'numeric' })}
+                          </span>
+                        </div>
+                        <div className="flex items-start justify-between gap-4 text-sm">
+                          <span className="text-gray-500 shrink-0">Pickup time</span>
+                          <span className="font-medium text-gray-800">{pickupTime}</span>
+                        </div>
+                        <div className="flex items-start justify-between gap-4 text-sm">
+                          <span className="text-gray-500 shrink-0">Expected delivery</span>
+                          <span className="font-medium text-gray-800 text-right">
+                            {deliveryDate?.toLocaleDateString('en-PH', { weekday: 'short', month: 'long', day: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="border-[#f0f0f0]" />
+
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400 mb-2.5">Laundry preferences</p>
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-4 text-sm">
+                          <span className="text-gray-500">Service</span>
+                          <span className="font-medium text-gray-800">{serviceType}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-sm">
+                          <span className="text-gray-500">Est. weight</span>
+                          <span className="font-medium text-gray-800">{weight} kg × ₱{pricePerKg} = ₱{subtotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-sm">
+                          <span className="text-gray-500">Detergent</span>
+                          <span className="font-medium text-gray-800">
+                            {detergent}{detergentPrice > 0 ? ` (+₱${detergentPrice})` : ' (free)'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-sm">
+                          <span className="text-gray-500">Conditioner</span>
+                          <span className="font-medium text-gray-800">
+                            {conditioner}{conditionerPrice > 0 ? ` (+₱${conditionerPrice})` : ' (free)'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="border-[#f0f0f0]" />
+
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-400">Total</span>
+                      <span className="font-heading font-extrabold text-lg text-[#1B6CA8]">₱{total.toLocaleString()}</span>
+                    </div>
+
+                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3 -mx-0">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" className="w-3.5 h-3.5 shrink-0 mt-0.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01"/>
+                      </svg>
+                      <p className="text-[11px] text-amber-800 leading-relaxed">
+                        Want to change anything? Use the ← back button to edit your selections.
+                      </p>
+                    </div>
+
+                  </div>
+                </SectionCard>
+
+                <SectionCard
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-4 h-4">
                       <rect x="1" y="4" width="22" height="16" rx="2"/>
                       <path strokeLinecap="round" d="M1 10h22"/>
                     </svg>
