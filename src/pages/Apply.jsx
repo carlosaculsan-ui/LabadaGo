@@ -26,9 +26,10 @@ const DEFAULT_HOURS = [
 ]
 
 const MERCHANT_STEPS = [
-  { label: 'Personal Info',     desc: 'Your basic details'          },
-  { label: 'Shop & Documents',  desc: 'Shop info and business docs'  },
-  { label: 'Review & Submit',   desc: 'Confirm before sending'       },
+  { label: 'Personal Info',    desc: 'Your basic details'              },
+  { label: 'Shop Details',     desc: 'Name, address, photo & contact'  },
+  { label: 'Services & Docs',  desc: 'Services, pricing and documents' },
+  { label: 'Review & Submit',  desc: 'Confirm before sending'          },
 ]
 const RIDER_STEPS = [
   { label: 'Personal Info',     desc: 'Your basic details'          },
@@ -156,6 +157,13 @@ export default function Apply() {
   const [amenities,      setAmenities]      = useState([])
   const [bizPermit,      setBizPermit]      = useState(null)
 
+  useEffect(() => {
+    if (!shopFrontPhoto) { setPhotoPreview(null); return }
+    const url = URL.createObjectURL(shopFrontPhoto)
+    setPhotoPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [shopFrontPhoto])
+
   // Step 2 — Rider
   const [vehicle,      setVehicle]      = useState('Motorcycle')
   const [plate,        setPlate]        = useState('')
@@ -179,13 +187,15 @@ export default function Apply() {
     }
     if (step === 1) {
       if (isMerchant) {
-        if (!shopName.trim())    { setError('Shop name is required.');              return false }
-        if (!shopAddress.trim()) { setError('Shop address is required.');           return false }
-        if (!shopFrontPhoto)     { setError('Please upload a shop front photo.');   return false }
-        if (!services.length)    { setError('Select at least one service.');        return false }
+        if (!shopName.trim())    { setError('Shop name is required.');            return false }
+        if (!shopAddress.trim()) { setError('Shop address is required.');         return false }
+        if (!shopFrontPhoto)     { setError('Please upload a shop front photo.'); return false }
       } else {
         if (vehicle !== 'Bicycle' && !plate.trim()) { setError('Plate number is required.'); return false }
       }
+    }
+    if (step === 2 && isMerchant) {
+      if (!services.length) { setError('Select at least one service.'); return false }
     }
     return true
   }
@@ -418,15 +428,9 @@ export default function Apply() {
               </>
             )}
 
-            {/* ── Step 2: Merchant — Shop & Documents ── */}
+            {/* ── Step 2: Merchant — Shop Details ── */}
             {step === 1 && isMerchant && (
               <>
-                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
-                  <svg className="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-xs text-amber-700">This step covers shop info, hours, services, and documents — takes about 5 minutes.</p>
-                </div>
                 <Field label="Shop name *">
                   <input value={shopName} onChange={e => setShopName(e.target.value)} placeholder="e.g. Sunshine Laundry" className={inputCls} />
                 </Field>
@@ -440,20 +444,10 @@ export default function Apply() {
                   <label className="block cursor-pointer">
                     <input
                       type="file" accept="image/*" className="hidden"
-                      onChange={e => {
-                        const file = e.target.files?.[0] ?? null
-                        setShopFrontPhoto(file)
-                        if (file) {
-                          const reader = new FileReader()
-                          reader.onload = ev => setPhotoPreview(ev.target.result)
-                          reader.readAsDataURL(file)
-                        } else {
-                          setPhotoPreview(null)
-                        }
-                      }}
+                      onChange={e => setShopFrontPhoto(e.target.files?.[0] ?? null)}
                     />
                     {photoPreview ? (
-                      <div className="rounded-xl overflow-hidden border border-[#1B6CA8] group relative">
+                      <div className="rounded-xl overflow-hidden border-2 border-[#1B6CA8] group relative">
                         <img src={photoPreview} alt="Shop front" className="w-full h-48 object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <span className="text-white text-sm font-semibold">Click to change photo</span>
@@ -462,7 +456,17 @@ export default function Apply() {
                           <svg className="w-3.5 h-3.5 text-[#1B6CA8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
-                          <p className="text-xs text-[#1B6CA8] font-medium truncate">{shopFrontPhoto.name}</p>
+                          <p className="text-xs text-[#1B6CA8] font-medium truncate flex-1">{shopFrontPhoto?.name}</p>
+                          <button
+                            type="button"
+                            onClick={e => { e.preventDefault(); setShopFrontPhoto(null) }}
+                            title="Remove photo"
+                            className="shrink-0 text-[#1B6CA8]/50 hover:text-red-500 transition-colors ml-1"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     ) : (
@@ -478,31 +482,6 @@ export default function Apply() {
                     )}
                   </label>
                 </Field>
-                <Field label="Services offered *">
-                  <div className="grid grid-cols-2 gap-2">
-                    {SERVICES.map(svc => (
-                      <label key={svc} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors text-sm ${services.includes(svc) ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8] font-medium' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
-                        <input type="checkbox" className="hidden" checked={services.includes(svc)} onChange={() => toggleService(svc)} />
-                        <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${services.includes(svc) ? 'bg-[#1B6CA8] border-[#1B6CA8]' : 'border-gray-300'}`}>
-                          {services.includes(svc) && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </span>
-                        {svc}
-                      </label>
-                    ))}
-                  </div>
-                </Field>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Starting price (₱/kg)" hint="Defaults to ₱65">
-                    <input type="number" value={pricePerKg} onChange={e => setPricePerKg(e.target.value)} placeholder="65" min={1} className={inputCls} />
-                  </Field>
-                  <Field label="GCash number">
-                    <input value={gcash} onChange={e => setGcash(e.target.value)} placeholder="09XXXXXXXXX" className={inputCls} />
-                  </Field>
-                </div>
                 <Field label="About your shop" hint="Shown on your shop profile — what makes your shop special?">
                   <textarea value={about} onChange={e => setAbout(e.target.value)} rows={3} placeholder="e.g. Family-owned laundry shop with over 10 years of experience…" className={`${inputCls} resize-none`} />
                 </Field>
@@ -542,6 +521,37 @@ export default function Apply() {
                     ))}
                   </div>
                 </Field>
+              </>
+            )}
+
+            {/* ── Step 3: Merchant — Services & Docs ── */}
+            {step === 2 && isMerchant && (
+              <>
+                <Field label="Services offered *">
+                  <div className="grid grid-cols-2 gap-2">
+                    {SERVICES.map(svc => (
+                      <label key={svc} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors text-sm ${services.includes(svc) ? 'border-[#1B6CA8] bg-[#E8F4FD] text-[#1B6CA8] font-medium' : 'border-[#e5e7eb] text-gray-600 hover:border-[#1B6CA8]/40'}`}>
+                        <input type="checkbox" className="hidden" checked={services.includes(svc)} onChange={() => toggleService(svc)} />
+                        <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${services.includes(svc) ? 'bg-[#1B6CA8] border-[#1B6CA8]' : 'border-gray-300'}`}>
+                          {services.includes(svc) && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                        {svc}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Starting price (₱/kg)" hint="Defaults to ₱65">
+                    <input type="number" value={pricePerKg} onChange={e => setPricePerKg(e.target.value)} placeholder="65" min={1} className={inputCls} />
+                  </Field>
+                  <Field label="GCash number">
+                    <input value={gcash} onChange={e => setGcash(e.target.value)} placeholder="09XXXXXXXXX" className={inputCls} />
+                  </Field>
+                </div>
 
                 {/* Services & Pricing */}
                 <Field label="Services & Pricing" hint="Add individual service prices shown on your profile">
@@ -650,8 +660,8 @@ export default function Apply() {
               </>
             )}
 
-            {/* ── Step 3: Review & Submit ── */}
-            {step === 2 && (
+            {/* ── Review & Submit ── */}
+            {step === steps.length - 1 && (
               <div className="space-y-4">
                 <div className="bg-white border border-[#e5e7eb] rounded-2xl p-6 space-y-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-4">Personal Information</p>
@@ -718,7 +728,7 @@ export default function Apply() {
                 Cancel
               </button>
             )}
-            {step < 2 ? (
+            {step < steps.length - 1 ? (
               <button onClick={next} className={`flex-1 ${accentBg} text-white text-sm font-bold py-3.5 rounded-xl transition-colors`}>
                 Continue →
               </button>
