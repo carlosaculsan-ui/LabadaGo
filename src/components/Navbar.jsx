@@ -466,13 +466,7 @@ export default function Navbar() {
               <div className="h-px bg-[#e5e7eb] mx-2 my-1" />
               <button onClick={() => { setMobileMenuOpen(false); handleSignOut() }} className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-50 rounded-xl transition-colors">Sign out</button>
             </div>
-          ) : (
-            <div className="border-t border-[#e5e7eb] p-3">
-              <Link to="/signin" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center bg-[#1B6CA8] text-white font-semibold px-4 py-3 rounded-xl text-sm hover:bg-[#155a8a] transition-colors">
-                Login
-              </Link>
-            </div>
-          )}
+          ) : null}
         </div>
       )}
     </header>

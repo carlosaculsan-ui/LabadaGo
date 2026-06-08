@@ -20,7 +20,7 @@ export default function RootLayout() {
     <>
       <Navbar />
       <WelcomeModal />
-      <main className="pt-[88px]">
+      <main className="pt-[88px] overflow-x-hidden">
         <Outlet />
       </main>
 
@@ -34,7 +34,7 @@ export default function RootLayout() {
               Pickup, wash, and delivery — connecting you with verified local laundry shops across the Philippines.
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-6 md:flex md:gap-12 md:shrink-0">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6 md:flex md:gap-12 md:shrink-0">
             {Object.entries(FOOTER_LINKS).map(([heading, links]) => (
               <div key={heading}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/40 mb-4">
