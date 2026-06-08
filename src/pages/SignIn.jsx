@@ -156,7 +156,7 @@ function PasswordInput({ id, label, value, onChange, autoComplete = 'current-pas
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider' }
+const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider', admin: '/admin' }
 
 function friendlyError(code) {
   switch (code) {

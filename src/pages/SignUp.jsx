@@ -312,7 +312,7 @@ function PrivacyModal({ onClose }) {
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
-const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider' }
+const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rider', admin: '/admin' }
 
 export default function SignUp() {
   const navigate = useNavigate()

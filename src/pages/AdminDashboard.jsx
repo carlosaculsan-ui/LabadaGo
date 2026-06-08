@@ -110,10 +110,10 @@ function ConfirmModal({ message, confirmLabel = 'Confirm', danger = false, onCon
 
 function SearchInput({ value, onChange, placeholder }) {
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-auto">
       <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="pl-9 pr-4 py-2 rounded-xl border border-[#e5e7eb] text-sm bg-white outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 w-64" />
+        className="pl-9 pr-4 py-2 rounded-xl border border-[#e5e7eb] text-sm bg-white outline-none focus:ring-2 focus:ring-[#1B6CA8]/30 w-full sm:w-64" />
     </div>
   )
 }
@@ -149,7 +149,7 @@ function BulkBar({ count, onClear, actions }) {
 function TableWrap({ cols, empty, children, checkboxCol }) {
   return (
     <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-x-auto">
-      <table className="w-full min-w-[600px] text-sm">
+      <table className="w-full min-w-[700px] text-sm">
         <thead>
           <tr className="border-b border-[#e5e7eb] bg-[#F9FAFB]">
             {checkboxCol !== undefined && <th className="px-4 py-3 w-10">{checkboxCol}</th>}
@@ -180,10 +180,10 @@ function FilterBar({ children, count, noun }) {
 
 function FilterPills({ options, active, onChange }) {
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-2 overflow-x-auto flex-1 min-w-0" style={{ scrollbarWidth: 'none' }}>
       {options.map(o => (
         <button key={o} onClick={() => onChange(o)}
-          className={['text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors', active === o ? 'bg-[#0A2540] text-white border-[#0A2540]' : 'bg-white text-gray-600 border-[#e5e7eb] hover:border-[#0A2540]'].join(' ')}
+          className={['shrink-0 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors', active === o ? 'bg-[#0A2540] text-white border-[#0A2540]' : 'bg-white text-gray-600 border-[#e5e7eb] hover:border-[#0A2540]'].join(' ')}
         >{o}</button>
       ))}
     </div>
@@ -800,7 +800,7 @@ function OrdersTab({ orders, users }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
         <h2 className="font-heading font-bold text-[17px] text-gray-900">Orders</h2>
         <button onClick={exportCSV} disabled={exporting}
           className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
