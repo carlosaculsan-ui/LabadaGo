@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   createUserWithEmailAndPassword,
@@ -316,6 +316,9 @@ const ROLE_REDIRECT = { customer: '/browse', merchant: '/merchant', rider: '/rid
 
 export default function SignUp() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect') ?? ''
+  const safeRedirect = redirectTo.startsWith('/') ? redirectTo : ''
   const { user, role, profileLoading } = useAuth()
 
   const [fullName,        setFullName]        = useState('')
@@ -371,7 +374,7 @@ export default function SignUp() {
       })
 
       localStorage.setItem('labadago_show_welcome', fullName)
-      navigate('/browse', { replace: true })
+      navigate(safeRedirect || '/browse', { replace: true })
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -396,7 +399,7 @@ export default function SignUp() {
         })
         localStorage.setItem('labadago_show_welcome', user.displayName ?? 'there')
       }
-      navigate('/browse', { replace: true })
+      navigate(safeRedirect || '/browse', { replace: true })
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -636,7 +639,7 @@ export default function SignUp() {
             Already have an account?{' '}
             <button
               type="button"
-              onClick={() => navigateTo('/signin')}
+              onClick={() => navigateTo('/signin' + (safeRedirect ? '?redirect=' + encodeURIComponent(safeRedirect) : ''))}
               className="text-orange-400 font-medium hover:text-orange-300 hover:drop-shadow-[0_0_8px_rgba(245,166,35,0.6)] transition-all"
             >
               Sign in

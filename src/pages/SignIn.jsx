@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   signInWithEmailAndPassword,
@@ -173,6 +173,9 @@ function friendlyError(code) {
 
 export default function SignIn() {
   const navigate   = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirectTo = searchParams.get('redirect') ?? ''
+  const safeRedirect = redirectTo.startsWith('/') ? redirectTo : ''
   const { user, role, profileLoading } = useAuth()
 
   const [email,    setEmail]    = useState('')
@@ -213,7 +216,7 @@ export default function SignIn() {
       const { user } = await signInWithEmailAndPassword(auth, email, password)
       const snap = await getDoc(doc(db, 'users', user.uid))
       const role = snap.exists() ? snap.data().role : 'customer'
-      navigate(ROLE_REDIRECT[role] ?? '/browse', { replace: true })
+      navigate(safeRedirect || ROLE_REDIRECT[role] || '/browse', { replace: true })
     } catch (err) {
       setError(friendlyError(err.code) ?? err.message)
       setLoading(false)
@@ -241,7 +244,7 @@ export default function SignIn() {
       } else if (user.photoURL) {
         await updateDoc(ref, { photoURL: user.photoURL })
       }
-      navigate('/browse', { replace: true })
+      navigate(safeRedirect || '/browse', { replace: true })
     } catch (err) {
       setError(friendlyError(err.code) ?? err.message)
       setLoading(false)
@@ -415,7 +418,7 @@ export default function SignIn() {
             New to LabadaGo?{' '}
             <button
               type="button"
-              onClick={() => navigateTo('/signup')}
+              onClick={() => navigateTo('/signup' + (safeRedirect ? '?redirect=' + encodeURIComponent(safeRedirect) : ''))}
               className="text-orange-400 font-medium hover:text-orange-300 hover:drop-shadow-[0_0_8px_rgba(245,166,35,0.6)] transition-all"
             >
               Sign up free

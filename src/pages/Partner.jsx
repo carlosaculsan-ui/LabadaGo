@@ -42,7 +42,7 @@ export default function Partner() {
   }, [role, navigate])
 
   function handleApply(type) {
-    if (!user) { navigate('/signin'); return }
+    if (!user) { navigate('/signin?redirect=/partner'); return }
     navigate(`/apply/${type}`)
   }
 
