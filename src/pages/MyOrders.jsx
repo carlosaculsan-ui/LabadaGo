@@ -122,7 +122,7 @@ function OrderCard({ order }) {
       </div>
 
       {/* Bottom row — price + action */}
-      <div className="flex items-center justify-between pt-3 border-t border-[#e5e7eb] mt-auto">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-[#e5e7eb] mt-auto">
         <div>
           <span className="text-sm font-bold text-gray-800">
             ₱{price?.toLocaleString() ?? '—'}
@@ -139,7 +139,7 @@ function OrderCard({ order }) {
           {isCompleted && (
             <button
               onClick={() => navigate(`/order-tracking?id=${order.id}`)}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors"
+              className="w-full sm:w-auto text-xs font-medium px-3 py-2 rounded-lg border border-[#e5e7eb] text-gray-600 hover:bg-gray-50 transition-colors"
             >
               View receipt
             </button>
@@ -147,7 +147,7 @@ function OrderCard({ order }) {
           {!isCancelled && !isCompleted && (
             <button
               onClick={() => navigate(`/order-tracking?id=${order.id}`)}
-              className="text-xs font-semibold px-4 py-1.5 rounded-lg bg-[#1B6CA8] text-white hover:bg-[#155a8a] transition-colors"
+              className="w-full sm:w-auto text-xs font-semibold px-4 py-2 rounded-lg bg-[#1B6CA8] text-white hover:bg-[#155a8a] transition-colors"
             >
               Track order
             </button>

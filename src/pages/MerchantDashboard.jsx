@@ -1493,7 +1493,7 @@ function OrdersTab({ orders, tab, setTab, dateFilter, setDateFilter }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-heading font-bold text-[17px] text-gray-900">Orders</h2>
         {filtered.length > 0 && (
           <button
@@ -1509,12 +1509,12 @@ function OrdersTab({ orders, tab, setTab, dateFilter, setDateFilter }) {
       </div>
 
       {/* Status tabs with counts — same layout as Dashboard filter tabs */}
-      <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm">
+      <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {TAB_COUNTS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            className={`shrink-0 sm:flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
               tab === t.id
                 ? 'bg-[#0A2540] text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-700'
@@ -1531,9 +1531,9 @@ function OrdersTab({ orders, tab, setTab, dateFilter, setDateFilter }) {
       </div>
 
       {/* Search + date filter */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
         {/* Search */}
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative flex-1 min-w-0">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
@@ -1554,7 +1554,7 @@ function OrdersTab({ orders, tab, setTab, dateFilter, setDateFilter }) {
         </div>
 
         {/* Date filter pills */}
-        <div className="flex gap-1 items-center">
+        <div className="flex gap-1 items-center overflow-x-auto shrink-0" style={{ scrollbarWidth: 'none' }}>
           {DATE_FILTERS.map(f => (
             <button
               key={f.id}
@@ -2548,7 +2548,7 @@ export default function MerchantDashboard() {
 
               {/* Name + avatar with dropdown */}
               <div className="relative flex items-center gap-2.5" ref={menuRef}>
-                <div className="text-right">
+                <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-white leading-tight">{userProfile?.fullName ?? 'Merchant'}</p>
                   <p className="text-[10px] text-white/40">Shop owner</p>
                 </div>
@@ -2626,12 +2626,12 @@ export default function MerchantDashboard() {
             {/* Orders */}
             <div>
               <h2 className="font-heading font-bold text-[17px] text-gray-900 mb-4">Orders</h2>
-              <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm mb-4">
+              <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                 {TABS.map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    className={`shrink-0 sm:flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                       activeTab === tab
                         ? 'bg-[#0A2540] text-white shadow-sm'
                         : 'text-gray-400 hover:text-gray-700'
