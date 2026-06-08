@@ -293,7 +293,7 @@ export default function OrderTracking() {
       )}
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
           <h1 className="font-heading font-bold text-2xl text-gray-900">Track your order</h1>
           <button
             onClick={() => { setShowRefSearch(v => !v); setRefSearchError('') }}
@@ -326,7 +326,7 @@ export default function OrderTracking() {
             {refSearchError && <p className="text-xs text-red-500 mt-2">{refSearchError}</p>}
           </div>
         )}
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 md:items-start">
 
           {/* ── Left column ───────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 space-y-5">
