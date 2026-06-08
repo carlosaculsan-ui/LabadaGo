@@ -1,6 +1,30 @@
 import { useState, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
+import leafletCSS from 'leaflet/dist/leaflet.css?inline'
+
+const LEAFLET_STYLE_ID = 'leaflet-dynamic-css'
+
+function mountLeafletCSS() {
+  const el = document.getElementById(LEAFLET_STYLE_ID)
+  if (el) {
+    el.dataset.refs = String(Number(el.dataset.refs || 0) + 1)
+  } else {
+    const style = document.createElement('style')
+    style.id = LEAFLET_STYLE_ID
+    style.textContent = leafletCSS
+    style.dataset.refs = '1'
+    document.head.appendChild(style)
+  }
+}
+
+function unmountLeafletCSS() {
+  const el = document.getElementById(LEAFLET_STYLE_ID)
+  if (!el) return
+  const refs = Number(el.dataset.refs || 1) - 1
+  if (refs <= 0) el.remove()
+  else el.dataset.refs = String(refs)
+}
 
 // Fix Leaflet's broken default icons in Vite
 const markerIcon = new L.Icon({
@@ -54,6 +78,11 @@ export default function MapPicker({ label = 'Pickup address', address, onAddress
   const mapRef      = useRef(null)
   const debounceRef = useRef(null)
   const wrapperRef  = useRef(null)
+
+  useEffect(() => {
+    mountLeafletCSS()
+    return unmountLeafletCSS
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(e) {

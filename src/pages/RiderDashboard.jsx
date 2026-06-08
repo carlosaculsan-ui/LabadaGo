@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Logo from '../components/Logo'
-import 'leaflet/dist/leaflet.css'
+import leafletCSS from 'leaflet/dist/leaflet.css?inline'
 import L from 'leaflet'
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet'
 import {
@@ -1495,6 +1495,27 @@ export default function RiderDashboard() {
   const [mapOrder,        setMapOrder]        = useState(null)
   const [application,     setApplication]     = useState(null)
   const menuRef = useRef(null)
+
+  useEffect(() => {
+    const STYLE_ID = 'leaflet-dynamic-css'
+    const el = document.getElementById(STYLE_ID)
+    if (el) {
+      el.dataset.refs = String(Number(el.dataset.refs || 0) + 1)
+    } else {
+      const style = document.createElement('style')
+      style.id = STYLE_ID
+      style.textContent = leafletCSS
+      style.dataset.refs = '1'
+      document.head.appendChild(style)
+    }
+    return () => {
+      const el = document.getElementById(STYLE_ID)
+      if (!el) return
+      const refs = Number(el.dataset.refs || 1) - 1
+      if (refs <= 0) el.remove()
+      else el.dataset.refs = String(refs)
+    }
+  }, [])
 
   useEffect(() => {
     if (!user?.uid) return

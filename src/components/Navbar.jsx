@@ -418,7 +418,7 @@ export default function Navbar() {
         <div ref={mobileMenuRef} className="md:hidden pointer-events-auto mt-2 bg-white rounded-2xl border border-[#e5e7eb] shadow-xl overflow-hidden">
           {/* Search */}
           <div className="p-3 border-b border-[#e5e7eb]">
-            <div className="relative">
+            <div className="relative w-full">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
