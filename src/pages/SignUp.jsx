@@ -405,7 +405,7 @@ export default function SignUp() {
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen relative overflow-x-hidden"
       style={{ background: 'linear-gradient(135deg, #0A3358, #1B6CA8, #2980C4, #0A3358)', backgroundSize: '300% 300%', animation: 'gradient-shift 15s ease infinite' }}
     >
       {showTermsModal && (
@@ -466,7 +466,7 @@ export default function SignUp() {
 
           <div className="space-y-4">
             {/* Row 1: Full name | Mobile number */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <FloatingInput
                   id="fullname"
@@ -527,7 +527,7 @@ export default function SignUp() {
             </div>
 
             {/* Row 2: Password | Confirm password */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <PasswordInput
                   id="password"
