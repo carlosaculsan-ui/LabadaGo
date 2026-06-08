@@ -709,10 +709,10 @@ function ServicesTab({ shopForm, setShopForm, isSaving, saveSuccess, onSave }) {
     <div className="space-y-6">
       <h2 className="font-heading font-bold text-[17px] text-gray-900">Services & Pricing</h2>
 
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col md:flex-row gap-6 md:items-start">
 
         {/* ── Left: Preview ───────────────────────────────────────────── */}
-        <div className="w-[240px] shrink-0 space-y-4">
+        <div className="md:w-[240px] md:shrink-0 space-y-4">
 
           <div className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-3">Price Preview</p>
@@ -1066,10 +1066,10 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
         </div>
       </div>
 
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col md:flex-row gap-6 md:items-start">
 
         {/* ── Left: Preview card ───────────────────────────────────────── */}
-        <div className="w-[260px] shrink-0 space-y-4">
+        <div className="md:w-[260px] md:shrink-0 space-y-4">
           <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
 
             {/* Cover photo */}
@@ -1828,7 +1828,7 @@ function SettingsTab({ user, userProfile, shopForm, setShopForm, shopId,
           {DAYS_OF_WEEK.map(({ id, label }) => {
             const day = shopForm.businessHours?.[id] ?? { open: false, from: '08:00', to: '18:00' }
             return (
-              <div key={id} className="flex items-center gap-4">
+              <div key={id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <div className="w-32 flex items-center gap-2.5 shrink-0">
                   <button type="button" onClick={() => hoursField(id, 'open', !day.open)}
                     className={`relative w-8 h-[18px] rounded-full transition-colors duration-200 shrink-0 ${day.open ? 'bg-emerald-500' : 'bg-gray-200'}`}>
@@ -2052,7 +2052,7 @@ function EarningsTab({ orders, activeServices }) {
       </div>
 
       {/* Filter + export toolbar */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-1">
           {DETAIL_FILTERS.map(f => (
             <button
@@ -2082,7 +2082,7 @@ function EarningsTab({ orders, activeServices }) {
       </div>
 
       {/* Bottom 2-col */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* By service */}
         <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
@@ -2661,7 +2661,7 @@ export default function MerchantDashboard() {
             </div>
 
             {/* Bottom 2-col */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               {/* Weight confirms */}
               <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
