@@ -587,8 +587,8 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
           </div>
           <div className="divide-y divide-[#e5e7eb]">
             {availableOrders.map(order => (
-              <div key={order.id} className="flex items-center gap-5 px-6 py-4">
-                <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+              <div key={order.id} className="flex flex-col gap-3 sm:flex-row sm:items-center px-6 py-4 sm:gap-5">
+                <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 items-center">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-500 mb-0.5">Order</p>
                     <p className="font-heading font-bold text-[13px] text-gray-900">LBG-{order.id.substring(0, 8).toUpperCase()}</p>
@@ -610,7 +610,7 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
                 </div>
                 <button
                   onClick={() => onClaimOrder(order.id)}
-                  className="shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap"
+                  className="w-full sm:w-auto sm:shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap"
                 >
                   Claim
                 </button>
@@ -621,12 +621,12 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
       )}
 
       {/* Filter bar */}
-      <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm">
+      <div className="flex gap-1 bg-white border border-[#e5e7eb] rounded-xl p-1 shadow-sm overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {TAB_COUNTS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+            className={`shrink-0 sm:flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
               tab === t.id ? 'bg-[#0A2540] text-white shadow-sm' : 'text-gray-400 hover:text-gray-700'
             }`}
           >
@@ -641,8 +641,8 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
       </div>
 
       {/* Search + date */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+        <div className="relative flex-1 min-w-0">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
@@ -661,12 +661,12 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
             </button>
           )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto shrink-0" style={{ scrollbarWidth: 'none' }}>
           {DATE_FILTERS.map(f => (
             <button
               key={f.id}
               onClick={() => setDateFilter(f.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
                 dateFilter === f.id
                   ? 'bg-[#0A2540] text-white'
                   : 'bg-white border border-[#e5e7eb] text-gray-500 hover:text-gray-800'
@@ -771,8 +771,8 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
           }
 
           return (
-            <div key={order.id} className="bg-white rounded-2xl border border-[#e5e7eb] flex items-center gap-5 px-6 py-4">
-              <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
+            <div key={order.id} className="bg-white rounded-2xl border border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 px-6 py-4">
+              <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 items-center">
                 <div>
                   <p className="font-heading font-bold text-[13px] text-gray-900">{ref}</p>
                   <p className="text-[11px] text-gray-400 mt-0.5">{fmtDate(order.createdAt)}</p>
@@ -798,7 +798,7 @@ function DeliveriesTab({ orders, availableOrders, isAvailable, onAdvanceStatus, 
                   </p>
                 </div>
               </div>
-              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
+              <span className={`self-start sm:self-auto sm:shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
                 {STATUS_LABEL[order.status] ?? order.status}
               </span>
             </div>
@@ -862,7 +862,7 @@ function EarningsTab({ orders }) {
 
       {/* Per-delivery breakdown */}
       <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[#e5e7eb] flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="font-heading font-bold text-[15px] text-gray-900">Delivery Breakdown</h3>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -889,7 +889,8 @@ function EarningsTab({ orders }) {
         {filteredDeliveries.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-10">No completed deliveries in this period.</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
               <tr className="border-b border-[#e5e7eb] bg-gray-50/60">
                 {['Date', 'Order ID', 'Customer', 'Shop', 'Service', 'Weight', 'Earned'].map(col => (
@@ -937,6 +938,7 @@ function EarningsTab({ orders }) {
               </tr>
             </tfoot>
           </table>
+          </div>
         )}
       </div>
     </div>
@@ -1091,10 +1093,10 @@ function ProfileTab({ user, userProfile, refreshProfile, application }) {
     <div className="space-y-6">
       <h2 className="font-heading font-bold text-[17px] text-gray-900">Profile</h2>
 
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col md:flex-row gap-6 md:items-start">
 
         {/* ── Left: Preview card ───────────────────────────────────────── */}
-        <div className="w-[240px] shrink-0 space-y-4">
+        <div className="md:w-[240px] md:shrink-0 space-y-4">
 
           {/* Profile card */}
           <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
@@ -1179,8 +1181,8 @@ function ProfileTab({ user, userProfile, refreshProfile, application }) {
             <div className="px-6 py-4 border-b border-[#e5e7eb]">
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">Personal Information</h3>
             </div>
-            <div className="p-6 grid grid-cols-2 gap-4">
-              <div className="col-span-2">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="col-span-1 sm:col-span-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Full Name</p>
                 <input
                   type="text"
@@ -1217,7 +1219,7 @@ function ProfileTab({ user, userProfile, refreshProfile, application }) {
             <div className="px-6 py-4 border-b border-[#e5e7eb]">
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">Emergency Contact</h3>
             </div>
-            <div className="p-6 grid grid-cols-2 gap-4">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Contact Name</p>
                 <input
@@ -1287,7 +1289,7 @@ function ProfileTab({ user, userProfile, refreshProfile, application }) {
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">Documents</h3>
               <p className="text-xs text-gray-400 mt-0.5">Used for verification — visible to Labada admins only</p>
             </div>
-            <div className="p-6 grid grid-cols-2 gap-5">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
               {[
                 { key: 'govId',   label: 'Government ID',   url: govIdURL   },
                 { key: 'license', label: "Driver's License", url: licenseURL },
@@ -1934,8 +1936,8 @@ export default function RiderDashboard() {
               ) : (
                 <div className="space-y-3">
                   {availableOrders.map(order => (
-                    <div key={order.id} className="flex items-center gap-5 border border-[#e5e7eb] rounded-xl p-4 hover:border-[#1B6CA8]/40 transition-colors">
-                      <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+                    <div key={order.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5 border border-[#e5e7eb] rounded-xl p-4 hover:border-[#1B6CA8]/40 transition-colors">
+                      <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 items-center">
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-0.5">Order</p>
                           <p className="font-heading font-bold text-[14px] text-gray-900">LBG-{order.id.substring(0, 8).toUpperCase()}</p>
@@ -1956,7 +1958,7 @@ export default function RiderDashboard() {
                         </div>
                       </div>
                       <button onClick={() => handleClaimOrder(order.id)}
-                        className="shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap">
+                        className="w-full sm:w-auto sm:shrink-0 bg-[#1B6CA8] text-white text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-[#155a8a] transition-colors whitespace-nowrap">
                         Claim order
                       </button>
                     </div>
@@ -1971,7 +1973,8 @@ export default function RiderDashboard() {
               {upcomingTasks.length === 0 ? (
                 <p className="text-sm text-gray-600 py-4">No upcoming tasks assigned yet.</p>
               ) : (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[500px]">
                   <thead>
                     <tr className="border-b border-[#e5e7eb]">
                       {['Order ID', 'Customer', 'Pickup address', 'Shop', 'Status', 'Action'].map(col => (
@@ -2010,6 +2013,7 @@ export default function RiderDashboard() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
 
