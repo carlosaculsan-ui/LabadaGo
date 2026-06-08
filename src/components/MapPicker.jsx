@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 
 // Fix Leaflet's broken default icons in Vite
 const markerIcon = new L.Icon({

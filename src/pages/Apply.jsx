@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import 'leaflet/dist/leaflet.css'
 
 async function uploadToCloudinary(file) {
   const form = new FormData()

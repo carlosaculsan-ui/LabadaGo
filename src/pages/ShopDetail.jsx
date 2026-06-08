@@ -127,7 +127,7 @@ export default function ShopDetail() {
 
       {/* Hero */}
       <div className={`w-full h-64 md:h-80 relative overflow-hidden ${shop.color ?? 'bg-[#DBEAFE]'}`}>
-        {shop.image && (
+        {typeof shop.image === 'string' && shop.image.startsWith('http') && (
           <img src={shop.image} alt={shop.name} className="absolute inset-0 w-full h-full object-cover" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />

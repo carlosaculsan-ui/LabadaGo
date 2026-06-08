@@ -769,7 +769,7 @@ export default function Checkout() {
                 Order summary
               </h2>
 
-              {shopImage
+              {typeof shopImage === 'string' && shopImage.startsWith('http')
                 ? <img src={shopImage} alt={shopName} className="w-20 h-20 mb-4 rounded-xl object-cover" />
                 : <div className="w-20 h-20 mb-4 rounded-xl bg-gray-100" />
               }

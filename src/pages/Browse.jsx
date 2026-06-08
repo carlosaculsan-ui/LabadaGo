@@ -131,7 +131,7 @@ export default function Browse() {
       <div className="border-b border-[#e5e7eb] bg-white">
         <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-4 flex flex-col gap-3">
           <h1 className="font-heading font-bold text-xl text-gray-900">Browse Shops</h1>
-          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex flex-nowrap gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             {CHIPS.map(chip => (
               <button
                 key={chip}
@@ -194,33 +194,35 @@ export default function Browse() {
           </div>
 
           {/* Sort + count bar */}
-          <div className="flex items-center gap-2 mb-5 md:mb-6 flex-wrap">
-            <span className="text-sm text-gray-600 mr-1">Sort by</span>
-            {SORT_OPTIONS.map(opt => (
-              <button
-                key={opt.key}
-                onClick={() => setSortBy(opt.key)}
-                className={[
-                  'text-sm font-medium px-4 py-1.5 rounded-lg border transition-colors',
-                  sortBy === opt.key
-                    ? 'bg-[#1B6CA8] text-white border-[#1B6CA8]'
-                    : 'bg-white text-gray-600 border-[#e5e7eb] hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
-                ].join(' ')}
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 mb-5 md:mb-6">
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+              <span className="text-sm text-gray-600 shrink-0">Sort by</span>
+              {SORT_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setSortBy(opt.key)}
+                  className={[
+                    'text-sm font-medium px-4 py-1.5 rounded-lg border transition-colors shrink-0 whitespace-nowrap',
+                    sortBy === opt.key
+                      ? 'bg-[#1B6CA8] text-white border-[#1B6CA8]'
+                      : 'bg-white text-gray-600 border-[#e5e7eb] hover:border-[#1B6CA8] hover:text-[#1B6CA8]',
+                  ].join(' ')}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             {!loading && (
-              <div className="ml-auto flex items-center gap-3">
+              <div className="shrink-0 flex items-center gap-3 pl-2">
                 {hasActiveFilters && (
                   <button
                     onClick={resetFilters}
-                    className="text-xs font-medium text-[#DC2626] hover:underline underline-offset-2"
+                    className="text-xs font-medium text-[#DC2626] hover:underline underline-offset-2 whitespace-nowrap"
                   >
-                    Clear filters ×
+                    Clear ×
                   </button>
                 )}
-                <span className="hidden md:inline text-sm text-gray-600">
+                <span className="hidden md:inline text-sm text-gray-600 whitespace-nowrap">
                   {displayed.length} shop{displayed.length !== 1 ? 's' : ''}
                 </span>
               </div>

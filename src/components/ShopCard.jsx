@@ -16,7 +16,7 @@ export default function ShopCard({
       ].join(' ')}
     >
       <div className={`${color} h-36 relative shrink-0 overflow-hidden`}>
-        {image && (
+        {typeof image === 'string' && image.startsWith('http') && (
           <img src={image} alt={name} className="absolute inset-0 w-full h-full object-cover" />
         )}
         {isFeatured && (
