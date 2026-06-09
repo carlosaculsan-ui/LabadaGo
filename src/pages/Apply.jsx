@@ -537,7 +537,7 @@ export default function Apply() {
                     {errorField === 'lastName' && <p className="text-xs text-red-500 mt-1">{error}</p>}
                   </Field>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Age *">
                     <input type="number" value={age} onChange={e => { setAge(e.target.value); clearError() }} placeholder="e.g. 25" min={18} max={80} className={`${inputCls} ${errorField === 'age' ? 'border-red-400 focus:border-red-400 focus:ring-red-400/25' : ''}`} />
                     {errorField === 'age' && <p className="text-xs text-red-500 mt-1">{error}</p>}
@@ -638,7 +638,7 @@ export default function Apply() {
                 <Field label="About your shop" hint="Shown on your shop profile — what makes your shop special?">
                   <textarea value={about} onChange={e => setAbout(e.target.value)} rows={3} placeholder="e.g. Family-owned laundry shop with over 10 years of experience…" className={`${inputCls} resize-none`} />
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Shop phone number">
                     <input type="tel" value={shopPhone} onChange={e => setShopPhone(e.target.value)} placeholder="e.g. 09171234567" className={inputCls} />
                     {mobile && !shopPhone && (
@@ -705,7 +705,7 @@ export default function Apply() {
                     ))}
                   </div>
                 </Field>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Field label="Washing machines" hint="Number of units">
                     <input type="number" value={machines} onChange={e => setMachines(e.target.value)} placeholder="e.g. 5" min={1} className={inputCls} />
                   </Field>
@@ -734,7 +734,7 @@ export default function Apply() {
                   </div>
                   {errorField === 'services' && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Starting price (₱/kg)" hint="Defaults to ₱65">
                     <input type="number" value={pricePerKg} onChange={e => setPricePerKg(e.target.value)} placeholder="65" min={1} className={inputCls} />
                   </Field>
