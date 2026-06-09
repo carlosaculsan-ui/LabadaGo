@@ -380,7 +380,7 @@ export default function Home() {
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
               </div>
-              <p className="font-heading font-bold text-[1.75rem] text-white leading-none">Same-day</p>
+              <p className="font-heading font-bold text-[1.75rem] text-white leading-none whitespace-nowrap">Same-day</p>
               <p className="text-[11px] text-white/60 mt-2">pickup available</p>
             </div>
 
