@@ -453,7 +453,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
             {shopsLoading ? (
               <>
                 <ShopSkeleton />
@@ -522,7 +522,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative grid grid-cols-2 gap-4 pt-8 md:grid-cols-4 md:gap-6 md:pt-4">
+          <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-4 pt-8 md:grid-cols-4 md:gap-6 md:pt-4">
             <div className="hidden md:block absolute top-[18px] left-[12.5%] right-[12.5%] border-t-2 border-[#94A3B8] pointer-events-none z-0" />
 
             {HOW_STEPS.map(step => (
