@@ -138,6 +138,47 @@ export default function Apply() {
 
   const STORAGE_KEY = user?.uid ? `labadago_apply_${type}_${user.uid}` : null
 
+  // Step 1 — Personal Info
+  const [firstName,     setFirstName]     = useState('')
+  const [middleInitial, setMiddleInitial] = useState('')
+  const [lastName,      setLastName]      = useState('')
+  const [age,           setAge]           = useState('')
+  const [sex,           setSex]           = useState('')
+  const [mobile,        setMobile]        = useState('')
+  const [address,       setAddress]       = useState('')
+  const [homeCoords,    setHomeCoords]    = useState(null)
+
+  // Step 2 — Merchant
+  const [shopName,       setShopName]       = useState('')
+  const [shopAddress,    setShopAddress]    = useState('')
+  const [shopCoords,     setShopCoords]     = useState(null)
+  const [shopFrontPhoto, setShopFrontPhoto] = useState(null)
+  const [photoPreview,   setPhotoPreview]   = useState(null)
+  const [services,       setServices]       = useState([])
+  const [pricePerKg,     setPricePerKg]     = useState('')
+  const [gcash,          setGcash]          = useState('')
+  const [about,          setAbout]          = useState('')
+  const [shopPhone,      setShopPhone]      = useState('')
+  const [shopEmail,      setShopEmail]      = useState('')
+  const [hours,          setHours]          = useState(DEFAULT_HOURS)
+  const [servicePricing, setServicePricing] = useState([{ name: '', price: '', desc: '' }])
+  const [amenities,      setAmenities]      = useState([])
+  const [detergents,     setDetergents]     = useState(['Any'])
+  const [bizPermit,      setBizPermit]      = useState(null)
+  const [turnaround,     setTurnaround]     = useState('')
+  const [machines,       setMachines]       = useState('')
+  const [maxKg,          setMaxKg]          = useState('')
+  const [serviceRadius,  setServiceRadius]  = useState('')
+
+  // Step 2 — Rider
+  const [vehicle,        setVehicle]        = useState('Motorcycle')
+  const [plate,          setPlate]          = useState('')
+  const [vehicleModel,   setVehicleModel]   = useState('')
+  const [license,        setLicense]        = useState(null)
+  const [validId,        setValidId]        = useState(null)
+  const [licensePreview, setLicensePreview] = useState(null)
+  const [validIdPreview, setValidIdPreview] = useState(null)
+
   // Restore saved progress on mount
   useEffect(() => {
     if (!STORAGE_KEY) return
@@ -200,53 +241,12 @@ export default function Apply() {
       gcash, services, amenities, detergents, turnaround, machines, maxKg, serviceRadius,
       vehicle, plate, vehicleModel])
 
-  // Step 1 — Personal Info
-  const [firstName,     setFirstName]     = useState('')
-  const [middleInitial, setMiddleInitial] = useState('')
-  const [lastName,      setLastName]      = useState('')
-  const [age,           setAge]           = useState('')
-  const [sex,           setSex]           = useState('')
-  const [mobile,        setMobile]        = useState('')
-  const [address,       setAddress]       = useState('')
-  const [homeCoords,    setHomeCoords]    = useState(null)
-
-  // Step 2 — Merchant
-  const [shopName,       setShopName]       = useState('')
-  const [shopAddress,    setShopAddress]    = useState('')
-  const [shopCoords,     setShopCoords]     = useState(null)
-  const [shopFrontPhoto, setShopFrontPhoto] = useState(null)
-  const [photoPreview,   setPhotoPreview]   = useState(null)
-  const [services,       setServices]       = useState([])
-  const [pricePerKg,     setPricePerKg]     = useState('')
-  const [gcash,          setGcash]          = useState('')
-  const [about,          setAbout]          = useState('')
-  const [shopPhone,      setShopPhone]      = useState('')
-  const [shopEmail,      setShopEmail]      = useState('')
-  const [hours,          setHours]          = useState(DEFAULT_HOURS)
-  const [servicePricing, setServicePricing] = useState([{ name: '', price: '', desc: '' }])
-  const [amenities,      setAmenities]      = useState([])
-  const [detergents,     setDetergents]     = useState(['Any'])
-  const [bizPermit,      setBizPermit]      = useState(null)
-  const [turnaround,     setTurnaround]     = useState('')
-  const [machines,       setMachines]       = useState('')
-  const [maxKg,          setMaxKg]          = useState('')
-  const [serviceRadius,  setServiceRadius]  = useState('')
-
   useEffect(() => {
     if (!shopFrontPhoto) { setPhotoPreview(null); return }
     const url = URL.createObjectURL(shopFrontPhoto)
     setPhotoPreview(url)
     return () => URL.revokeObjectURL(url)
   }, [shopFrontPhoto])
-
-  // Step 2 — Rider
-  const [vehicle,       setVehicle]       = useState('Motorcycle')
-  const [plate,         setPlate]         = useState('')
-  const [vehicleModel,  setVehicleModel]  = useState('')
-  const [license,       setLicense]       = useState(null)
-  const [validId,       setValidId]       = useState(null)
-  const [licensePreview, setLicensePreview] = useState(null)
-  const [validIdPreview,  setValidIdPreview]  = useState(null)
 
   useEffect(() => {
     if (!license) { setLicensePreview(null); return }
