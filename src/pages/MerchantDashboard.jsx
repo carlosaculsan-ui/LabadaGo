@@ -316,7 +316,7 @@ function OrderCard({ order }) {
 
   return (
     <>
-    <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 flex gap-5">
+    <div className="bg-white rounded-xl border border-[#e5e7eb] p-5 flex flex-col sm:flex-row gap-5">
 
       {/* Left — order meta */}
       <div className="min-w-[148px]">
@@ -368,7 +368,7 @@ function OrderCard({ order }) {
       </div>
 
       {/* Right — status + actions */}
-      <div className="flex flex-col items-end gap-2 min-w-[176px]">
+      <div className="flex flex-col items-start sm:items-end gap-2 sm:min-w-[176px]">
         <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${STATUS_PILL[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
           {STATUS_LABEL[order.status] ?? order.status}
         </span>
@@ -1210,8 +1210,8 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
             <div className="px-6 py-4 border-b border-[#e5e7eb]">
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">Location & Contact</h3>
             </div>
-            <div className="p-6 grid grid-cols-2 gap-4">
-              <div className="col-span-2">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="col-span-1 sm:col-span-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-600 mb-2">Shop Address</p>
                 <input
                   type="text"
@@ -1317,7 +1317,7 @@ function ShopProfileTab({ shopForm, setShopForm, isSaving, saveSuccess, photoUpl
               <h3 className="font-heading font-semibold text-[15px] text-gray-900">What's Included</h3>
               <p className="text-xs text-gray-500 mt-0.5">Amenities and features available at your shop</p>
             </div>
-            <div className="p-6 grid grid-cols-2 gap-2">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
               {AMENITY_OPTIONS.map(opt => {
                 const checked = (shopForm.amenities ?? []).includes(opt)
                 return (
