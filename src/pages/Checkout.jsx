@@ -428,13 +428,13 @@ export default function Checkout() {
                       />
                       <div className="mt-3">
                         <FieldLabel>Pickup time</FieldLabel>
-                        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+                        <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
                           {TIME_SLOTS.map(slot => (
                             <button
                               key={slot}
                               onClick={() => handlePickupTimeChange(slot)}
                               className={[
-                                'text-xs px-3 py-1.5 rounded-full border transition-colors shrink-0 whitespace-nowrap',
+                                'text-xs px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap text-center',
                                 pickupTime === slot
                                   ? 'bg-[#1B6CA8] text-white border-[#1B6CA8] font-medium'
                                   : 'border-[#e5e7eb] text-gray-600 cursor-pointer hover:border-[#1B6CA8] hover:text-[#1B6CA8] hover:bg-[#EEF5FB]',

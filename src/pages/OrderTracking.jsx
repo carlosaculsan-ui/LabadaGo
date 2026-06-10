@@ -437,7 +437,7 @@ export default function OrderTracking() {
             <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
               <div className="flex items-start justify-between mb-5">
                 <div>
-                  <h1 className="font-heading font-bold text-[22px] text-gray-900 leading-tight">
+                  <h1 className="font-heading font-bold text-lg md:text-[22px] text-gray-900 leading-tight">
                     Order #{orderRef}
                   </h1>
                   <p className="text-sm text-gray-600 mt-1">
