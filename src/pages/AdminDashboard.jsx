@@ -261,15 +261,15 @@ function OverviewTab({ orders, users, shops, onNavigate }) {
           </h3>
           <div className="space-y-2">
             {pendingShops.map(s => (
-              <div key={s.id} className="flex items-center justify-between text-sm">
+              <div key={s.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
                 <span className="text-amber-700">Shop awaiting approval: <strong>{s.name}</strong></span>
-                <button onClick={() => onNavigate('Shops')} className="text-amber-500 text-xs font-semibold hover:underline">Go to Shops tab →</button>
+                <button onClick={() => onNavigate('Shops')} className="text-amber-500 text-xs font-semibold hover:underline shrink-0">Go to Shops tab →</button>
               </div>
             ))}
             {pendingRiders.map(r => (
-              <div key={r.id} className="flex items-center justify-between text-sm">
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
                 <span className="text-amber-700">Rider pending review: <strong>{r.fullName ?? r.email}</strong></span>
-                <button onClick={() => onNavigate('Riders')} className="text-amber-500 text-xs font-semibold hover:underline">Go to Riders tab →</button>
+                <button onClick={() => onNavigate('Riders')} className="text-amber-500 text-xs font-semibold hover:underline shrink-0">Go to Riders tab →</button>
               </div>
             ))}
           </div>
